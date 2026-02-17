@@ -15,8 +15,8 @@
 </head>
 <body>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -70,12 +70,7 @@
       var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       var defaultRange = todayStr + ' | ' + todayStr;
 
-      laydate.render({
-        elem: '#betTime',
-        type: 'date',
-        range: '|',
-        value: defaultRange
-      });
+      laydate.render({ elem: '#betTime', type: 'date', range: '|', rangeLinked: true, value: defaultRange });
 
       table.render({
         elem: '#dataTable',
@@ -107,11 +102,10 @@
           { field: 'win_lose', title: 'Thắng / Thua', width: 130 },
           { field: 'bet_time', title: 'Thời gian cược', width: 160 },
           { field: 'platform_username', title: 'TK Platform', width: 150 },
-          // ── Ẩn mặc định ──
-          { field: 'id', title: 'ID', width: 120, hide: true },
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'platform_id', title: 'ID NCC', width: 80, hide: true },
-          { field: 'cid', title: 'ID loại', width: 80, hide: true }
+          { field: 'id', title: 'ID', width: 120},
+          { field: 'uid', title: 'UID', width: 90},
+          { field: 'platform_id', title: 'ID NCC', width: 80},
+          { field: 'cid', title: 'ID loại', width: 80}
         ]],
         done: function (res) {
           console.log('[betOrder] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' đơn cược');

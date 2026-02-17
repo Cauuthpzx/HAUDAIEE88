@@ -32,8 +32,8 @@
     <button class="layui-btn layui-btn-xs" lay-event="rebate">Cài đặt hoàn trả</button>
   </script>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -112,11 +112,7 @@
       var laydate = layui.laydate;
 
       // ── Date range picker ──
-      laydate.render({
-        elem: '#firstDepositTime',
-        type: 'datetime',
-        range: '|'
-      });
+      laydate.render({ elem: '#firstDepositTime', type: 'datetime', range: '|', rangeLinked: true });
 
       // ── Khởi tạo bảng ──
       table.render({
@@ -153,27 +149,26 @@
           { field: 'login_time', title: 'Lần đăng nhập cuối', width: 160 },
           { field: 'register_time', title: 'Thời gian đăng ký', width: 160 },
           { field: 'status_format', title: 'Trạng thái', width: 100 },
-          // ── Ẩn mặc định (bật qua nút lọc) ──
-          { field: 'id', title: 'ID', width: 90, hide: true },
-          { field: 'truename', title: 'Họ tên', width: 150, hide: true },
-          { field: 'phone', title: 'Điện thoại', width: 120, hide: true },
-          { field: 'email', title: 'Email', width: 180, hide: true },
-          { field: 'invite_code', title: 'Mã mời', width: 100, hide: true },
-          { field: 'device', title: 'Thiết bị', width: 100, hide: true },
-          { field: 'login_ip', title: 'IP đăng nhập', width: 150, hide: true },
-          { field: 'first_deposit_time', title: 'Thời gian nạp đầu', width: 160, hide: true },
-          { field: 'level', title: 'Cấp độ', width: 80, hide: true },
-          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
-          { field: 'agent_type', title: 'Loại đại lý', width: 100, hide: true },
-          { field: 'is_tester', title: 'Thử nghiệm', width: 100, hide: true },
-          { field: 'phone_verified', title: 'XM điện thoại', width: 110, hide: true },
-          { field: 'email_verified', title: 'XM email', width: 100, hide: true },
-          { field: 'useragent', title: 'User Agent', width: 250, hide: true },
-          { field: 'create_time', title: 'Thời gian tạo', width: 160, hide: true },
-          { field: 'update_time', title: 'Cập nhật cuối', width: 160, hide: true },
-          { field: 'remark', title: 'Ghi chú', width: 150, hide: true },
-          { field: 'note', title: 'Ghi chú thêm', width: 150, hide: true },
-          { field: 'user_tree', title: 'Cây đại lý', width: 150, hide: true },
+          { field: 'id', title: 'ID', width: 90},
+          { field: 'truename', title: 'Họ tên', width: 150},
+          { field: 'phone', title: 'Điện thoại', width: 120},
+          { field: 'email', title: 'Email', width: 180},
+          { field: 'invite_code', title: 'Mã mời', width: 100},
+          { field: 'device', title: 'Thiết bị', width: 100},
+          { field: 'login_ip', title: 'IP đăng nhập', width: 150},
+          { field: 'first_deposit_time', title: 'Thời gian nạp đầu', width: 160},
+          { field: 'level', title: 'Cấp độ', width: 80},
+          { field: 'group_id', title: 'Nhóm', width: 80},
+          { field: 'agent_type', title: 'Loại đại lý', width: 100},
+          { field: 'is_tester', title: 'Thử nghiệm', width: 100},
+          { field: 'phone_verified', title: 'XM điện thoại', width: 110},
+          { field: 'email_verified', title: 'XM email', width: 100},
+          { field: 'useragent', title: 'User Agent', width: 250},
+          { field: 'create_time', title: 'Thời gian tạo', width: 160},
+          { field: 'update_time', title: 'Cập nhật cuối', width: 160},
+          { field: 'remark', title: 'Ghi chú', width: 150},
+          { field: 'note', title: 'Ghi chú thêm', width: 150},
+          { field: 'user_tree', title: 'Cây đại lý', width: 150},
           { fixed: 'right', title: 'Thao tác', width: 130, toolbar: '#rowActionTpl' }
         ]],
         done: function (res) {

@@ -32,8 +32,8 @@
     <button class="layui-btn layui-btn-xs" lay-event="edit">Chỉnh sửa</button>
   </script>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -83,8 +83,8 @@
       var form = layui.form;
       var laydate = layui.laydate;
 
-      laydate.render({ elem: '#createTime', type: 'datetime', range: '|' });
-      laydate.render({ elem: '#registerTime', type: 'datetime', range: '|' });
+      laydate.render({ elem: '#createTime', type: 'datetime', range: '|', rangeLinked: true });
+      laydate.render({ elem: '#registerTime', type: 'datetime', range: '|', rangeLinked: true });
 
       table.render({
         elem: '#dataTable',
@@ -115,12 +115,11 @@
           { field: 'remark', title: 'Ghi chú' },
           { field: 'create_time', title: 'Thời gian thêm vào' },
           { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' },
-          // ── Ẩn mặc định ──
-          { field: 'id', title: 'ID', width: 90, hide: true },
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
-          { field: 'rebate_arr', title: 'Hoàn trả', width: 200, hide: true },
-          { field: 'update_time', title: 'Cập nhật', width: 160, hide: true }
+          { field: 'id', title: 'ID', width: 90},
+          { field: 'uid', title: 'UID', width: 90},
+          { field: 'group_id', title: 'Nhóm', width: 80},
+          { field: 'rebate_arr', title: 'Hoàn trả', width: 200},
+          { field: 'update_time', title: 'Cập nhật', width: 160}
         ]],
         done: function (res) {
           console.log('[inviteList] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' mã giới thiệu');

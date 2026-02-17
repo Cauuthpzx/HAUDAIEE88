@@ -16,8 +16,8 @@
 </head>
 <body>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -179,13 +179,7 @@
 
       var defaultRange = todayStr + ' | ' + todayStr;
 
-      laydate.render({
-        elem: '#dateRange',
-        type: 'date',
-        range: '|',
-        max: 0,
-        value: defaultRange
-      });
+      laydate.render({ elem: '#dateRange', type: 'date', range: '|', rangeLinked: true, max: 0, value: defaultRange });
 
       form.on('select(quickDateFilter)', function (data) {
         if (data.value) {

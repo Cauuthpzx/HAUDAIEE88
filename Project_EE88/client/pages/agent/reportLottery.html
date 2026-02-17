@@ -16,8 +16,8 @@
 </head>
 <body>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -206,13 +206,7 @@
 
       var defaultRange = todayStr + ' | ' + todayStr;
 
-      laydate.render({
-        elem: '#dateRange',
-        type: 'date',
-        range: '|',
-        max: 0,
-        value: defaultRange
-      });
+      laydate.render({ elem: '#dateRange', type: 'date', range: '|', rangeLinked: true, max: 0, value: defaultRange });
 
       form.on('select(quickDateFilter)', function (data) {
         if (data.value) {
@@ -266,8 +260,8 @@
           { field: 'result', title: 'Kết quả', width: 140 },
           { field: 'win_lose', title: 'Thắng / Thua', width: 140 },
           // ── Ẩn mặc định ──
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'lottery_id', title: 'ID xổ số', width: 90, hide: true }
+          { field: 'uid', title: 'UID', width: 90},
+          { field: 'lottery_id', title: 'ID xổ số', width: 90}
         ]],
         done: function (res) {
           console.log('[reportLottery] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);

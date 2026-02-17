@@ -29,4 +29,35 @@ const HubAPI = {
 
     return res.json();
   }
+},
+
+  /**
+   * Single-panel date range picker (1 bảng lịch, chọn khoảng ngày)
+   * - Click 1: chọn ngày bắt đầu (đậm)
+   * - Click 2: chọn ngày kết thúc (đậm), dải giữa nhạt màu
+   *
+   * @param {string} elem — CSS selector (#myInput)
+   * @param {object} opts — laydate options bổ sung (max, value, done…)
+   * @returns laydate instance
+   */
+  singleRangePicker(elem, opts) {
+    opts = opts || {};
+    var sep = opts.separator || '|';
+    var userReady = opts.ready;
+    delete opts.separator;
+
+    return layui.laydate.render(Object.assign({
+      type: 'date',
+      range: sep,
+      rangeLinked: true
+    }, opts, {
+      elem: elem,
+      ready: function () {
+        var key = layui.$(elem).attr('lay-key');
+        var el = document.getElementById('layui-laydate' + key);
+        if (el) el.classList.add('laydate-single-panel');
+        if (userReady) userReady.apply(this, arguments);
+      }
+    }));
+  }
 };

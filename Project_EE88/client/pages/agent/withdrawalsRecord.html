@@ -15,8 +15,8 @@
 </head>
 <body>
 
-  <div class="layui-row layui-col-space15">
-    <div class="layui-col-md12" style="padding: 0;">
+  <div class="layui-row">
+    <div class="layui-col-md12">
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
@@ -82,12 +82,7 @@
       var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       var defaultRange = todayStr + ' | ' + todayStr;
 
-      laydate.render({
-        elem: '#createTime',
-        type: 'date',
-        range: '|',
-        value: defaultRange
-      });
+      laydate.render({ elem: '#createTime', type: 'date', range: '|', rangeLinked: true, value: defaultRange });
 
       table.render({
         elem: '#dataTable',
@@ -121,32 +116,31 @@
           { field: 'operator', title: 'Thao tác viên', width: 110 },
           { field: 'create_time', title: 'Thời gian tạo', width: 160 },
           { field: 'success_time', title: 'Thời gian hoàn tất', width: 160 },
-          // ── Ẩn mặc định ──
-          { field: 'id', title: 'ID', width: 100, hide: true },
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'user_parent', title: 'ID đại lý', width: 100, hide: true },
-          { field: 'user_tree', title: 'Cây đại lý', width: 150, hide: true },
-          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
-          { field: 'firm_fee', title: 'Phí công ty', width: 120, hide: true },
-          { field: 'user_fee', title: 'Phí người dùng', width: 120, hide: true },
-          { field: 'rebate', title: 'Hoàn trả', width: 120, hide: true },
-          { field: 'branch', title: 'Chi nhánh', width: 130, hide: true },
-          { field: 'transfer_time', title: 'Thời gian CK', width: 160, hide: true },
-          { field: 'remark', title: 'Ghi chú', width: 150, hide: true },
-          { field: 'user_remark', title: 'Ghi chú KH', width: 150, hide: true },
-          { field: 'prostatus', title: 'Trạng thái xử lí', width: 120, hide: true },
-          { field: 'prize_amount', title: 'Tiền thưởng', width: 120, hide: true },
-          { field: 'activity_id', title: 'ID khuyến mãi', width: 110, hide: true },
-          { field: 'extra', title: 'Thông tin thêm', width: 150, hide: true },
-          { field: 'category_id', title: 'Danh mục', width: 100, hide: true },
-          { field: 'merchant_id', title: 'Nhà cung cấp', width: 110, hide: true },
-          { field: 'pay_type', title: 'Hình thức TT', width: 120, hide: true },
-          { field: 'trade_id', title: 'Mã thanh toán', width: 200, hide: true },
-          { field: 'is_tester', title: 'Thử nghiệm', width: 100, hide: true },
-          { field: 'review_time', title: 'Thời gian duyệt', width: 160, hide: true },
-          { field: 'transfer_record', title: 'Bản ghi CK', width: 150, hide: true },
-          { field: 'currency', title: 'Tiền tệ', width: 80, hide: true },
-          { field: 'update_time', title: 'Cập nhật', width: 160, hide: true }
+          { field: 'id', title: 'ID', width: 100},
+          { field: 'uid', title: 'UID', width: 90},
+          { field: 'user_parent', title: 'ID đại lý', width: 100},
+          { field: 'user_tree', title: 'Cây đại lý', width: 150},
+          { field: 'group_id', title: 'Nhóm', width: 80},
+          { field: 'firm_fee', title: 'Phí công ty', width: 120},
+          { field: 'user_fee', title: 'Phí người dùng', width: 120},
+          { field: 'rebate', title: 'Hoàn trả', width: 120},
+          { field: 'branch', title: 'Chi nhánh', width: 130},
+          { field: 'transfer_time', title: 'Thời gian CK', width: 160},
+          { field: 'remark', title: 'Ghi chú', width: 150},
+          { field: 'user_remark', title: 'Ghi chú KH', width: 150},
+          { field: 'prostatus', title: 'Trạng thái xử lí', width: 120},
+          { field: 'prize_amount', title: 'Tiền thưởng', width: 120},
+          { field: 'activity_id', title: 'ID khuyến mãi', width: 110},
+          { field: 'extra', title: 'Thông tin thêm', width: 150},
+          { field: 'category_id', title: 'Danh mục', width: 100},
+          { field: 'merchant_id', title: 'Nhà cung cấp', width: 110},
+          { field: 'pay_type', title: 'Hình thức TT', width: 120},
+          { field: 'trade_id', title: 'Mã thanh toán', width: 200},
+          { field: 'is_tester', title: 'Thử nghiệm', width: 100},
+          { field: 'review_time', title: 'Thời gian duyệt', width: 160},
+          { field: 'transfer_record', title: 'Bản ghi CK', width: 150},
+          { field: 'currency', title: 'Tiền tệ', width: 80},
+          { field: 'update_time', title: 'Cập nhật', width: 160}
         ]],
         done: function (res) {
           console.log('[withdrawals] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' lệnh rút');
