@@ -53,6 +53,11 @@ async function fanoutFetch(agents, endpointKey, params) {
   }
 
   // Fan-out N agents song song
+  // Lưu page/limit client gửi, fetch toàn bộ từ mỗi agent rồi paginate server-side
+  const clientPage = parseInt(params.page) || 1;
+  const clientLimit = parseInt(params.limit) || 10;
+  const fetchParams = { ...params, page: 1, limit: 500 };
+
   const startTime = Date.now();
   log.info(`Fan-out [${endpointKey}] → ${agents.length} agents`, {
     agents: agents.map(a => a.label)
@@ -60,7 +65,7 @@ async function fanoutFetch(agents, endpointKey, params) {
 
   const results = await Promise.allSettled(
     agents.map(agent =>
-      limit(() => fetchWithRelogin(agent, endpointKey, params)
+      limit(() => fetchWithRelogin(agent, endpointKey, fetchParams)
         .then(data => ({ agent, data }))
       )
     )
@@ -68,7 +73,6 @@ async function fanoutFetch(agents, endpointKey, params) {
 
   // Gộp kết quả
   let mergedData = [];
-  let totalCount = 0;
   let mergedTotalData = null;
   let successCount = 0;
   let errors = [];
@@ -86,8 +90,6 @@ async function fanoutFetch(agents, endpointKey, params) {
         });
         mergedData = mergedData.concat(data.data);
       }
-
-      totalCount += (data.count || 0);
 
       // Gộp total_data (cộng dồn các trường số)
       if (data.total_data) {
@@ -107,12 +109,18 @@ async function fanoutFetch(agents, endpointKey, params) {
     }
   }
 
+  // Server-side pagination trên merged data
+  const totalCount = mergedData.length;
+  const offset = (clientPage - 1) * clientLimit;
+  const pagedData = mergedData.slice(offset, offset + clientLimit);
+
   const duration = Date.now() - startTime;
   log.ok(`Fan-out [${endpointKey}] hoàn tất — ${duration}ms`, {
     thànhCông: successCount,
     thấtBại: errors.length,
-    tổngDòng: mergedData.length,
-    tổngSố: totalCount
+    tổngDòng: totalCount,
+    trangHiện: clientPage,
+    sốDòngTrang: pagedData.length
   });
 
   if (errors.length > 0) {
@@ -123,7 +131,7 @@ async function fanoutFetch(agents, endpointKey, params) {
     code: successCount > 0 ? 0 : 1,
     msg: errors.length > 0 ? `${errors.length}/${agents.length} agent lỗi` : '',
     count: totalCount,
-    data: mergedData,
+    data: pagedData,
     total_data: mergedTotalData
   };
 }

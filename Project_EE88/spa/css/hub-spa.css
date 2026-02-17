@@ -1,0 +1,30 @@
+/* ── SPA-specific styles ── */
+/* Sub-page content inside tabs */
+.hub-page {
+  background: #f2f2f2;
+  height: 100%;
+  overflow-y: auto;
+}
+.hub-page .layui-card { margin: 15px; }
+.hub-page .layui-card-header { padding-bottom: 0; border-bottom: none; }
+.hub-page .layui-field-box .layui-inline { margin-bottom: 8px; }
+.hub-page .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+.hub-page .hs-text { text-align: left; }
+
+/* Status colors */
+.hub-page .status-active { color: #16b777; font-weight: 600; }
+.hub-page .status-inactive { color: #ff5722; font-weight: 600; }
+
+/* Agent tags (manageUsers) */
+.hub-page .agent-tag {
+  display: inline-block;
+  background: #e6f7ff;
+  color: #1890ff;
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin: 2px;
+}
+
+/* Solver status (manageAgents) */
+.hub-page .solver-status { margin-left: 10px; }

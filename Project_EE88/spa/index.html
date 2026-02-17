@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Hub — Quản lý</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <link rel="stylesheet" href="/spa/css/hub-spa.css">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+
+    /* ── Logo ── */
+    .layui-logo .layui-icon { font-size: 26px; color: #ff4d4f; margin-right: 6px; vertical-align: middle; }
+    .layui-logo span { color: #ff4d4f; vertical-align: middle; font-weight: bold; }
+
+    /* ── Sidebar ── */
+    .hub-sidebar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      bottom: 0;
+      width: 200px;
+      background: #20222A;
+      overflow-y: auto;
+      transition: width .3s;
+      z-index: 999;
+    }
+    .hub-sidebar .layui-nav { background: transparent; width: 100%; }
+    .hub-sidebar .layui-nav .layui-nav-item a { color: #ccc; }
+    .hub-sidebar .layui-nav .layui-nav-item a:hover,
+    .hub-sidebar .layui-nav .layui-this a { color: #fff; background: rgba(255,255,255,0.08); }
+
+    /* ── Body ── */
+    .hub-body {
+      position: fixed;
+      top: 50px;
+      left: 200px;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: left .3s;
+    }
+
+    /* ── Tabs ── */
+    .hub-body .layui-tabs { margin: 0; display: flex; flex-direction: column; height: 100%; }
+    .hub-body .layui-tabs-body { flex: 1; padding: 0; overflow: hidden; }
+    .hub-body .layui-tabs-item { height: 100%; }
+
+    /* ── Flag icon ── */
+    .hub-flag { display: inline-block; width: 20px; height: 14px; vertical-align: middle; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="layui-layout layui-layout-admin">
+  <!-- Header -->
+  <div class="layui-header">
+    <div class="layui-logo layui-hide-xs">
+      <i class="layui-icon layui-icon-firefox"></i><span>FIRE</span>
+    </div>
+    <ul class="layui-nav layui-layout-left">
+      <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-header-event="menuLeft">
+        <i class="layui-icon layui-icon-spread-left"></i>
+      </li>
+      <li class="layui-nav-item layui-hide-xs">
+        <a href="javascript:;" id="btnToggle"><i class="layui-icon layui-icon-shrink-right"></i></a>
+      </li>
+      <li class="layui-nav-item layui-hide-xs">
+        <a href="javascript:;" id="btnRefresh"><i class="layui-icon layui-icon-refresh"></i></a>
+      </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
+      <li class="layui-nav-item" id="navLang">
+        <a href="javascript:;"><img id="langFlag" class="hub-flag" src=""><span id="langLabel" style="vertical-align:middle;"></span></a>
+        <dl class="layui-nav-child">
+          <dd><a href="javascript:;" data-lang="vi"><img src="/images/vn.gif" class="hub-flag"><span style="vertical-align:middle;">Tiếng Việt</span></a></dd>
+          <dd><a href="javascript:;" data-lang="en"><img src="/images/uk.gif" class="hub-flag"><span style="vertical-align:middle;">English</span></a></dd>
+          <dd><a href="javascript:;" data-lang="zh-CN"><img src="/images/china.gif" class="hub-flag"><span style="vertical-align:middle;">中文</span></a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item">
+        <a href="javascript:;" id="btnFullscreen"><i class="layui-icon layui-icon-screen-full"></i></a>
+      </li>
+      <li class="layui-nav-item layui-hide layui-show-sm-inline-block">
+        <a href="javascript:;">
+          <img src="//unpkg.com/outeres@0.0.10/img/layui/icon-v2.png" class="layui-nav-img">
+          <span id="userInfo"></span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd><a href="javascript:;" id="navProfile" data-i18n="accountInfo">Thông tin tài khoản</a></dd>
+          <dd><a href="javascript:;" id="navSettings" data-i18n="settings">Cài đặt</a></dd>
+          <hr>
+          <dd style="text-align: center;"><a href="javascript:;" id="navLogout" data-i18n="logout">Đăng xuất</a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item" lay-header-event="menuRight">
+        <a href="javascript:;"><i class="layui-icon layui-icon-more-vertical"></i></a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="hub-sidebar">
+    <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
+      <!-- 1. Quản lí hội viên -->
+      <li class="layui-nav-item layui-nav-itemed">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i><span data-i18n="memberMgmt">Quản lí hội viên</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd class="layui-this">
+            <a href="javascript:;" data-page="user" data-title-i18n="members" data-i18n="members">Hội viên</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 2. Mã giới thiệu -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i><span data-i18n="referralCode">Mã giới thiệu</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="inviteList" data-title-i18n="referralCode" data-i18n="referralCode">Mã giới thiệu</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 3. Báo cáo -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i><span data-i18n="reports">Báo cáo</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="reportLottery" data-title-i18n="lotteryReport" data-i18n="lotteryReport">BC xổ số</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="reportFunds" data-title-i18n="transStatement" data-i18n="transStatement">Sao kê giao dịch</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="reportThirdGame" data-title-i18n="providerReport" data-i18n="providerReport">BC nhà cung cấp</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 4. Rút hoa hồng -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i><span data-i18n="commission">Rút hoa hồng</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="depositAndWithdrawal" data-title-i18n="deposit" data-i18n="deposit">Nạp tiền</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="withdrawalsRecord" data-title-i18n="withdraw" data-i18n="withdraw">Rút tiền</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 5. Đơn cược -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i><span data-i18n="betOrders">Đơn cược</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="bet" data-title-i18n="lotteryBet" data-i18n="lotteryBet">Đơn cược xổ số</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="betOrder" data-title-i18n="thirdPartyBet" data-i18n="thirdPartyBet">Cược bên thứ 3</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 6. Khách hàng -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i><span data-i18n="customer">Khách hàng</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="editPassword" data-title-i18n="changeLoginPw" data-i18n="changeLoginPw">Đổi MK đăng nhập</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="editFundPassword" data-title-i18n="changeFundPw" data-i18n="changeFundPw">Đổi MK giao dịch</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 7. Tỉ lệ hoàn trả -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="getRebateOddsPanel" data-title-i18n="rebateRate" data-i18n="rebateRate">Tỉ lệ hoàn trả</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 8. Quản lý (admin only) -->
+      <li class="layui-nav-item" id="menuManage" style="display:none;">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-set" style="margin-right: 6px;"></i><span data-i18n="management">Quản lý</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-page="manageAgents" data-title-i18n="manageAgents" data-i18n="manageAgents">Quản lý Agents</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="manageUsers" data-title-i18n="manageUsers" data-i18n="manageUsers">Quản lý Users</a>
+          </dd>
+        </dl>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Body -->
+  <div class="hub-body">
+    <div class="layui-tabs layui-hide-v" id="hubTabs" lay-options="{closable: true, headerMode: 'scroll'}">
+      <ul class="layui-tabs-header"></ul>
+      <div class="layui-tabs-body"></div>
+    </div>
+  </div>
+</div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script src="/js/hub-lang.js"></script>
+  <script src="/spa/js/hub-utils.js"></script>
+  <script src="/spa/js/hub-router.js"></script>
+  <script>
+    // ── SPA: override login redirect URL ──
+    HubAPI.LOGIN_URL = '/spa/login.html';
+
+    // ── Auth guard ──
+    if (!HubAPI.isLoggedIn()) {
+      window.location.href = '/spa/login.html';
+    }
+
+    // ── Init i18n ──
+    HubLang.init();
+    document.title = HubLang.t('adminPageTitle');
+
+    layui.use(['element', 'tabs', 'dropdown', 'layer', 'util', 'i18n'], function () {
+      var $ = layui.$;
+      var element = layui.element;
+      var tabs = layui.tabs;
+      var dropdown = layui.dropdown;
+      var layer = layui.layer;
+      var util = layui.util;
+
+      // ── User info ──
+      var user = HubAPI.getUser();
+      if (user) {
+        document.getElementById('userInfo').textContent = user.username;
+        if (user.role === 'admin') {
+          document.getElementById('menuManage').style.display = '';
+        }
+      }
+
+      // ── i18n: apply DOM + update lang label ──
+      function applyI18n() {
+        HubLang.applyDOM();
+        var lang = HubLang.getLang();
+        var info = HubLang.LANGS[lang];
+        document.getElementById('langLabel').textContent = info ? info.short : lang;
+        document.getElementById('langFlag').src = info ? info.flag : '';
+      }
+      applyI18n();
+
+      // ── Right-click context menu cho tab header ──
+      var dropdownInst = dropdown.render({
+        elem: '#hubTabs .layui-tabs-header>li',
+        trigger: 'contextmenu',
+        data: HubRouter.getContextMenuData(),
+        click: function (data) {
+          var index = this.elem.index();
+          if (data.mode === 'this') {
+            tabs.close('hubTabs', index);
+          } else {
+            tabs.closeMult('hubTabs', data.mode, index);
+          }
+        }
+      });
+
+      // ── Initialize router ──
+      HubRouter.init(tabs, dropdown, dropdownInst, $);
+
+      // ── Language switch ──
+      element.on('nav(hub-account)', function (elem) {
+        var lang = elem.attr('data-lang');
+        if (lang) {
+          HubLang.setLang(lang);
+          applyI18n();
+          dropdownInst.config.data = HubRouter.getContextMenuData();
+          // Re-render all open tabs (no iframe reload needed!)
+          HubRouter.onLangChange();
+          return;
+        }
+        // Logout
+        if (elem.attr('id') === 'navLogout') {
+          HubAPI.logout();
+          return;
+        }
+      });
+
+      // ── Click menu → open page tab ──
+      element.on('nav(hub-menu)', function (elem) {
+        var pageId = elem.attr('data-page');
+        var titleKey = elem.attr('data-title-i18n');
+        if (!pageId) return;
+        HubRouter.openPage(pageId, titleKey);
+      });
+
+      // ── Header events ──
+      util.event('lay-header-event', {
+        menuLeft: function () {
+          document.getElementById('btnToggle').click();
+        },
+        menuRight: function () {
+          layer.open({
+            type: 1,
+            title: HubLang.t('options'),
+            content: '<div style="padding: 15px;"><p>' + HubLang.t('noOptions') + '</p></div>',
+            area: ['260px', '100%'],
+            offset: 'rt',
+            anim: 'slideLeft',
+            shadeClose: true,
+            scrollbar: false
+          });
+        }
+      });
+
+      // ── Toggle sidebar ──
+      var LAYOUT = document.querySelector('.layui-layout-admin');
+      var toggleIcon = document.querySelector('#btnToggle .layui-icon');
+      document.getElementById('btnToggle').addEventListener('click', function () {
+        var collapsed = LAYOUT.classList.toggle('layui-layout-collapse');
+        if (collapsed) {
+          toggleIcon.className = 'layui-icon layui-icon-spread-left';
+          document.querySelectorAll('.hub-sidebar .layui-nav-itemed').forEach(function (el) { el.classList.remove('layui-nav-itemed'); });
+        } else {
+          toggleIcon.className = 'layui-icon layui-icon-shrink-right';
+        }
+      });
+
+      // ── Refresh tab ──
+      document.getElementById('btnRefresh').addEventListener('click', function () {
+        HubRouter.refreshActive();
+      });
+
+      // ── Fullscreen ──
+      var fsIcon = document.querySelector('#btnFullscreen .layui-icon');
+      document.getElementById('btnFullscreen').addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+          fsIcon.className = 'layui-icon layui-icon-screen-restore';
+        } else {
+          document.exitFullscreen();
+          fsIcon.className = 'layui-icon layui-icon-screen-full';
+        }
+      });
+
+      // ── Layer tips ──
+      var tipKeys = { btnToggle: 'toggleMenu', btnRefresh: 'reload', btnFullscreen: 'fullscreen' };
+      $('#btnToggle, #btnRefresh, #btnFullscreen').each(function () {
+        var el = this;
+        el.removeAttribute('title');
+        $(el).on('mouseenter', function () {
+          layer.tips(HubLang.t(tipKeys[el.id]), el, { tips: [3, '#393D49'], time: 1500 });
+        }).on('mouseleave', function () {
+          layer.closeAll('tips');
+        });
+      });
+
+      // ── Sidebar tips when collapsed ──
+      $('.hub-sidebar .layui-nav-item > a').each(function () {
+        var el = this;
+        var span = $(el).find('span[data-i18n]');
+        if (!span.length) return;
+        var key = span.attr('data-i18n');
+        $(el).on('mouseenter', function () {
+          if (!LAYOUT.classList.contains('layui-layout-collapse')) return;
+          layer.tips(HubLang.t(key), el, { tips: [2, '#393D49'], time: 1500 });
+        }).on('mouseleave', function () {
+          layer.closeAll('tips');
+        });
+      });
+
+      // ── Auto-load first page ──
+      var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-page]');
+      if (firstLink) firstLink.click();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Hub — Đăng nhập</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #20222A; }
+    .login-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .login-box {
+      width: 380px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 40px 35px 30px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .login-logo .layui-icon {
+      font-size: 40px;
+      color: #ff4d4f;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    .login-logo span {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+      vertical-align: middle;
+    }
+    .login-box .layui-form-item { margin-bottom: 20px; }
+    .login-box .layui-input {
+      height: 42px;
+      line-height: 42px;
+      border-radius: 4px;
+    }
+    .login-box .layui-btn {
+      height: 42px;
+      line-height: 42px;
+      border-radius: 4px;
+      font-size: 15px;
+    }
+    .login-footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-logo">
+        <i class="layui-icon layui-icon-firefox"></i><span>Agent Hub</span>
+      </div>
+      <form class="layui-form" lay-filter="loginForm">
+        <div class="layui-form-item">
+          <input type="text" name="username" data-i18n="username" data-i18n-attr="placeholder" placeholder="Tên đăng nhập" class="layui-input" lay-verify="required" autocomplete="off" autofocus>
+        </div>
+        <div class="layui-form-item">
+          <input type="password" name="password" data-i18n="password" data-i18n-attr="placeholder" placeholder="Mật khẩu" class="layui-input" lay-verify="required" autocomplete="off">
+        </div>
+        <div class="layui-form-item">
+          <button type="button" class="layui-btn layui-btn-fluid" lay-submit lay-filter="doLogin" data-i18n="loginBtn">Đăng nhập</button>
+        </div>
+      </form>
+      <div class="login-footer">Agent Hub &copy; 2024</div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script src="/js/hub-lang.js"></script>
+  <script>
+    // Nếu đã đăng nhập → redirect SPA
+    if (HubAPI.isLoggedIn()) {
+      window.location.href = '/spa/index.html';
+    }
+
+    HubLang.init();
+    document.title = HubLang.t('loginPageTitle');
+
+    layui.use(['form', 'layer', 'i18n'], function () {
+      var form = layui.form;
+      var layer = layui.layer;
+
+      HubLang.applyDOM();
+
+      form.on('submit(doLogin)', function (data) {
+        var username = data.field.username;
+        var password = data.field.password;
+
+        var loadIdx = layer.load();
+
+        HubAPI.login(username, password).then(function (res) {
+          layer.close(loadIdx);
+          if (res.code === 0) {
+            layer.msg(HubLang.t('loginSuccess'), { icon: 1, time: 1000 }, function () {
+              window.location.href = '/spa/index.html';
+            });
+          } else {
+            layer.msg(res.msg || HubLang.t('loginFailed'), { icon: 2 });
+          }
+        }).catch(function (err) {
+          layer.close(loadIdx);
+          layer.msg(HubLang.t('connectionError'), { icon: 2 });
+        });
+
+        return false;
+      });
+
+      // Enter key submit
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          document.querySelector('[lay-filter="doLogin"]').click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
