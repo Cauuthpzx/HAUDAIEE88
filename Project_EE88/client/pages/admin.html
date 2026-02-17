@@ -9,69 +9,8 @@
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
     /* ── Logo ── */
-    .hub-logo {
-      position: fixed;
-      top: 0; left: 0;
-      width: 200px;
-      height: 50px;
-      line-height: 50px;
-      background: #20222A;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      z-index: 101;
-      transition: width .3s;
-    }
-    .hub-logo .layui-icon { font-size: 26px; color: #ff4d4f; margin-right: 8px; vertical-align: middle; }
-    .hub-logo span { vertical-align: middle; transition: opacity .3s; }
-
-    /* ── Header ── */
-    .layui-header {
-      height: 50px;
-      background: #20222A;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding: 0 15px;
-      position: fixed;
-      top: 0; left: 200px; right: 0;
-      z-index: 100;
-      transition: left .3s;
-    }
-    .hub-header-right-nav {
-      background: transparent !important;
-      padding: 0;
-      margin-left: auto;
-    }
-    .hub-header-right-nav .layui-nav-bar { display: none; }
-    .hub-header-right-nav .layui-nav-item > a { color: #ccc !important; height: 50px; line-height: 50px; }
-    .hub-header-right-nav .layui-nav-item:hover > a { color: #fff !important; }
-    .hub-header-right-nav .layui-nav-item > a > .layui-icon { font-size: 18px; }
-    .hub-header-right-nav .layui-nav-more { border-top-color: #ccc; border-width: 5px; margin-left: 4px; }
-    .hub-header-right-nav .layui-nav-item:hover .layui-nav-more { border-top-color: #fff; }
-    .hub-header-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      color: #ccc;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all .2s;
-    }
-    .hub-header-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
-    .hub-header-btn .layui-icon { font-size: 18px; }
-
-    .hub-user-info {
-      color: #aaa;
-      font-size: 13px;
-      margin-right: 10px;
-    }
-    .hub-user-info b { color: #fff; }
+    .layui-logo .layui-icon { font-size: 26px; color: #ff4d4f; margin-right: 6px; vertical-align: middle; }
+    .layui-logo span { color: #ff4d4f; vertical-align: middle; font-weight: bold; }
 
     /* ── Sidebar ── */
     .hub-sidebar {
@@ -83,6 +22,7 @@
       background: #20222A;
       overflow-y: auto;
       transition: width .3s;
+      z-index: 999;
     }
     .hub-sidebar .layui-nav {
       background: transparent;
@@ -113,10 +53,10 @@
 
     /* ── Collapsed ── */
     .hub-sidebar .layui-nav-item > a > span { transition: opacity .3s; }
-    body.hub-collapsed .hub-logo { width: 60px; }
-    body.hub-collapsed .hub-logo .layui-icon { margin-right: 0 !important; font-size: 28px; }
-    body.hub-collapsed .hub-logo span { display: none; }
-    body.hub-collapsed .layui-header { left: 60px; }
+    body.hub-collapsed .layui-logo { width: 60px; }
+    body.hub-collapsed .layui-logo span { display: none; }
+    body.hub-collapsed .layui-logo .layui-icon { margin-right: 0 !important; font-size: 28px; }
+    body.hub-collapsed .layui-layout-left { left: 60px; }
     body.hub-collapsed .hub-sidebar { width: 60px; }
     body.hub-collapsed .hub-body { left: 60px; }
     body.hub-collapsed .hub-sidebar .layui-nav.layui-nav-tree { width: 60px; }
@@ -150,16 +90,25 @@
 </head>
 <body>
 
-  <!-- Logo -->
-  <div class="hub-logo">
-    <i class="layui-icon layui-icon-firefox"></i><span>Agent Hub</span>
-  </div>
-
+<div class="layui-layout layui-layout-admin">
   <!-- Header -->
   <div class="layui-header">
-    <a class="hub-header-btn" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
-    <a class="hub-header-btn" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
-    <ul class="layui-nav hub-header-right-nav" lay-bar="disabled" lay-filter="hub-account">
+    <div class="layui-logo layui-hide-xs">
+      <i class="layui-icon layui-icon-firefox"></i><span>FIRE</span>
+    </div>
+    <ul class="layui-nav layui-layout-left">
+      <!-- Mobile menu toggle -->
+      <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-header-event="menuLeft">
+        <i class="layui-icon layui-icon-spread-left"></i>
+      </li>
+      <li class="layui-nav-item layui-hide-xs" lay-unselect>
+        <a href="javascript:;" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
+      </li>
+      <li class="layui-nav-item layui-hide-xs" lay-unselect>
+        <a href="javascript:;" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
+      </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
       <li class="layui-nav-item" lay-unselect>
         <a href="javascript:;" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
       </li>
@@ -175,8 +124,10 @@
           <dd style="text-align: center;"><a href="javascript:;" id="navLogout">Đăng xuất</a></dd>
         </dl>
       </li>
-      <li class="layui-nav-item" lay-unselect>
-        <a href="javascript:;" id="btnMore" title="Tuỳ chọn"><i class="layui-icon layui-icon-more-vertical"></i></a>
+      <li class="layui-nav-item" lay-header-event="menuRight" lay-unselect>
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-more-vertical"></i>
+        </a>
       </li>
     </ul>
   </div>
@@ -300,6 +251,7 @@
       <div class="layui-tabs-body"></div>
     </div>
   </div>
+</div>
 
   <script src="/lib/layui/layui.js"></script>
   <script src="/js/hub-api.js"></script>
@@ -309,11 +261,13 @@
       window.location.href = '/pages/login.html';
     }
 
-    layui.use(['element', 'tabs', 'dropdown', 'layer'], function () {
+    layui.use(['element', 'tabs', 'dropdown', 'layer', 'util'], function () {
       var $ = layui.$;
       var element = layui.element;
       var tabs = layui.tabs;
       var dropdown = layui.dropdown;
+      var layer = layui.layer;
+      var util = layui.util;
       var openedTabs = {};
       var TABS_ID = 'hubTabs';
 
@@ -327,6 +281,28 @@
           document.getElementById('menuManage').style.display = '';
         }
       }
+
+      // ── Header events (layui util.event pattern) ──
+      util.event('lay-header-event', {
+        menuLeft: function () {
+          // Mobile toggle — trigger same as desktop toggle
+          document.getElementById('btnToggle').click();
+        },
+        menuRight: function () {
+          layer.open({
+            type: 1,
+            title: 'Tuỳ chọn',
+            content: '<div style="padding: 15px;">'
+              + '<p>Chưa có tuỳ chọn nào.</p>'
+              + '</div>',
+            area: ['260px', '100%'],
+            offset: 'rt',
+            anim: 'slideLeft',
+            shadeClose: true,
+            scrollbar: false
+          });
+        }
+      });
 
       // ── Header nav "Tài khoản" ──
       element.on('nav(hub-account)', function (elem) {
@@ -388,7 +364,6 @@
             content: '<iframe src="' + url + '"></iframe>',
             id: url,
             done: function (data) {
-              // Thêm context menu cho tab mới
               dropdown.render($.extend({}, dropdownInst.config, {
                 elem: data.headerItem
               }));
@@ -434,23 +409,6 @@
           document.exitFullscreen();
           fsIcon.className = 'layui-icon layui-icon-screen-full';
         }
-      });
-
-      // ── More options (menu right) ──
-      var layer = layui.layer;
-      document.getElementById('btnMore').addEventListener('click', function () {
-        layer.open({
-          type: 1,
-          title: 'Tuỳ chọn',
-          content: '<div style="padding: 15px;">'
-            + '<p>Chưa có tuỳ chọn nào.</p>'
-            + '</div>',
-          area: ['260px', '100%'],
-          offset: 'rt',
-          anim: 'slideLeft',
-          shadeClose: true,
-          scrollbar: false
-        });
       });
 
       // Auto-load trang đầu tiên
