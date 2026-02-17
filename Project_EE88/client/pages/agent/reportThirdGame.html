@@ -228,9 +228,8 @@
           { field: 't_turnover', title: 'Doanh thu', width: 140 },
           { field: 't_prize', title: 'Trúng thưởng', width: 140 },
           { field: 't_win_lose', title: 'Thắng / Thua', width: 140 },
-          // ── Ẩn mặc định ──
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'platform_id', title: 'ID NCC', width: 80, hide: true }
+          { field: 'uid', title: 'UID', width: 90 },
+          { field: 'platform_id', title: 'ID NCC', width: 80 }
         ]],
         done: function (res) {
           console.log('[reportThird] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);

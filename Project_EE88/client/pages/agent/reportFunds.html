@@ -187,10 +187,9 @@
           { field: 'third_rebate', title: 'Hoàn trả bên thứ 3', minWidth: 150 },
           { field: 'third_activity_amount', title: 'Tiền thưởng từ bên thứ 3', minWidth: 150 },
           { field: 'date', title: 'Ngày', minWidth: 160, fixed: 'right' },
-          // ── Ẩn mặc định ──
-          { field: 'id', title: 'ID', width: 100, hide: true },
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'user_parent', title: 'ID đại lý', width: 100, hide: true }
+          { field: 'id', title: 'ID', width: 100 },
+          { field: 'uid', title: 'UID', width: 90 },
+          { field: 'user_parent', title: 'ID đại lý', width: 100 }
         ]],
         done: function (res) {
           console.log('[reportFunds] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
