@@ -21,37 +21,37 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Sao kê giao dịch</legend>
+            <legend data-i18n="transStatementTitle">Sao kê giao dịch</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
-                  <label>Thời gian：</label>
+                  <label data-i18n="time">Thời gian</label>：
                   <div style="width:220px;" class="layui-input-inline">
-                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" data-i18n="dateStartEnd" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
                   <div style="width:100px;" class="layui-input-inline">
                     <select lay-filter="quickDateFilter" lay-search="">
-                      <option value="" id="optToday">Hôm nay</option>
-                      <option value="" id="optYesterday">Hôm qua</option>
-                      <option value="" id="optWeek">Tuần này</option>
-                      <option value="" id="optMonth">Tháng này</option>
-                      <option value="" id="optLastMonth">Tháng trước</option>
+                      <option value="" id="optToday" data-i18n="today">Hôm nay</option>
+                      <option value="" id="optYesterday" data-i18n="yesterday">Hôm qua</option>
+                      <option value="" id="optWeek" data-i18n="thisWeek">Tuần này</option>
+                      <option value="" id="optMonth" data-i18n="thisMonth">Tháng này</option>
+                      <option value="" id="optLastMonth" data-i18n="lastMonth">Tháng trước</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Tên tài khoản：</label>
+                  <label data-i18n="accountName">Tên tài khoản</label>：
                   <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" data-i18n="enterAccountName" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
                 </div>
                 <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
                 </div>
               </form>
             </div>
@@ -62,17 +62,17 @@
         </div>
         <div class="layui-fluid" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
           <div>
-            <span style="font-weight: bold;">Dữ liệu tổng hợp:</span>
+            <span style="font-weight: bold;" data-i18n="summaryData">Dữ liệu tổng hợp:</span>
             <table class="layui-table" lay-even lay-skin="nob">
               <thead>
               <tr>
-                <th>Số tiền nạp</th>
-                <th>Số tiền rút</th>
-                <th>Phí dịch vụ</th>
-                <th>Hoa hồng đại lý</th>
-                <th>Ưu đãi</th>
-                <th>Hoàn trả bên thứ 3</th>
-                <th>Tiền thưởng từ bên thứ 3</th>
+                <th data-i18n="depositAmountTotal">Số tiền nạp</th>
+                <th data-i18n="withdrawAmountTotal">Số tiền rút</th>
+                <th data-i18n="chargeFee">Phí dịch vụ</th>
+                <th data-i18n="agentCommission">Hoa hồng đại lý</th>
+                <th data-i18n="promotion">Ưu đãi</th>
+                <th data-i18n="thirdRebate">Hoàn trả bên thứ 3</th>
+                <th data-i18n="thirdActivityAmount">Tiền thưởng từ bên thứ 3</th>
               </tr>
               </thead>
               <tbody>
@@ -94,9 +94,12 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     layui.use(['table', 'form', 'laydate'], function () {
+      HubLang.init();
+      HubLang.applyDOM();
       var $ = layui.$;
       var table = layui.table;
       var form = layui.form;
@@ -163,7 +166,7 @@
         defaultToolbar: ['filter', 'print', 'exports'],
         page: true,
         limit: 10,
-        text: { none: 'Không có dữ liệu' },
+        text: { none: HubLang.t('noData') },
         parseData: function (res) {
           window._lastTotalData = res.total_data || null;
           return {
@@ -175,21 +178,21 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'username', title: 'Tài khoản', width: 150, fixed: 'left' },
-          { field: 'user_parent_format', title: 'Đại lý', width: 150 },
-          { field: 'deposit_count', title: 'Số lần nạp', width: 160 },
-          { field: 'deposit_amount', title: 'Số tiền nạp', minWidth: 150, sort: true },
-          { field: 'withdrawal_count', title: 'Số lần rút', minWidth: 150 },
-          { field: 'withdrawal_amount', title: 'Số tiền rút', minWidth: 160 },
-          { field: 'charge_fee', title: 'Phí dịch vụ', minWidth: 150 },
-          { field: 'agent_commission', title: 'Hoa hồng đại lý', minWidth: 150 },
-          { field: 'promotion', title: 'Ưu đãi', minWidth: 150 },
-          { field: 'third_rebate', title: 'Hoàn trả bên thứ 3', minWidth: 150 },
-          { field: 'third_activity_amount', title: 'Tiền thưởng từ bên thứ 3', minWidth: 150 },
-          { field: 'date', title: 'Ngày', minWidth: 160, fixed: 'right' },
+          { field: 'username', title: HubLang.t('account'), width: 150, fixed: 'left' },
+          { field: 'user_parent_format', title: HubLang.t('agent'), width: 150 },
+          { field: 'deposit_count', title: HubLang.t('depositCountCol'), width: 160 },
+          { field: 'deposit_amount', title: HubLang.t('depositAmountTotal'), minWidth: 150, sort: true },
+          { field: 'withdrawal_count', title: HubLang.t('withdrawCountCol'), minWidth: 150 },
+          { field: 'withdrawal_amount', title: HubLang.t('withdrawAmountTotal'), minWidth: 160 },
+          { field: 'charge_fee', title: HubLang.t('chargeFee'), minWidth: 150 },
+          { field: 'agent_commission', title: HubLang.t('agentCommission'), minWidth: 150 },
+          { field: 'promotion', title: HubLang.t('promotion'), minWidth: 150 },
+          { field: 'third_rebate', title: HubLang.t('thirdRebate'), minWidth: 150 },
+          { field: 'third_activity_amount', title: HubLang.t('thirdActivityAmount'), minWidth: 150 },
+          { field: 'date', title: HubLang.t('dateCol'), minWidth: 160, fixed: 'right' },
           { field: 'id', title: 'ID', width: 100 },
           { field: 'uid', title: 'UID', width: 90 },
-          { field: 'user_parent', title: 'ID đại lý', width: 100 }
+          { field: 'user_parent', title: HubLang.t('agentId'), width: 100 }
         ]],
         done: function (res) {
           console.log('[reportFunds] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);

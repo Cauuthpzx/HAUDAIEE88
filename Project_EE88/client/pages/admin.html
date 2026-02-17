@@ -51,20 +51,7 @@
       transition: left .3s;
     }
 
-    /* ── Collapsed ── */
-    .hub-sidebar .layui-nav-item > a > span { transition: opacity .3s; }
-    body.hub-collapsed .layui-logo { width: 60px; }
-    body.hub-collapsed .layui-logo span { display: none; }
-    body.hub-collapsed .layui-logo .layui-icon { margin-right: 0 !important; font-size: 28px; }
-    body.hub-collapsed .layui-layout-left { left: 60px; }
-    body.hub-collapsed .hub-sidebar { width: 60px; }
-    body.hub-collapsed .hub-body { left: 60px; }
-    body.hub-collapsed .hub-sidebar .layui-nav.layui-nav-tree { width: 60px; }
-    body.hub-collapsed .hub-sidebar .layui-nav-item > a > span { display: none; }
-    body.hub-collapsed .hub-sidebar .layui-nav-item > a > .layui-icon:first-child { width: 100%; margin-right: 0 !important; text-align: center; font-size: 20px; }
-    body.hub-collapsed .hub-sidebar .layui-nav-more { display: none !important; }
-    body.hub-collapsed .hub-sidebar .layui-nav-child { display: none !important; }
-    body.hub-collapsed .hub-sidebar .layui-nav-item > a { padding-left: 0; padding-right: 0; text-align: center; }
+    /* ── Collapsed: xem layui.css (.layui-layout-collapse) ── */
 
     /* ── Tabs ── */
     .hub-body .layui-tabs {
@@ -274,6 +261,7 @@
 
     // ── Init i18n trước khi layui.use ──
     HubLang.init();
+    document.title = HubLang.t('adminPageTitle');
 
     layui.use(['element', 'tabs', 'dropdown', 'layer', 'util', 'i18n'], function () {
       var $ = layui.$;
@@ -315,6 +303,22 @@
           HubLang.setLang(lang);
           applyI18n();
           dropdownInst.config.data = getContextMenuData();
+          // Reload tất cả iframe để sub-pages áp dụng ngôn ngữ mới
+          document.querySelectorAll('.hub-body iframe').forEach(function (iframe) {
+            iframe.contentWindow.location.reload();
+          });
+          // Cập nhật document.title
+          var activeIframe = document.querySelector('.hub-body .layui-tabs-item.layui-show iframe');
+          if (activeIframe) {
+            var src = activeIframe.getAttribute('src');
+            var menuLink = document.querySelector('.hub-sidebar a[data-url="' + src + '"]');
+            if (menuLink) {
+              var titleKey = menuLink.getAttribute('data-title-i18n');
+              if (titleKey) document.title = 'Agent Hub — ' + HubLang.t(titleKey);
+            }
+          } else {
+            document.title = HubLang.t('adminPageTitle');
+          }
           return;
         }
         // Logout
@@ -415,9 +419,10 @@
       });
 
       // ── Toggle sidebar ──
+      var LAYOUT = document.querySelector('.layui-layout-admin');
       var toggleIcon = document.querySelector('#btnToggle .layui-icon');
       document.getElementById('btnToggle').addEventListener('click', function () {
-        var collapsed = document.body.classList.toggle('hub-collapsed');
+        var collapsed = LAYOUT.classList.toggle('layui-layout-collapse');
         if (collapsed) {
           toggleIcon.className = 'layui-icon layui-icon-spread-left';
           document.querySelectorAll('.hub-sidebar .layui-nav-itemed').forEach(function (el) { el.classList.remove('layui-nav-itemed'); });
@@ -463,7 +468,7 @@
         if (!span.length) return;
         var key = span.attr('data-i18n');
         $(el).on('mouseenter', function () {
-          if (!document.body.classList.contains('hub-collapsed')) return;
+          if (!LAYOUT.classList.contains('layui-layout-collapse')) return;
           layer.tips(HubLang.t(key), el, { tips: [2, '#393D49'], time: 1500 });
         }).on('mouseleave', function () {
           layer.closeAll('tips');

@@ -75,6 +75,7 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     // Gắn JWT token vào mọi axios request
@@ -99,7 +100,7 @@
         tableHead: [],
         tableBody: [],
         layer: null,
-        noData: 'Không có dữ liệu',
+        noData: (typeof HubLang !== 'undefined') ? HubLang.t('noData') : 'Không có dữ liệu',
         getSelectDataUrl: '/api/action/getLottery',
         getDataUrl: '/api/action/getRebateOddsPanel',
         seriesData: [],
@@ -111,6 +112,7 @@
         var that = this;
         layui.use(['layer'], function () {
           that.layer = layui.layer;
+          HubLang.init();
           that.init();
         });
       },
@@ -129,7 +131,7 @@
             that.series_id = result.firsSeriesId;
           }).catch(function () {
             that.layer.close(load);
-            that.layer.msg('Thất bại');
+            that.layer.msg(HubLang.t('failed'));
           });
         },
         getLottery: function () {
@@ -146,7 +148,7 @@
             that.series_id = result.firsSeriesId;
           }).catch(function () {
             that.layer.close(load);
-            that.layer.msg('Thất bại');
+            that.layer.msg(HubLang.t('failed'));
           });
         },
         getData: function () {
@@ -160,7 +162,7 @@
             that.tableHead = result.tableHead;
           }).catch(function () {
             that.layer.close(load);
-            that.layer.msg('Thất bại');
+            that.layer.msg(HubLang.t('failed'));
           });
         }
       }

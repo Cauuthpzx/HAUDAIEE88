@@ -21,7 +21,7 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Danh sách đơn cược</legend>
+            <legend data-i18n="betListTitle">Danh sách đơn cược</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
@@ -32,28 +32,28 @@
                 <div class="layui-inline">
                   <div style="width:100px;" class="layui-input-inline">
                     <select lay-filter="quickDateFilter" lay-search="">
-                      <option value="" id="optToday">Hôm nay</option>
-                      <option value="" id="optYesterday">Hôm qua</option>
+                      <option value="" id="optToday" data-i18n="today">Hôm nay</option>
+                      <option value="" id="optYesterday" data-i18n="yesterday">Hôm qua</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Tên người dùng：</label>
+                  <label data-i18n="userName">Tên người dùng</label>：
                   <div style="width:160px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Vui lòng nhập đầy đủ Tên người dùng" class="layui-input" autocomplete="off">
+                    <input type="text" name="username" placeholder="Vui lòng nhập đầy đủ Tên người dùng" data-i18n="enterFullUsername" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Mã giao dịch：</label>
+                  <label data-i18n="serialNo">Mã giao dịch</label>：
                   <div class="layui-input-inline">
-                    <input type="text" name="serial_no" placeholder="Nhập đầy đủ mã giao dịch" class="layui-input" autocomplete="off">
+                    <input type="text" name="serial_no" placeholder="Nhập đầy đủ mã giao dịch" data-i18n="enterFullSerialNo" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Trò chơi：</label>
+                  <label data-i18n="game">Trò chơi</label>：
                   <div style="width:150px;" class="layui-input-inline">
                     <select name="lottery_id" lay-filter="lotteryFilter" lay-search="">
-                      <option value="">Chọn</option>
+                      <option value="" data-i18n="select">Chọn</option>
                       <option value="67">Sicbo 30 giây</option>
                       <option value="66">Sicbo 20 giây</option>
                       <option value="68">Sicbo 40 giây</option>
@@ -120,42 +120,42 @@
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Loại trò chơi：</label>
+                  <label data-i18n="gameType">Loại trò chơi</label>：
                   <div style="width:180px;" class="layui-input-inline">
                     <select name="play_type_id" id="playTypeSelect" lay-filter="playTypeFilter" lay-search="">
-                      <option value="">Chọn</option>
+                      <option value="" data-i18n="select">Chọn</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Cách chơi：</label>
+                  <label data-i18n="playStyle">Cách chơi</label>：
                   <div style="width:180px;" class="layui-input-inline">
                     <select name="play_id" id="playSelect" lay-search="">
-                      <option value="">Chọn</option>
+                      <option value="" data-i18n="select">Chọn</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Trạng thái：</label>
+                  <label data-i18n="status">Trạng thái</label>：
                   <div style="width:100px;" class="layui-input-inline">
                     <select name="status" lay-search="">
-                      <option value="">Chọn</option>
-                      <option value="-9">Chưa thanh toán</option>
-                      <option value="1">Trúng</option>
-                      <option value="-1">Không trúng</option>
-                      <option value="2">Hoà</option>
-                      <option value="3">Khách huỷ đơn</option>
-                      <option value="4">Hệ thống huỷ đơn</option>
-                      <option value="5">Đơn cược bất thường</option>
-                      <option value="6">Chưa thanh toán (khôi phục thủ công)</option>
+                      <option value="" data-i18n="select">Chọn</option>
+                      <option value="-9" data-i18n="betStatusUnpaid">Chưa thanh toán</option>
+                      <option value="1" data-i18n="betStatusWon">Trúng</option>
+                      <option value="-1" data-i18n="betStatusLost">Không trúng</option>
+                      <option value="2" data-i18n="betStatusDraw">Hoà</option>
+                      <option value="3" data-i18n="betStatusCancelUser">Khách huỷ đơn</option>
+                      <option value="4" data-i18n="betStatusCancelSystem">Hệ thống huỷ đơn</option>
+                      <option value="5" data-i18n="betStatusAbnormal">Đơn cược bất thường</option>
+                      <option value="6" data-i18n="betStatusUnpaidManual">Chưa thanh toán (khôi phục thủ công)</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
                 </div>
                 <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
                 </div>
               </form>
             </div>
@@ -166,13 +166,13 @@
         </div>
         <div class="layui-fluid" id="totalSection" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
           <div>
-            <span style="font-weight: bold;">Dữ liệu tổng hợp:</span>
+            <span style="font-weight: bold;" data-i18n="summaryData">Dữ liệu tổng hợp:</span>
             <table class="layui-table" lay-even lay-skin="nob">
               <thead>
               <tr>
-                <th>Tiền cược</th>
-                <th>Tiền hoàn trả</th>
-                <th>Thắng thua</th>
+                <th data-i18n="totalBetMoney">Tiền cược</th>
+                <th data-i18n="totalRebateAmount">Tiền hoàn trả</th>
+                <th data-i18n="totalWinLose">Thắng thua</th>
               </tr>
               </thead>
               <tbody>
@@ -190,9 +190,12 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     layui.use(['table', 'form', 'laydate', 'layer'], function () {
+      HubLang.init();
+      HubLang.applyDOM();
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
@@ -225,8 +228,8 @@
       // ── Cascading dropdowns: Lottery → Play Type → Play ──
       form.on('select(lotteryFilter)', function (data) {
         var lotteryId = data.value;
-        $('#playTypeSelect').html('<option value="">Chọn</option>');
-        $('#playSelect').html('<option value="">Chọn</option>');
+        $('#playTypeSelect').html('<option value="">' + HubLang.t('select') + '</option>');
+        $('#playSelect').html('<option value="">' + HubLang.t('select') + '</option>');
         form.render('select');
         if (!lotteryId) return;
 
@@ -237,7 +240,7 @@
           data: JSON.stringify({ type: 'getPlayType', lottery_id: lotteryId }),
           success: function (res) {
             if (res.data && res.data.playTypeData) {
-              var html = '<option value="">Chọn</option>';
+              var html = '<option value="">' + HubLang.t('select') + '</option>';
               res.data.playTypeData.forEach(function (item) {
                 html += '<option value="' + item.id + '">' + item.name + '</option>';
               });
@@ -250,7 +253,7 @@
 
       form.on('select(playTypeFilter)', function (data) {
         var playTypeId = data.value;
-        $('#playSelect').html('<option value="">Chọn</option>');
+        $('#playSelect').html('<option value="">' + HubLang.t('select') + '</option>');
         form.render('select');
         if (!playTypeId) return;
 
@@ -262,7 +265,7 @@
           data: JSON.stringify({ type: 'getPlay', lottery_id: lotteryId, play_type_id: playTypeId }),
           success: function (res) {
             if (res.data && res.data.playData) {
-              var html = '<option value="">Chọn</option>';
+              var html = '<option value="">' + HubLang.t('select') + '</option>';
               res.data.playData.forEach(function (item) {
                 html += '<option value="' + item.id + '">' + item.name + '</option>';
               });
@@ -303,7 +306,7 @@
         defaultToolbar: ['filter'],
         page: true,
         limit: 10,
-        text: { none: 'Không có dữ liệu' },
+        text: { none: HubLang.t('noData') },
         parseData: function (res) {
           return {
             code: res.code === 0 ? 0 : 1,
@@ -314,18 +317,18 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'serial_no', title: 'Mã giao dịch', width: 200, fixed: 'left' },
-          { field: 'username', title: 'Tên người dùng', width: 150 },
-          { field: 'create_time', title: 'Thời gian cược', width: 160 },
-          { field: 'lottery_name', title: 'Trò chơi', minWidth: 150 },
-          { field: 'play_type_name', title: 'Loại trò chơi', minWidth: 150 },
-          { field: 'play_name', title: 'Cách chơi', minWidth: 150 },
-          { field: 'issue', title: 'Kỳ', minWidth: 150 },
-          { field: 'content', title: 'Thông tin cược', minWidth: 150 },
-          { field: 'money', title: 'Tiền cược', minWidth: 150 },
-          { field: 'rebate_amount', title: 'Tiền hoàn trả', minWidth: 150 },
-          { field: 'result', title: 'Thắng thua', minWidth: 150 },
-          { field: 'status_text', title: 'Trạng thái', fixed: 'right', width: 100 }
+          { field: 'serial_no', title: HubLang.t('serialNo'), width: 200, fixed: 'left' },
+          { field: 'username', title: HubLang.t('userName'), width: 150 },
+          { field: 'create_time', title: HubLang.t('betTime'), width: 160 },
+          { field: 'lottery_name', title: HubLang.t('game'), minWidth: 150 },
+          { field: 'play_type_name', title: HubLang.t('gameType'), minWidth: 150 },
+          { field: 'play_name', title: HubLang.t('playStyle'), minWidth: 150 },
+          { field: 'issue', title: HubLang.t('issue'), minWidth: 150 },
+          { field: 'content', title: HubLang.t('betContent'), minWidth: 150 },
+          { field: 'money', title: HubLang.t('betMoney'), minWidth: 150 },
+          { field: 'rebate_amount', title: HubLang.t('betRebate'), minWidth: 150 },
+          { field: 'result', title: HubLang.t('betResult'), minWidth: 150 },
+          { field: 'status_text', title: HubLang.t('status'), fixed: 'right', width: 100 }
         ]],
         done: function (res) {
           console.log('[lotteryBet] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
@@ -343,8 +346,8 @@
       $('#btnReset').on('click', function () {
         setTimeout(function () {
           $('#hsDateTime').val(defaultRange);
-          $('#playTypeSelect').html('<option value="">Chọn</option>');
-          $('#playSelect').html('<option value="">Chọn</option>');
+          $('#playTypeSelect').html('<option value="">' + HubLang.t('select') + '</option>');
+          $('#playSelect').html('<option value="">' + HubLang.t('select') + '</option>');
           form.render('select');
           table.reload('dataTable', {
             where: { create_time: defaultRange, username: '', serial_no: '', lottery_id: '', play_type_id: '', play_id: '', status: '' },

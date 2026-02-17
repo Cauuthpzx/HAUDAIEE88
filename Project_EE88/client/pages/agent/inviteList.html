@@ -19,17 +19,17 @@
   <script type="text/html" id="toolbarTpl">
     <div class="layui-btn-group">
       <button class="layui-btn layui-btn-xs" lay-event="addInvite">
-        <i class="layui-icon layui-icon-addition"></i>Thêm mã giới thiệu
+        <i class="layui-icon layui-icon-addition"></i><span data-i18n="addInviteBtn">Thêm mã giới thiệu</span>
       </button>
     </div>
   </script>
 
   <!-- ── Thao tác từng dòng ── -->
   <script type="text/html" id="rowActionTpl">
-    <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="copyLink">Copy đường link</button>
-    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="viewConfig">Xem cài đặt</button>
-    <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="qrCode">Mã QR</button>
-    <button class="layui-btn layui-btn-xs" lay-event="edit">Chỉnh sửa</button>
+    <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="copyLink"><span data-i18n="copyLink">Copy đường link</span></button>
+    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="viewConfig"><span data-i18n="viewConfig">Xem cài đặt</span></button>
+    <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="qrCode"><span data-i18n="qrCode">Mã QR</span></button>
+    <button class="layui-btn layui-btn-xs" lay-event="edit"><span data-i18n="editBtn">Chỉnh sửa</span></button>
   </script>
 
   <div class="layui-row">
@@ -37,32 +37,32 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Mã giới thiệu</legend>
+            <legend data-i18n="referralCode">Mã giới thiệu</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
-                  <label>Thời gian thêm vào：</label>
+                  <label data-i18n="addedTime">Thời gian thêm vào</label>：
                   <div style="width:290px;" class="layui-input-inline">
-                    <input type="text" name="create_time" id="createTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="create_time" id="createTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" data-i18n="dateStartEndTime" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Thời gian hội viên đăng nhập：</label>
+                  <label data-i18n="memberLoginTime">Thời gian hội viên đăng nhập</label>：
                   <div style="width:290px;" class="layui-input-inline">
-                    <input type="text" name="user_register_time" id="registerTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="user_register_time" id="registerTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" data-i18n="dateStartEndTime" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Mã giới thiệu：</label>
+                  <label data-i18n="referralCode">Mã giới thiệu</label>：
                   <div style="width:240px;" class="layui-input-inline">
-                    <input type="text" name="invite_code" placeholder="Nhập đầy đủ mã giới thiệu" class="layui-input" autocomplete="off">
+                    <input type="text" name="invite_code" placeholder="Nhập đầy đủ mã giới thiệu" data-i18n="enterInviteCode" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
                 </div>
                 <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
                 </div>
               </form>
             </div>
@@ -76,9 +76,11 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     layui.use(['table', 'form', 'laydate', 'layer'], function () {
+      HubLang.init();
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
@@ -113,7 +115,7 @@
         defaultToolbar: ['filter', 'print', 'exports'],
         page: true,
         limit: 10,
-        text: { none: 'Không có dữ liệu' },
+        text: { none: HubLang.t('noData') },
         parseData: function (res) {
           return {
             code: res.code === 0 ? 0 : 1,
@@ -124,19 +126,19 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'invite_code', title: 'Mã giới thiệu' },
-          { field: 'user_type', title: 'Loại hình giới thiệu' },
-          { field: 'reg_count', title: 'Tổng số đã đăng ký' },
-          { field: 'scope_reg_count', title: 'Số lượng người dùng đã đăng ký' },
-          { field: 'recharge_count', title: 'Số người nạp tiền' },
-          { field: 'first_recharge_count', title: 'Nạp đầu trong ngày' },
-          { field: 'register_recharge_count', title: 'Nạp đầu trong ngày đăng kí' },
-          { field: 'remark', title: 'Ghi chú' },
-          { field: 'create_time', title: 'Thời gian thêm vào' },
+          { field: 'invite_code', title: HubLang.t('referralCode') },
+          { field: 'user_type', title: HubLang.t('inviteType') },
+          { field: 'reg_count', title: HubLang.t('totalRegistered') },
+          { field: 'scope_reg_count', title: HubLang.t('registeredUsers') },
+          { field: 'recharge_count', title: HubLang.t('rechargeCount') },
+          { field: 'first_recharge_count', title: HubLang.t('firstRechargeDay') },
+          { field: 'register_recharge_count', title: HubLang.t('registerRechargeDay') },
+          { field: 'remark', title: HubLang.t('remark') },
+          { field: 'create_time', title: HubLang.t('addedTime') },
           { field: 'id', title: 'ID', width: 90},
           { field: 'uid', title: 'UID', width: 90},
-          { field: 'group_id', title: 'Nhóm', width: 80},
-          { field: 'rebate_arr', title: 'Hoàn trả', minWidth: 260, templet: function(d) {
+          { field: 'group_id', title: HubLang.t('groupId'), width: 80},
+          { field: 'rebate_arr', title: HubLang.t('rebateArr'), minWidth: 260, templet: function(d) {
             try {
               var obj = typeof d.rebate_arr === 'string' ? JSON.parse(d.rebate_arr) : d.rebate_arr;
               if (!obj || typeof obj !== 'object') return d.rebate_arr || '';
@@ -146,10 +148,11 @@
               return parts.join(', ');
             } catch(e) { return d.rebate_arr || ''; }
           }},
-          { field: 'update_time', title: 'Cập nhật', width: 160},
-          { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' }
+          { field: 'update_time', title: HubLang.t('updateTime'), width: 160},
+          { fixed: 'right', title: HubLang.t('actions'), minWidth: 360, toolbar: '#rowActionTpl' }
         ]],
         done: function (res) {
+          HubLang.applyDOM();
           console.log('[inviteList] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' mã giới thiệu');
         }
       });
@@ -168,7 +171,7 @@
           case 'copyLink':
             var link = getInviteLink(d.invite_code);
             navigator.clipboard.writeText(link).then(function () {
-              layer.msg('Đã copy: ' + link, { icon: 1, time: 2000 });
+              layer.msg(HubLang.t('copied') + link, { icon: 1, time: 2000 });
             }).catch(function () {
               // Fallback cho trình duyệt không hỗ trợ clipboard API
               var input = document.createElement('input');
@@ -177,16 +180,16 @@
               input.select();
               document.execCommand('copy');
               document.body.removeChild(input);
-              layer.msg('Đã copy: ' + link, { icon: 1, time: 2000 });
+              layer.msg(HubLang.t('copied') + link, { icon: 1, time: 2000 });
             });
             break;
 
           case 'viewConfig':
             var rebates = parseRebate(d.rebate_arr);
             var html = '<table class="layui-table" style="margin:10px 0;">';
-            html += '<thead><tr><th>Loại hình</th><th>Tỉ lệ hoàn trả</th></tr></thead><tbody>';
+            html += '<thead><tr><th>' + HubLang.t('configType') + '</th><th>' + HubLang.t('rebateTitle') + '</th></tr></thead><tbody>';
             if (rebates.length === 0) {
-              html += '<tr><td colspan="2" style="text-align:center;">Chưa cài đặt</td></tr>';
+              html += '<tr><td colspan="2" style="text-align:center;">' + HubLang.t('notConfigured') + '</td></tr>';
             } else {
               for (var i = 0; i < rebates.length; i++) {
                 html += '<tr><td>' + rebates[i].name + '</td><td>' + rebates[i].value + '</td></tr>';
@@ -194,7 +197,7 @@
             }
             html += '</tbody></table>';
             layer.open({
-              type: 1, title: 'Cài đặt hoàn trả — ' + d.invite_code,
+              type: 1, title: HubLang.t('configTitle') + d.invite_code,
               area: ['400px', 'auto'], shadeClose: true,
               content: '<div style="padding:15px;">' + html + '</div>'
             });
@@ -204,7 +207,7 @@
             var qrLink = getInviteLink(d.invite_code);
             var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrLink);
             layer.open({
-              type: 1, title: 'Mã QR — ' + d.invite_code,
+              type: 1, title: HubLang.t('qrTitle') + d.invite_code,
               area: ['300px', 'auto'], shadeClose: true,
               content: '<div style="padding:20px;text-align:center;">'
                 + '<img src="' + qrUrl + '" style="width:200px;height:200px;" />'
@@ -222,7 +225,7 @@
       // ── Form thêm / chỉnh sửa mã giới thiệu ──
       function openInviteForm(data) {
         var isEdit = !!data;
-        var title = isEdit ? 'Chỉnh sửa mã: ' + data.invite_code : 'Thêm mã giới thiệu';
+        var title = isEdit ? HubLang.t('editInviteCode') + data.invite_code : HubLang.t('addInviteBtn');
 
         var rebates = isEdit ? parseRebate(data.rebate_arr) : [];
         var rebateInputs = '';
@@ -243,18 +246,18 @@
 
         var formHtml = '<form class="layui-form" lay-filter="inviteForm" style="padding:15px 30px 0 0;">'
           + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">Ghi chú</label>'
+          + '<label class="layui-form-label">' + HubLang.t('remark') + '</label>'
           + '<div class="layui-input-block">'
-          + '<input type="text" name="remark" value="' + (isEdit ? (data.remark || '') : '') + '" placeholder="Mô tả mã giới thiệu" class="layui-input">'
+          + '<input type="text" name="remark" value="' + (isEdit ? (data.remark || '') : '') + '" placeholder="' + HubLang.t('inviteDescription') + '" class="layui-input">'
           + '</div></div>'
           + '<fieldset class="layui-elem-field" style="margin:0 0 10px 110px;">'
-          + '<legend style="font-size:13px;">Tỉ lệ hoàn trả</legend>'
+          + '<legend style="font-size:13px;">' + HubLang.t('rebateTitle') + '</legend>'
           + '<div class="layui-field-box" style="padding:5px 15px;">' + rebateInputs + '</div>'
           + '</fieldset>'
           + '<div class="layui-form-item">'
           + '<div class="layui-input-block">'
-          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitInvite">Xác nhận</button>'
-          + '<button type="reset" class="layui-btn layui-btn-primary">Đặt lại</button>'
+          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitInvite">' + HubLang.t('confirm') + '</button>'
+          + '<button type="reset" class="layui-btn layui-btn-primary">' + HubLang.t('reset') + '</button>'
           + '</div></div></form>';
 
         var layerIdx = layer.open({
@@ -290,15 +293,15 @@
               layer.close(loadIdx);
               if (res.code === 0 || res.code === 1) {
                 layer.close(layerIdx);
-                layer.msg(isEdit ? 'Đã cập nhật' : 'Đã thêm mã giới thiệu', { icon: 1 });
+                layer.msg(isEdit ? HubLang.t('updated') : HubLang.t('inviteAdded'), { icon: 1 });
                 table.reload('dataTable');
               } else {
-                layer.msg(res.msg || 'Thất bại', { icon: 2 });
+                layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
               }
             },
             error: function () {
               layer.close(loadIdx);
-              layer.msg('Lỗi kết nối', { icon: 2 });
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
             }
           });
           return false;

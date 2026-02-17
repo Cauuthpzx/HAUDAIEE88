@@ -19,17 +19,17 @@
   <script type="text/html" id="toolbarTpl">
     <div class="layui-btn-group">
       <button class="layui-btn layui-btn-xs" lay-event="addMember">
-        <i class="layui-icon layui-icon-addition"></i>Thêm hội viên
+        <i class="layui-icon layui-icon-addition"></i><span data-i18n="addMemberBtn">Thêm hội viên</span>
       </button>
       <button class="layui-btn layui-btn-xs" lay-event="addAgent">
-        <i class="layui-icon layui-icon-addition"></i>Đại lý mới thêm
+        <i class="layui-icon layui-icon-addition"></i><span data-i18n="addAgentBtn">Đại lý mới thêm</span>
       </button>
     </div>
   </script>
 
   <!-- ── Thao tác từng dòng ── -->
   <script type="text/html" id="rowActionTpl">
-    <button class="layui-btn layui-btn-xs" lay-event="rebate">Cài đặt hoàn trả</button>
+    <button class="layui-btn layui-btn-xs" lay-event="rebate"><span data-i18n="setRebateBtn">Cài đặt hoàn trả</span></button>
   </script>
 
   <div class="layui-row">
@@ -37,60 +37,60 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Quản lí hội viên thuộc cấp</legend>
+            <legend data-i18n="memberMgmtSub">Quản lí hội viên thuộc cấp</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
-                  <label>Tên tài khoản：</label>
+                  <label data-i18n="accountName">Tên tài khoản</label>：
                   <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" data-i18n="enterAccountName" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Thời gian nạp đầu：</label>
+                  <label data-i18n="firstDepositTime">Thời gian nạp đầu</label>：
                   <div style="width:290px;" class="layui-input-inline">
-                    <input type="text" name="first_deposit_time" id="firstDepositTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="first_deposit_time" id="firstDepositTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" data-i18n="dateStartEndTime" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Trạng thái：</label>
+                  <label data-i18n="status">Trạng thái</label>：
                   <div class="layui-input-inline">
                     <select name="status" lay-filter="status" lay-search>
-                      <option value="">Chọn</option>
-                      <option value="0">Chưa đánh giá</option>
-                      <option value="1">Bình thường</option>
-                      <option value="2">Đóng băng</option>
-                      <option value="3">Khoá</option>
+                      <option value="" data-i18n="select">Chọn</option>
+                      <option value="0" data-i18n="statusNotEval">Chưa đánh giá</option>
+                      <option value="1" data-i18n="statusNormal">Bình thường</option>
+                      <option value="2" data-i18n="statusFrozen">Đóng băng</option>
+                      <option value="3" data-i18n="locked">Khoá</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Sắp xếp theo trường：</label>
+                  <label data-i18n="sortByField">Sắp xếp theo trường</label>：
                   <div style="width:150px;" class="layui-input-inline">
                     <select name="sort_field" lay-filter="sort_field" lay-search>
-                      <option value="">Chọn</option>
-                      <option value="money">Số dư</option>
-                      <option value="login_time">Lần đăng nhập cuối</option>
-                      <option value="register_time">Thời gian đăng ký</option>
-                      <option value="deposit_money">Tổng tiền nạp</option>
-                      <option value="withdrawal_money">Tổng tiền rút</option>
+                      <option value="" data-i18n="select">Chọn</option>
+                      <option value="money" data-i18n="balance">Số dư</option>
+                      <option value="login_time" data-i18n="lastLoginTime">Lần đăng nhập cuối</option>
+                      <option value="register_time" data-i18n="registerTime">Thời gian đăng ký</option>
+                      <option value="deposit_money" data-i18n="totalDeposit">Tổng tiền nạp</option>
+                      <option value="withdrawal_money" data-i18n="totalWithdraw">Tổng tiền rút</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Sắp xếp theo hướng：</label>
+                  <label data-i18n="sortDirection">Sắp xếp theo hướng</label>：
                   <div style="width:150px;" class="layui-input-inline">
                     <select name="sort_direction" lay-filter="sort_direction" lay-search>
-                      <option value="desc" selected>Từ lớn đến bé</option>
-                      <option value="asc">Từ bé đến lớn</option>
+                      <option value="desc" selected data-i18n="sortDesc">Từ lớn đến bé</option>
+                      <option value="asc" data-i18n="sortAsc">Từ bé đến lớn</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
                 </div>
                 <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
                 </div>
               </form>
             </div>
@@ -104,9 +104,12 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     layui.use(['table', 'form', 'laydate', 'layer'], function () {
+      HubLang.init();
+
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
@@ -127,7 +130,7 @@
         defaultToolbar: ['filter', 'print', 'exports'],
         page: true,
         limit: 10,
-        text: { none: 'Không có dữ liệu' },
+        text: { none: HubLang.t('noData') },
         parseData: function (res) {
           return {
             code: res.code === 0 ? 0 : 1,
@@ -142,40 +145,41 @@
         },
         cols: [[
           // ── Hiển thị mặc định ──
-          { field: 'username', title: 'Hội viên', width: 150, fixed: 'left' },
-          { field: 'type_format', title: 'Loại hình hội viên', width: 130 },
-          { field: 'parent_user', title: 'Tài khoản đại lý', width: 150 },
-          { field: 'money', title: 'Số dư', width: 150 },
-          { field: 'deposit_count', title: 'Lần nạp', width: 80 },
-          { field: 'withdrawal_count', title: 'Lần rút', width: 80 },
-          { field: 'deposit_amount', title: 'Tổng tiền nạp', width: 130 },
-          { field: 'withdrawal_amount', title: 'Tổng tiền rút', width: 130 },
-          { field: 'login_time', title: 'Lần đăng nhập cuối', width: 160 },
-          { field: 'register_time', title: 'Thời gian đăng ký', width: 160 },
-          { field: 'status_format', title: 'Trạng thái', width: 100 },
+          { field: 'username', title: HubLang.t('member'), width: 150, fixed: 'left' },
+          { field: 'type_format', title: HubLang.t('memberType'), width: 130 },
+          { field: 'parent_user', title: HubLang.t('agentAccount'), width: 150 },
+          { field: 'money', title: HubLang.t('balance'), width: 150 },
+          { field: 'deposit_count', title: HubLang.t('depositCount'), width: 80 },
+          { field: 'withdrawal_count', title: HubLang.t('withdrawCount'), width: 80 },
+          { field: 'deposit_amount', title: HubLang.t('totalDeposit'), width: 130 },
+          { field: 'withdrawal_amount', title: HubLang.t('totalWithdraw'), width: 130 },
+          { field: 'login_time', title: HubLang.t('lastLoginTime'), width: 160 },
+          { field: 'register_time', title: HubLang.t('registerTime'), width: 160 },
+          { field: 'status_format', title: HubLang.t('status'), width: 100 },
           { field: 'id', title: 'ID', width: 90},
-          { field: 'truename', title: 'Họ tên', width: 150},
-          { field: 'phone', title: 'Điện thoại', width: 120},
+          { field: 'truename', title: HubLang.t('truename'), width: 150},
+          { field: 'phone', title: HubLang.t('phone'), width: 120},
           { field: 'email', title: 'Email', width: 180},
-          { field: 'invite_code', title: 'Mã mời', width: 100},
-          { field: 'device', title: 'Thiết bị', width: 100},
-          { field: 'login_ip', title: 'IP đăng nhập', width: 150},
-          { field: 'first_deposit_time', title: 'Thời gian nạp đầu', width: 160},
-          { field: 'level', title: 'Cấp độ', width: 80},
-          { field: 'group_id', title: 'Nhóm', width: 80},
-          { field: 'agent_type', title: 'Loại đại lý', width: 100},
-          { field: 'is_tester', title: 'Thử nghiệm', width: 100},
-          { field: 'phone_verified', title: 'XM điện thoại', width: 110},
-          { field: 'email_verified', title: 'XM email', width: 100},
+          { field: 'invite_code', title: HubLang.t('inviteCode'), width: 100},
+          { field: 'device', title: HubLang.t('device'), width: 100},
+          { field: 'login_ip', title: HubLang.t('loginIp'), width: 150},
+          { field: 'first_deposit_time', title: HubLang.t('firstDepositTime'), width: 160},
+          { field: 'level', title: HubLang.t('level'), width: 80},
+          { field: 'group_id', title: HubLang.t('groupId'), width: 80},
+          { field: 'agent_type', title: HubLang.t('agentType'), width: 100},
+          { field: 'is_tester', title: HubLang.t('isTester'), width: 100},
+          { field: 'phone_verified', title: HubLang.t('phoneVerified'), width: 110},
+          { field: 'email_verified', title: HubLang.t('emailVerified'), width: 100},
           { field: 'useragent', title: 'User Agent', width: 250},
-          { field: 'create_time', title: 'Thời gian tạo', width: 160},
-          { field: 'update_time', title: 'Cập nhật cuối', width: 160},
-          { field: 'remark', title: 'Ghi chú', width: 150},
-          { field: 'note', title: 'Ghi chú thêm', width: 150},
-          { field: 'user_tree', title: 'Cây đại lý', width: 150},
-          { fixed: 'right', title: 'Thao tác', width: 130, toolbar: '#rowActionTpl' }
+          { field: 'create_time', title: HubLang.t('createTime'), width: 160},
+          { field: 'update_time', title: HubLang.t('lastUpdate'), width: 160},
+          { field: 'remark', title: HubLang.t('remark'), width: 150},
+          { field: 'note', title: HubLang.t('noteExtra'), width: 150},
+          { field: 'user_tree', title: HubLang.t('agentTree'), width: 150},
+          { fixed: 'right', title: HubLang.t('actions'), width: 130, toolbar: '#rowActionTpl' }
         ]],
         done: function (res) {
+          HubLang.applyDOM();
           console.log('[user.html] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' hội viên');
         }
       });
@@ -202,26 +206,26 @@
       // ── Form thêm hội viên / đại lý ──
       function openAddUserForm(type) {
         var isAgent = type === 'agent';
-        var title = isAgent ? 'Thêm đại lý mới' : 'Thêm hội viên mới';
+        var title = isAgent ? HubLang.t('addNewAgent') : HubLang.t('addNewMember');
 
         var formHtml = '<form class="layui-form" lay-filter="addUserForm" style="padding:15px 30px 0 0;">'
           + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">Tên tài khoản</label>'
-          + '<div class="layui-input-block"><input type="text" name="username" required lay-verify="required" placeholder="4-16 ký tự" class="layui-input"></div>'
+          + '<label class="layui-form-label">' + HubLang.t('accountName') + '</label>'
+          + '<div class="layui-input-block"><input type="text" name="username" required lay-verify="required" placeholder="' + HubLang.t('chars416') + '" class="layui-input"></div>'
           + '</div>'
           + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">Mật khẩu</label>'
-          + '<div class="layui-input-block"><input type="password" name="password" required lay-verify="required" placeholder="6-20 ký tự" class="layui-input"></div>'
+          + '<label class="layui-form-label">' + HubLang.t('password') + '</label>'
+          + '<div class="layui-input-block"><input type="password" name="password" required lay-verify="required" placeholder="' + HubLang.t('chars620') + '" class="layui-input"></div>'
           + '</div>'
           + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">Xác nhận MK</label>'
-          + '<div class="layui-input-block"><input type="password" name="confirm_password" required lay-verify="required" placeholder="Nhập lại mật khẩu" class="layui-input"></div>'
+          + '<label class="layui-form-label">' + HubLang.t('confirmPw') + '</label>'
+          + '<div class="layui-input-block"><input type="password" name="confirm_password" required lay-verify="required" placeholder="' + HubLang.t('retypePw') + '" class="layui-input"></div>'
           + '</div>'
           + '<input type="hidden" name="type" value="' + (isAgent ? '1' : '0') + '">'
           + '<div class="layui-form-item">'
           + '<div class="layui-input-block">'
-          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitAddUser">Xác nhận</button>'
-          + '<button type="reset" class="layui-btn layui-btn-primary">Đặt lại</button>'
+          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitAddUser">' + HubLang.t('confirm') + '</button>'
+          + '<button type="reset" class="layui-btn layui-btn-primary">' + HubLang.t('reset') + '</button>'
           + '</div></div></form>';
 
         var layerIdx = layer.open({
@@ -233,7 +237,7 @@
 
         form.on('submit(submitAddUser)', function (formData) {
           if (formData.field.password !== formData.field.confirm_password) {
-            layer.msg('Mật khẩu không khớp', { icon: 2 });
+            layer.msg(HubLang.t('passwordNoMatch'), { icon: 2 });
             return false;
           }
           var loadIdx = layer.load();
@@ -244,15 +248,15 @@
               layer.close(loadIdx);
               if (res.code === 0 || res.code === 1) {
                 layer.close(layerIdx);
-                layer.msg(isAgent ? 'Đã thêm đại lý' : 'Đã thêm hội viên', { icon: 1 });
+                layer.msg(isAgent ? HubLang.t('agentAdded') : HubLang.t('memberAdded'), { icon: 1 });
                 table.reload('memberTable');
               } else {
-                layer.msg(res.msg || 'Thất bại', { icon: 2 });
+                layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
               }
             },
             error: function () {
               layer.close(loadIdx);
-              layer.msg('Lỗi kết nối', { icon: 2 });
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
             }
           });
           return false;
@@ -277,19 +281,19 @@
         }
 
         var formHtml = '<form class="layui-form" lay-filter="rebateForm" style="padding:15px 30px 0 0;">'
-          + '<div class="layui-form-item"><label class="layui-form-label">Hội viên</label>'
+          + '<div class="layui-form-item"><label class="layui-form-label">' + HubLang.t('member') + '</label>'
           + '<div class="layui-input-block"><input type="text" value="' + userData.username + '" class="layui-input" disabled></div></div>'
           + '<fieldset class="layui-elem-field" style="margin:0 0 10px 110px;">'
-          + '<legend style="font-size:13px;">Tỉ lệ hoàn trả</legend>'
+          + '<legend style="font-size:13px;">' + HubLang.t('rebateTitle') + '</legend>'
           + '<div class="layui-field-box" style="padding:5px 15px;">' + rebateInputs + '</div>'
           + '</fieldset>'
           + '<div class="layui-form-item"><div class="layui-input-block">'
-          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitRebate">Xác nhận</button>'
-          + '<button type="reset" class="layui-btn layui-btn-primary">Đặt lại</button>'
+          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitRebate">' + HubLang.t('confirm') + '</button>'
+          + '<button type="reset" class="layui-btn layui-btn-primary">' + HubLang.t('reset') + '</button>'
           + '</div></div></form>';
 
         var layerIdx = layer.open({
-          type: 1, title: 'Cài đặt hoàn trả — ' + userData.username,
+          type: 1, title: HubLang.t('rebateSetup') + userData.username,
           area: ['550px', 'auto'],
           content: formHtml,
           success: function () { form.render(); }
@@ -316,14 +320,14 @@
               layer.close(loadIdx);
               if (res.code === 0 || res.code === 1) {
                 layer.close(layerIdx);
-                layer.msg('Đã cập nhật hoàn trả', { icon: 1 });
+                layer.msg(HubLang.t('rebateUpdated'), { icon: 1 });
               } else {
-                layer.msg(res.msg || 'Thất bại', { icon: 2 });
+                layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
               }
             },
             error: function () {
               layer.close(loadIdx);
-              layer.msg('Lỗi kết nối', { icon: 2 });
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
             }
           });
           return false;

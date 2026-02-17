@@ -21,37 +21,37 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Báo cáo nhà cung cấp game</legend>
+            <legend data-i18n="reportThirdTitle">Báo cáo nhà cung cấp game</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
-                  <label>Thời gian：</label>
+                  <label data-i18n="time">Thời gian</label>：
                   <div style="width:220px;" class="layui-input-inline">
-                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" data-i18n="dateStartEnd" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
                   <div style="width:100px;" class="layui-input-inline">
                     <select lay-filter="quickDateFilter" lay-search="">
-                      <option value="" id="optToday">Hôm nay</option>
-                      <option value="" id="optYesterday">Hôm qua</option>
-                      <option value="" id="optWeek">Tuần này</option>
-                      <option value="" id="optMonth">Tháng này</option>
-                      <option value="" id="optLastMonth">Tháng trước</option>
+                      <option value="" id="optToday" data-i18n="today">Hôm nay</option>
+                      <option value="" id="optYesterday" data-i18n="yesterday">Hôm qua</option>
+                      <option value="" id="optWeek" data-i18n="thisWeek">Tuần này</option>
+                      <option value="" id="optMonth" data-i18n="thisMonth">Tháng này</option>
+                      <option value="" id="optLastMonth" data-i18n="lastMonth">Tháng trước</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Tên tài khoản：</label>
+                  <label data-i18n="accountName">Tên tài khoản</label>：
                   <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" data-i18n="enterAccountName" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Nhà cung cấp：</label>
+                  <label data-i18n="provider">Nhà cung cấp</label>：
                   <div style="width:150px;" class="layui-input-inline">
                     <select name="platform_id" lay-filter="platform_id" lay-search>
-                      <option value="">Tất cả</option>
+                      <option value="" data-i18n="all">Tất cả</option>
                       <option value="8">PA</option>
                       <option value="9">BBIN</option>
                       <option value="10">WM</option>
@@ -95,10 +95,10 @@
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
                 </div>
                 <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
                 </div>
               </form>
             </div>
@@ -109,16 +109,16 @@
         </div>
         <div class="layui-fluid" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
           <div>
-            <span style="font-weight: bold;">Dữ liệu tổng hợp:</span>
+            <span style="font-weight: bold;" data-i18n="summaryData">Dữ liệu tổng hợp:</span>
             <table class="layui-table" lay-even lay-skin="nob">
               <thead>
               <tr>
-                <th>Tiền cược</th>
-                <th>Doanh thu</th>
-                <th>Trúng thưởng</th>
-                <th>Thắng / Thua</th>
-                <th>Lượt cược</th>
-                <th>Số người cược</th>
+                <th data-i18n="betAmount">Tiền cược</th>
+                <th data-i18n="turnover">Doanh thu</th>
+                <th data-i18n="prize">Trúng thưởng</th>
+                <th data-i18n="winLose">Thắng / Thua</th>
+                <th data-i18n="betTimesCol">Lượt cược</th>
+                <th data-i18n="bettersCountCol">Số người cược</th>
               </tr>
               </thead>
               <tbody>
@@ -139,9 +139,12 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
     layui.use(['table', 'form', 'laydate'], function () {
+      HubLang.init();
+      HubLang.applyDOM();
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
@@ -209,7 +212,7 @@
         defaultToolbar: ['filter', 'print', 'exports'],
         page: true,
         limit: 10,
-        text: { none: 'Không có dữ liệu' },
+        text: { none: HubLang.t('noData') },
         parseData: function (res) {
           window._lastTotalData = res.total_data || null;
           return {
@@ -221,15 +224,15 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'username', title: 'Tài khoản', width: 130 },
-          { field: 'platform_id_name', title: 'Nhà cung cấp', width: 130 },
-          { field: 't_bet_amount', title: 'Tiền cược', width: 140 },
-          { field: 't_bet_times', title: 'Lượt cược', width: 100 },
-          { field: 't_turnover', title: 'Doanh thu', width: 140 },
-          { field: 't_prize', title: 'Trúng thưởng', width: 140 },
-          { field: 't_win_lose', title: 'Thắng / Thua', width: 140 },
+          { field: 'username', title: HubLang.t('account'), width: 130 },
+          { field: 'platform_id_name', title: HubLang.t('provider'), width: 130 },
+          { field: 't_bet_amount', title: HubLang.t('betAmount'), width: 140 },
+          { field: 't_bet_times', title: HubLang.t('betTimes'), width: 100 },
+          { field: 't_turnover', title: HubLang.t('turnover'), width: 140 },
+          { field: 't_prize', title: HubLang.t('prize'), width: 140 },
+          { field: 't_win_lose', title: HubLang.t('winLose'), width: 140 },
           { field: 'uid', title: 'UID', width: 90 },
-          { field: 'platform_id', title: 'ID NCC', width: 80 }
+          { field: 'platform_id', title: HubLang.t('providerId'), width: 80 }
         ]],
         done: function (res) {
           console.log('[reportThird] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
