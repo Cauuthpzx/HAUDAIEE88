@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mã giới thiệu</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Toolbar template ── -->
+  <script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-group">
+      <button class="layui-btn layui-btn-xs" lay-event="addInvite">
+        <i class="layui-icon layui-icon-addition"></i>Thêm mã giới thiệu
+      </button>
+    </div>
+  </script>
+
+  <!-- ── Thao tác từng dòng ── -->
+  <script type="text/html" id="rowActionTpl">
+    <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="copyLink">Copy đường link</button>
+    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="viewConfig">Xem cài đặt</button>
+    <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="qrCode">Mã QR</button>
+    <button class="layui-btn layui-btn-xs" lay-event="edit">Chỉnh sửa</button>
+  </script>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Mã giới thiệu</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Thời gian thêm vào：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="create_time" id="createTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Thời gian hội viên đăng nhập：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="user_register_time" id="registerTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Mã giới thiệu：</label>
+                  <div style="width:240px;" class="layui-input-inline">
+                    <input type="text" name="invite_code" placeholder="Nhập đầy đủ mã giới thiệu" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="dataTable" lay-filter="dataTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      laydate.render({ elem: '#createTime', type: 'datetime', range: '|' });
+      laydate.render({ elem: '#registerTime', type: 'datetime', range: '|' });
+
+      table.render({
+        elem: '#dataTable',
+        url: '/api/data/invites',
+        method: 'get',
+        toolbar: '#toolbarTpl',
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: { pageName: 'page', limitName: 'limit' },
+        cols: [[
+          { field: 'invite_code', title: 'Mã giới thiệu' },
+          { field: 'user_type', title: 'Loại hình giới thiệu' },
+          { field: 'reg_count', title: 'Tổng số đã đăng ký' },
+          { field: 'scope_reg_count', title: 'Số lượng người dùng đã đăng ký' },
+          { field: 'recharge_count', title: 'Số người nạp tiền' },
+          { field: 'first_recharge_count', title: 'Nạp đầu trong ngày' },
+          { field: 'register_recharge_count', title: 'Nạp đầu trong ngày đăng kí' },
+          { field: 'remark', title: 'Ghi chú' },
+          { field: 'create_time', title: 'Thời gian thêm vào' },
+          { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' },
+          // ── Ẩn mặc định ──
+          { field: 'id', title: 'ID', width: 90, hide: true },
+          { field: 'uid', title: 'UID', width: 90, hide: true },
+          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
+          { field: 'rebate_arr', title: 'Hoàn trả', width: 200, hide: true },
+          { field: 'update_time', title: 'Cập nhật', width: 160, hide: true }
+        ]],
+        done: function (res) {
+          console.log('[inviteList] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' mã giới thiệu');
+        }
+      });
+
+      // ── Toolbar events ──
+      table.on('toolbar(dataTable)', function (obj) {
+        if (obj.event === 'addInvite') {
+          layui.layer.msg('Chức năng thêm mã giới thiệu — đang phát triển');
+        }
+      });
+
+      // ── Row action events ──
+      table.on('tool(dataTable)', function (obj) {
+        switch (obj.event) {
+          case 'copyLink':
+            layui.layer.msg('Copy link cho mã: ' + obj.data.invite_code + ' — đang phát triển');
+            break;
+          case 'viewConfig':
+            layui.layer.msg('Xem cài đặt hoàn trả: ' + obj.data.invite_code + ' — đang phát triển');
+            break;
+          case 'qrCode':
+            layui.layer.msg('Mã QR cho: ' + obj.data.invite_code + ' — đang phát triển');
+            break;
+          case 'edit':
+            layui.layer.msg('Chỉnh sửa mã: ' + obj.data.invite_code + ' — đang phát triển');
+            break;
+        }
+      });
+
+      // ── Tìm kiếm ──
+      form.on('submit(doSearch)', function (data) {
+        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+        return false;
+      });
+
+      // ── Đặt lại ──
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('createTime').value = '';
+          document.getElementById('registerTime').value = '';
+          table.reload('dataTable', {
+            where: { invite_code: '', create_time: '', user_register_time: '' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>

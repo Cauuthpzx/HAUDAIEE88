@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sao kê giao dịch</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+    .total-data-box { padding: 10px 15px; background: #f8f8f8; border-top: 1px solid #e6e6e6; font-size: 13px; }
+    .total-data-box span { margin-right: 20px; }
+    .total-data-box b { color: #333; }
+  </style>
+</head>
+<body>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Sao kê giao dịch</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Thời gian：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Tên tài khoản：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="dataTable" lay-filter="dataTable"></table>
+          <div id="totalDataBox" class="total-data-box" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      var today = new Date();
+      var weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+      var defaultRange = fmt(weekAgo) + ' | ' + fmt(today);
+
+      laydate.render({
+        elem: '#dateRange',
+        type: 'date',
+        range: '|',
+        value: defaultRange
+      });
+
+      function renderTotalData(totalData) {
+        var box = document.getElementById('totalDataBox');
+        if (!totalData) { box.style.display = 'none'; return; }
+        var html = '<b>Dữ liệu tổng hợp：</b>';
+        html += '<span>Lần nạp: <b>' + (totalData.total_deposit_count || 0) + '</b></span>';
+        html += '<span>Tổng nạp: <b>' + (totalData.total_deposit_amount || '0') + '</b></span>';
+        html += '<span>Lần rút: <b>' + (totalData.total_withdrawal_count || 0) + '</b></span>';
+        html += '<span>Tổng rút: <b>' + (totalData.total_withdrawal_amount || '0') + '</b></span>';
+        html += '<span>Phí: <b>' + (totalData.total_charge_fee || '0') + '</b></span>';
+        html += '<span>Hoa hồng ĐL: <b>' + (totalData.total_agent_commission || '0') + '</b></span>';
+        html += '<span>Khuyến mãi: <b>' + (totalData.total_promotion || '0') + '</b></span>';
+        html += '<span>Hoàn trả NCC: <b>' + (totalData.total_third_rebate || '0') + '</b></span>';
+        html += '<span>HĐ bên thứ 3: <b>' + (totalData.third_activity_amount || 0) + '</b></span>';
+        box.innerHTML = html;
+        box.style.display = 'block';
+      }
+
+      table.render({
+        elem: '#dataTable',
+        url: '/api/data/report-funds',
+        method: 'get',
+        where: { date: defaultRange },
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          window._lastTotalData = res.total_data || null;
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: { pageName: 'page', limitName: 'limit' },
+        cols: [[
+          { field: 'username', title: 'Tài khoản', width: 130 },
+          { field: 'user_parent_format', title: 'Đại lý', width: 120 },
+          { field: 'date', title: 'Ngày', width: 110 },
+          { field: 'deposit_count', title: 'Lần nạp', width: 80 },
+          { field: 'deposit_amount', title: 'Tổng nạp', width: 140 },
+          { field: 'withdrawal_count', title: 'Lần rút', width: 80 },
+          { field: 'withdrawal_amount', title: 'Tổng rút', width: 140 },
+          { field: 'charge_fee', title: 'Phí', width: 120 },
+          { field: 'agent_commission', title: 'Hoa hồng ĐL', width: 130 },
+          { field: 'promotion', title: 'Khuyến mãi', width: 130 },
+          { field: 'third_rebate', title: 'Hoàn trả NCC', width: 140 },
+          // ── Ẩn mặc định ──
+          { field: 'id', title: 'ID', width: 100, hide: true },
+          { field: 'uid', title: 'UID', width: 90, hide: true },
+          { field: 'user_parent', title: 'ID đại lý', width: 100, hide: true },
+          { field: 'third_activity_amount', title: 'HĐ bên thứ 3', width: 120, hide: true }
+        ]],
+        done: function (res) {
+          console.log('[reportFunds] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
+          renderTotalData(window._lastTotalData);
+        }
+      });
+
+      form.on('submit(doSearch)', function (data) {
+        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+        return false;
+      });
+
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('dateRange').value = defaultRange;
+          table.reload('dataTable', {
+            where: { date: defaultRange, username: '' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>

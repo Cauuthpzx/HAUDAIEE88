@@ -101,14 +101,68 @@
 
   <!-- Sidebar -->
   <div class="hub-sidebar">
-    <ul class="layui-nav layui-nav-tree" lay-filter="hub-menu">
+    <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
+      <!-- 1. Quản lí hội viên thuộc cấp -->
       <li class="layui-nav-item layui-nav-itemed">
-        <a href="javascript:;">Đại lý</a>
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i>Quản lí hội viên thuộc cấp
+        </a>
         <dl class="layui-nav-child">
           <dd class="layui-this">
-            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Hội viên">
-              <i class="layui-icon layui-icon-user" style="margin-right: 6px;"></i>Hội viên
-            </a>
+            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Danh sách hội viên">Danh sách hội viên</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 2. Mã giới thiệu -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i>Mã giới thiệu
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/inviteList.html" data-title="Danh sách mã giới thiệu">Danh sách mã giới thiệu</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 3. Báo cáo -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i>Báo cáo
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/reportLottery.html" data-title="Báo cáo xổ số">Báo cáo xổ số</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/reportFunds.html" data-title="Sao kê giao dịch">Sao kê giao dịch</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/reportThirdGame.html" data-title="Báo cáo nhà cung cấp">Báo cáo nhà cung cấp</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 4. Rút hoa hồng -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i>Rút hoa hồng
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/depositAndWithdrawal.html" data-title="Danh sách nạp tiền">Danh sách nạp tiền</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/withdrawalsRecord.html" data-title="Lịch sử rút tiền">Lịch sử rút tiền</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 5. Quản lí đơn cược -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i>Quản lí đơn cược
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/betOrder.html" data-title="Đơn cược bên thứ 3">Đơn cược bên thứ 3</a>
           </dd>
         </dl>
       </li>

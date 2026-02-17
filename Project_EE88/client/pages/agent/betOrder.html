@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cược bên thứ 3</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Đơn cược bên thứ 3</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Thời gian cược：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="bet_time" id="betTime" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Mã giao dịch：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="serial_no" placeholder="Nhập mã giao dịch" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Tài khoản platform：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="platform_username" placeholder="Nhập tài khoản" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="dataTable" lay-filter="dataTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      var today = new Date();
+      var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      var defaultRange = todayStr + ' | ' + todayStr;
+
+      laydate.render({
+        elem: '#betTime',
+        type: 'date',
+        range: '|',
+        value: defaultRange
+      });
+
+      table.render({
+        elem: '#dataTable',
+        url: '/api/data/bet-orders',
+        method: 'get',
+        where: { bet_time: defaultRange },
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: { pageName: 'page', limitName: 'limit' },
+        cols: [[
+          { field: 'serial_no', title: 'Mã giao dịch', width: 220 },
+          { field: 'platform_id_name', title: 'Nhà cung cấp', width: 120 },
+          { field: 'c_name', title: 'Loại game', width: 120 },
+          { field: 'game_name', title: 'Tên game', width: 180 },
+          { field: 'bet_amount', title: 'Tiền cược', width: 130 },
+          { field: 'turnover', title: 'Doanh thu', width: 130 },
+          { field: 'prize', title: 'Trúng thưởng', width: 130 },
+          { field: 'win_lose', title: 'Thắng / Thua', width: 130 },
+          { field: 'bet_time', title: 'Thời gian cược', width: 160 },
+          { field: 'platform_username', title: 'TK Platform', width: 150 },
+          // ── Ẩn mặc định ──
+          { field: 'id', title: 'ID', width: 120, hide: true },
+          { field: 'uid', title: 'UID', width: 90, hide: true },
+          { field: 'platform_id', title: 'ID NCC', width: 80, hide: true },
+          { field: 'cid', title: 'ID loại', width: 80, hide: true }
+        ]],
+        done: function (res) {
+          console.log('[betOrder] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' đơn cược');
+        }
+      });
+
+      form.on('submit(doSearch)', function (data) {
+        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+        return false;
+      });
+
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('betTime').value = defaultRange;
+          table.reload('dataTable', {
+            where: { bet_time: defaultRange, serial_no: '', platform_username: '' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>

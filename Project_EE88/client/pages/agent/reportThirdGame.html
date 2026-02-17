@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Báo cáo NCC</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+    .total-data-box { padding: 10px 15px; background: #f8f8f8; border-top: 1px solid #e6e6e6; font-size: 13px; }
+    .total-data-box span { margin-right: 20px; }
+    .total-data-box b { color: #333; }
+  </style>
+</head>
+<body>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Báo cáo nhà cung cấp game</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Thời gian：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Tên tài khoản：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Nhà cung cấp：</label>
+                  <div style="width:150px;" class="layui-input-inline">
+                    <select name="platform_id" lay-filter="platform_id" lay-search>
+                      <option value="">Tất cả</option>
+                      <option value="8">PA</option>
+                      <option value="9">BBIN</option>
+                      <option value="10">WM</option>
+                      <option value="14">MINI</option>
+                      <option value="20">KY</option>
+                      <option value="28">PGSOFT</option>
+                      <option value="29">LUCKYWIN</option>
+                      <option value="30">SABA</option>
+                      <option value="31">PT</option>
+                      <option value="38">RICH88</option>
+                      <option value="43">ASTAR</option>
+                      <option value="45">FB</option>
+                      <option value="46">JILI</option>
+                      <option value="47">KA</option>
+                      <option value="48">MW</option>
+                      <option value="50">SBO</option>
+                      <option value="51">NEXTSPIN</option>
+                      <option value="52">AMB</option>
+                      <option value="53">FunTa</option>
+                      <option value="62">MG</option>
+                      <option value="63">WS168</option>
+                      <option value="69">DG CASINO</option>
+                      <option value="70">V8</option>
+                      <option value="71">AE</option>
+                      <option value="72">TP</option>
+                      <option value="73">FC</option>
+                      <option value="74">JDB</option>
+                      <option value="75">CQ9</option>
+                      <option value="76">PP</option>
+                      <option value="77">VA</option>
+                      <option value="78">BNG</option>
+                      <option value="84">DB CASINO</option>
+                      <option value="85">EVO CASINO</option>
+                      <option value="90">CMD SPORTS</option>
+                      <option value="91">PG NEW</option>
+                      <option value="92">FBLIVE</option>
+                      <option value="93">ON CASINO</option>
+                      <option value="94">MT</option>
+                      <option value="102">FC NEW</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="dataTable" lay-filter="dataTable"></table>
+          <div id="totalDataBox" class="total-data-box" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      var today = new Date();
+      var weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+      var defaultRange = fmt(weekAgo) + ' | ' + fmt(today);
+
+      laydate.render({
+        elem: '#dateRange',
+        type: 'date',
+        range: '|',
+        value: defaultRange
+      });
+
+      function renderTotalData(totalData) {
+        var box = document.getElementById('totalDataBox');
+        if (!totalData) { box.style.display = 'none'; return; }
+        var html = '<b>Dữ liệu tổng hợp：</b>';
+        html += '<span>Tiền cược: <b>' + (totalData.total_bet_amount || '0') + '</b></span>';
+        html += '<span>Doanh thu: <b>' + (totalData.total_turnover || '0') + '</b></span>';
+        html += '<span>Trúng thưởng: <b>' + (totalData.total_prize || '0') + '</b></span>';
+        html += '<span>Thắng/Thua: <b>' + (totalData.total_win_lose || '0') + '</b></span>';
+        html += '<span>Lượt cược: <b>' + (totalData.total_bet_times || 0) + '</b></span>';
+        html += '<span>Số người cược: <b>' + (totalData.total_bet_number || 0) + '</b></span>';
+        box.innerHTML = html;
+        box.style.display = 'block';
+      }
+
+      table.render({
+        elem: '#dataTable',
+        url: '/api/data/report-third',
+        method: 'get',
+        where: { date: defaultRange },
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          window._lastTotalData = res.total_data || null;
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: { pageName: 'page', limitName: 'limit' },
+        cols: [[
+          { field: 'username', title: 'Tài khoản', width: 130 },
+          { field: 'platform_id_name', title: 'Nhà cung cấp', width: 130 },
+          { field: 't_bet_amount', title: 'Tiền cược', width: 140 },
+          { field: 't_bet_times', title: 'Lượt cược', width: 100 },
+          { field: 't_turnover', title: 'Doanh thu', width: 140 },
+          { field: 't_prize', title: 'Trúng thưởng', width: 140 },
+          { field: 't_win_lose', title: 'Thắng / Thua', width: 140 },
+          // ── Ẩn mặc định ──
+          { field: 'uid', title: 'UID', width: 90, hide: true },
+          { field: 'platform_id', title: 'ID NCC', width: 80, hide: true }
+        ]],
+        done: function (res) {
+          console.log('[reportThird] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
+          renderTotalData(window._lastTotalData);
+        }
+      });
+
+      form.on('submit(doSearch)', function (data) {
+        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+        return false;
+      });
+
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('dateRange').value = defaultRange;
+          table.reload('dataTable', {
+            where: { date: defaultRange, username: '', platform_id: '' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>

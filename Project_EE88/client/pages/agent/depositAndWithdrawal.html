@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nạp tiền</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Quản lí nạp / rút tiền</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Tên tài khoản：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Thời gian：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="create_time" id="createTime" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Loại：</label>
+                  <div class="layui-input-inline">
+                    <select name="type" lay-filter="type" lay-search>
+                      <option value="">Tất cả</option>
+                      <option value="1">Nạp tiền</option>
+                      <option value="2">Rút tiền</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Trạng thái：</label>
+                  <div class="layui-input-inline">
+                    <select name="status" lay-filter="status" lay-search>
+                      <option value="">Tất cả</option>
+                      <option value="0">Chờ xử lí</option>
+                      <option value="1">Hoàn tất</option>
+                      <option value="2">Đang xử lí</option>
+                      <option value="3">Thất bại</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="dataTable" lay-filter="dataTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      // Mặc định hôm nay
+      var today = new Date();
+      var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      var defaultRange = todayStr + ' | ' + todayStr;
+
+      laydate.render({
+        elem: '#createTime',
+        type: 'date',
+        range: '|',
+        value: defaultRange
+      });
+
+      table.render({
+        elem: '#dataTable',
+        url: '/api/data/deposits',
+        method: 'get',
+        where: { create_time: defaultRange },
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: { pageName: 'page', limitName: 'limit' },
+        cols: [[
+          { field: 'serial_no', title: 'Mã giao dịch', width: 220 },
+          { field: 'username', title: 'Tài khoản', width: 130 },
+          { field: 'user_parent_format', title: 'Đại lý', width: 120 },
+          { field: 'type', title: 'Loại', width: 80, templet: function (d) {
+            return d.type == '1' ? 'Nạp' : 'Rút';
+          }},
+          { field: 'amount', title: 'Số tiền', width: 130 },
+          { field: 'true_amount', title: 'Thực nhận', width: 130 },
+          { field: 'status', title: 'Trạng thái', width: 100, templet: function (d) {
+            var map = { 0: 'Chờ', 1: 'Hoàn tất', 2: 'Đang xử lí', 3: 'Thất bại' };
+            return map[d.status] || d.status;
+          }},
+          { field: 'operator', title: 'Thao tác viên', width: 110 },
+          { field: 'create_time', title: 'Thời gian tạo', width: 160 },
+          { field: 'success_time', title: 'Thời gian hoàn tất', width: 160 },
+          // ── Ẩn mặc định ──
+          { field: 'id', title: 'ID', width: 100, hide: true },
+          { field: 'uid', title: 'UID', width: 90, hide: true },
+          { field: 'user_parent', title: 'ID đại lý', width: 100, hide: true },
+          { field: 'user_tree', title: 'Cây đại lý', width: 150, hide: true },
+          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
+          { field: 'firm_fee', title: 'Phí công ty', width: 120, hide: true },
+          { field: 'user_fee', title: 'Phí người dùng', width: 120, hide: true },
+          { field: 'rebate', title: 'Hoàn trả', width: 120, hide: true },
+          { field: 'name', title: 'Tên chủ TK', width: 150, hide: true },
+          { field: 'bank_id', title: 'Ngân hàng', width: 100, hide: true },
+          { field: 'branch', title: 'Chi nhánh', width: 130, hide: true },
+          { field: 'account', title: 'Số tài khoản', width: 150, hide: true },
+          { field: 'transfer_time', title: 'Thời gian CK', width: 160, hide: true },
+          { field: 'remark', title: 'Ghi chú', width: 150, hide: true },
+          { field: 'user_remark', title: 'Ghi chú KH', width: 150, hide: true },
+          { field: 'prostatus', title: 'Trạng thái xử lí', width: 120, hide: true },
+          { field: 'prize_amount', title: 'Tiền thưởng', width: 120, hide: true },
+          { field: 'activity_id', title: 'ID khuyến mãi', width: 110, hide: true },
+          { field: 'extra', title: 'Thông tin thêm', width: 150, hide: true },
+          { field: 'category_id', title: 'Danh mục', width: 100, hide: true },
+          { field: 'merchant_id', title: 'Nhà cung cấp', width: 110, hide: true },
+          { field: 'pay_type', title: 'Hình thức TT', width: 120, hide: true },
+          { field: 'trade_id', title: 'Mã thanh toán', width: 200, hide: true },
+          { field: 'is_tester', title: 'Thử nghiệm', width: 100, hide: true },
+          { field: 'review_time', title: 'Thời gian duyệt', width: 160, hide: true },
+          { field: 'transfer_record', title: 'Bản ghi CK', width: 150, hide: true },
+          { field: 'currency', title: 'Tiền tệ', width: 80, hide: true },
+          { field: 'update_time', title: 'Cập nhật', width: 160, hide: true }
+        ]],
+        done: function (res) {
+          console.log('[deposits] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' giao dịch');
+        }
+      });
+
+      form.on('submit(doSearch)', function (data) {
+        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+        return false;
+      });
+
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('createTime').value = defaultRange;
+          table.reload('dataTable', {
+            where: { username: '', create_time: defaultRange, type: '', status: '' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>
