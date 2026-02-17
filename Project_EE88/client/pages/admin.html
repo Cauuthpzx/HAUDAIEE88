@@ -60,6 +60,21 @@
     }
     .hub-header-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
     .hub-header-btn .layui-icon { font-size: 18px; }
+    .hub-header-account {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 40px;
+      padding: 0 12px;
+      margin-left: 4px;
+      color: #ccc;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: all .2s;
+    }
+    .hub-header-account:hover { color: #fff; background: rgba(255,255,255,.1); }
+    .hub-header-account .layui-icon:first-child { font-size: 18px; }
 
     /* ── Sidebar ── */
     .hub-sidebar {
@@ -150,6 +165,11 @@
     <div class="hub-header-right">
       <a class="hub-header-btn" id="btnCloseAll" title="Đóng tất cả tab"><i class="layui-icon layui-icon-close"></i></a>
       <a class="hub-header-btn" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
+      <div class="hub-header-account" id="btnAccount">
+        <i class="layui-icon layui-icon-username"></i>
+        <span id="accountName">Agent</span>
+        <i class="layui-icon layui-icon-down" style="font-size:12px;margin-left:2px;"></i>
+      </div>
     </div>
   </div>
 
@@ -355,6 +375,40 @@
         } else {
           document.exitFullscreen();
           fsIcon.className = 'layui-icon layui-icon-screen-full';
+        }
+      });
+
+      // ── Account dropdown ──
+      dropdown.render({
+        elem: '#btnAccount',
+        data: [
+          { title: '<i class="layui-icon layui-icon-edit" style="margin-right:6px;"></i>Đổi MK đăng nhập', id: 'editPassword' },
+          { title: '<i class="layui-icon layui-icon-password" style="margin-right:6px;"></i>Đổi MK giao dịch', id: 'editFundPassword' },
+          { type: '-' },
+          { title: '<i class="layui-icon layui-icon-logout" style="margin-right:6px;color:#ff5722;"></i><span style="color:#ff5722;">Đăng xuất</span>', id: 'logout' }
+        ],
+        click: function (data) {
+          var map = {
+            editPassword: { url: '/pages/agent/editPassword.html', title: 'Đổi MK đăng nhập' },
+            editFundPassword: { url: '/pages/agent/editFundPassword.html', title: 'Đổi MK giao dịch' }
+          };
+          if (map[data.id]) {
+            var info = map[data.id];
+            if (openedTabs[info.url]) {
+              tabs.change(TABS_ID, info.url);
+            } else {
+              tabs.add(TABS_ID, {
+                title: info.title,
+                content: '<iframe src="' + info.url + '"></iframe>',
+                id: info.url
+              });
+              openedTabs[info.url] = true;
+            }
+          } else if (data.id === 'logout') {
+            layui.layer.confirm('Bạn có chắc muốn đăng xuất?', { title: 'Xác nhận', btn: ['Đăng xuất', 'Hủy'] }, function () {
+              window.location.href = '/';
+            });
+          }
         }
       });
 
