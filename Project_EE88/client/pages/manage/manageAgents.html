@@ -216,14 +216,17 @@
         html += '<div class="layui-form-item">'
           + '<div class="layui-input-block">'
           + '<button type="button" class="layui-btn" lay-submit lay-filter="submitAgent">' + HubLang.t('confirm') + '</button>'
-          + '<button type="reset" class="layui-btn layui-btn-primary">' + HubLang.t('reset') + '</button>'
+          + '<button type="button" class="layui-btn layui-btn-primary" id="cancelAgentBtn">' + HubLang.t('cancel') + '</button>'
           + '</div></div></form>';
 
         var layerIdx = layer.open({
           type: 1, title: title,
           area: ['550px', 'auto'],
           content: html,
-          success: function () { form.render(); }
+          success: function () {
+            form.render();
+            $('#cancelAgentBtn').on('click', function () { layer.close(layerIdx); });
+          }
         });
 
         form.on('submit(submitAgent)', function (formData) {

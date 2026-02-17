@@ -73,9 +73,11 @@ if (fs.existsSync(distServer)) {
   }
 }
 
-// 3. Clean dist/client
+// 3. Clean dist/client + dist/spa
 console.log('[build] Cleaning dist/client...');
 rmSync(path.join(DIST, 'client'));
+console.log('[build] Cleaning dist/spa...');
+rmSync(path.join(DIST, 'spa'));
 
 // 4. Copy server → dist/server
 console.log('[build] Copying server...');
@@ -89,7 +91,11 @@ copyDir(
 console.log('[build] Copying client...');
 copyDir(path.join(ROOT, 'client'), path.join(DIST, 'client'));
 
-// 6. Copy captcha → dist/captcha
+// 6. Copy spa → dist/spa
+console.log('[build] Copying spa...');
+copyDir(path.join(ROOT, 'spa'), path.join(DIST, 'spa'));
+
+// 7. Copy captcha → dist/captcha
 console.log('[build] Copying captcha...');
 copyDir(path.join(ROOT, 'captcha'), path.join(DIST, 'captcha'));
 

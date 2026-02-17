@@ -68,6 +68,13 @@ const clientDir = path.join(__dirname, '..', 'client');
 app.use(express.static(clientDir));
 log.info(`Thư mục client: ${clientDir}`);
 
+// ── Phục vụ SPA từ spa/ (truy cập qua /spa/) ──
+const spaDir = path.join(__dirname, '..', 'spa');
+if (fs.existsSync(spaDir)) {
+  app.use('/spa', express.static(spaDir));
+  log.info(`Thư mục SPA: ${spaDir}`);
+}
+
 // ── 404 ──
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
@@ -75,7 +82,7 @@ app.use((req, res) => {
     return res.status(404).json({ code: -1, msg: 'Không tìm thấy đường dẫn API' });
   }
   log.warn(`Không tìm thấy: ${req.method} ${req.originalUrl}`);
-  res.status(404).sendFile(path.join(clientDir, 'index.html'));
+  res.status(404).send('<!DOCTYPE html><html><head><meta charset="utf-8"><title>404</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h1>404</h1><p>Không tìm thấy trang</p><a href="/spa/login.html">Về trang đăng nhập</a></body></html>');
 });
 
 // ── Global error handler ──
