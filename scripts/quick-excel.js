@@ -1,6 +1,6 @@
 /**
  * Quick export ee88 sample data to Excel (5 rows each, parallel fetch)
- * Usage: node Project_EE88/scripts/quick-excel.js "<cookie>"
+ * Usage: node scripts/quick-excel.js "<cookie>"
  */
 const axios = require('axios');
 const XLSX = require('xlsx');

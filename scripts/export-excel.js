@@ -1,6 +1,6 @@
 /**
  * Export ee88 API data to Excel
- * Usage: node Project_EE88/scripts/export-excel.js "<full cookie string>"
+ * Usage: node scripts/export-excel.js "<full cookie string>"
  */
 const axios = require('axios');
 const XLSX = require('xlsx');
@@ -10,7 +10,7 @@ const BASE_URL = 'https://a2u4k.ee88dly.com';
 const COOKIE = process.argv[2] || '';
 
 if (!COOKIE) {
-  console.log('Usage: node Project_EE88/scripts/export-excel.js "<full cookie string>"');
+  console.log('Usage: node scripts/export-excel.js "<full cookie string>"');
   process.exit(1);
 }
 

@@ -2,9 +2,9 @@
  * Script test API ee88 — Phase 1
  *
  * Cách dùng:
- *   node Project_EE88/scripts/test-api.js <PHPSESSID>
- *   node Project_EE88/scripts/test-api.js <PHPSESSID> members
- *   node Project_EE88/scripts/test-api.js <PHPSESSID> all
+ *   node scripts/test-api.js <PHPSESSID>
+ *   node scripts/test-api.js <PHPSESSID> members
+ *   node scripts/test-api.js <PHPSESSID> all
  */
 
 const axios = require('axios');
@@ -136,9 +136,9 @@ async function main() {
   const args = process.argv.slice(2);
   if (!args.length) {
     console.log('Usage:');
-    console.log('  node Project_EE88/scripts/test-api.js <PHPSESSID>              # test members');
-    console.log('  node Project_EE88/scripts/test-api.js <PHPSESSID> <endpoint>   # test 1');
-    console.log('  node Project_EE88/scripts/test-api.js <PHPSESSID> all          # test all');
+    console.log('  node scripts/test-api.js <PHPSESSID>              # test members');
+    console.log('  node scripts/test-api.js <PHPSESSID> <endpoint>   # test 1');
+    console.log('  node scripts/test-api.js <PHPSESSID> all          # test all');
     console.log('\nEndpoints:');
     for (const [k, c] of Object.entries(ENDPOINTS)) console.log(`  ${k.padEnd(20)} ${c.description}`);
     process.exit(0);

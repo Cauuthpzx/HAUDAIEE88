@@ -1,7 +1,10 @@
 node_modules/
-server/.env
-server/logs/
 *.db
 *.xlsx
 ~$*
 dist/
+
+# Project EE88
+Project_EE88/server/.env
+Project_EE88/server/logs/
+Project_EE88/dist/

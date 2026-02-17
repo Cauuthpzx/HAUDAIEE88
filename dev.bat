@@ -4,7 +4,7 @@ echo.
 echo === EE88 Agent Hub — Dev Mode ===
 echo.
 
-cd /d "%~dp0server"
+cd /d "%~dp0Project_EE88\server"
 
 if not exist "node_modules" (
     echo [*] Cai dat dependencies...

@@ -1,0 +1,13 @@
+{
+  "name": "ee88-agent-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent Hub — Proxy dashboard cho ee88 agent data",
+  "scripts": {
+    "start": "cd Project_EE88/server && node server.js",
+    "dev": "cd Project_EE88/server && npx nodemon server.js",
+    "install:server": "cd Project_EE88/server && npm install",
+    "build": "node scripts/build.js",
+    "serve": "node Project_EE88/dist/server/server.js"
+  }
+}
