@@ -36,7 +36,7 @@
       color: #fff;
       background: rgba(255,255,255,0.08);
     }
-    .hub-sidebar .layui-nav-bar { display: none; }
+
 
     /* ── Body ── */
     .hub-body {
@@ -101,18 +101,18 @@
       <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-header-event="menuLeft">
         <i class="layui-icon layui-icon-spread-left"></i>
       </li>
-      <li class="layui-nav-item layui-hide-xs" lay-unselect>
+      <li class="layui-nav-item layui-hide-xs">
         <a href="javascript:;" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
       </li>
-      <li class="layui-nav-item layui-hide-xs" lay-unselect>
+      <li class="layui-nav-item layui-hide-xs">
         <a href="javascript:;" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
       </li>
     </ul>
     <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
-      <li class="layui-nav-item" lay-unselect>
+      <li class="layui-nav-item">
         <a href="javascript:;" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
       </li>
-      <li class="layui-nav-item layui-hide layui-show-sm-inline-block" lay-unselect>
+      <li class="layui-nav-item layui-hide layui-show-sm-inline-block">
         <a href="javascript:;">
           <img src="//unpkg.com/outeres@0.0.10/img/layui/icon-v2.png" class="layui-nav-img">
           <span id="userInfo"></span>
@@ -124,7 +124,7 @@
           <dd style="text-align: center;"><a href="javascript:;" id="navLogout">Đăng xuất</a></dd>
         </dl>
       </li>
-      <li class="layui-nav-item" lay-header-event="menuRight" lay-unselect>
+      <li class="layui-nav-item" lay-header-event="menuRight">
         <a href="javascript:;">
           <i class="layui-icon layui-icon-more-vertical"></i>
         </a>
@@ -409,6 +409,31 @@
           document.exitFullscreen();
           fsIcon.className = 'layui-icon layui-icon-screen-full';
         }
+      });
+
+      // ── Layer tips cho header buttons ──
+      $('#btnToggle, #btnRefresh, #btnFullscreen').each(function () {
+        var el = this;
+        var tip = el.getAttribute('title');
+        el.removeAttribute('title');
+        $(el).on('mouseenter', function () {
+          layer.tips(tip, el, { tips: [3, '#393D49'], time: 1500 });
+        }).on('mouseleave', function () {
+          layer.closeAll('tips');
+        });
+      });
+
+      // ── Layer tips cho sidebar khi collapsed ──
+      $('.hub-sidebar .layui-nav-item > a').each(function () {
+        var el = this;
+        var tip = $(el).find('span').text();
+        if (!tip) return;
+        $(el).on('mouseenter', function () {
+          if (!document.body.classList.contains('hub-collapsed')) return;
+          layer.tips(tip, el, { tips: [2, '#393D49'], time: 1500 });
+        }).on('mouseleave', function () {
+          layer.closeAll('tips');
+        });
       });
 
       // Auto-load trang đầu tiên
