@@ -10,3 +10,5 @@ blockquote,body,button,dd,div,dl,dt,form,h1,h2,h3,h4,h5,h6,input,li,ol,p,pre,td,
 .layui-table th{background:#f2f2f2!important}
 .layui-elem-field{margin-left:0!important;margin-right:0!important}
 .layui-table td,.layui-table th,.layui-table-view,.layui-table-col-set,.layui-table-fixed-r,.layui-table-grid-down,.layui-table-mend,.layui-table-page,.layui-table-total,.layui-table-tips-main,.layui-table[lay-skin=line],.layui-table[lay-skin=row],.layui-table-column,.layui-table-tool .layui-inline[lay-event]{border-color:#e6e6e6!important}
+.layui-input[readonly]{text-align:center;padding-left:10px!important;padding-right:10px!important}
+.layui-laydate-preview{color:#16b777!important}

@@ -1,4 +1,19 @@
 /**
+ * Passive event listener patch
+ * Tắt Chrome [Violation] warning cho touchstart/touchmove/mousewheel
+ */
+(function () {
+  var PASSIVE_EVENTS = ['touchstart', 'touchmove', 'mousewheel', 'wheel'];
+  var orig = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, fn, opts) {
+    if (PASSIVE_EVENTS.indexOf(type) !== -1 && typeof opts !== 'object') {
+      opts = { capture: !!opts, passive: true };
+    }
+    return orig.call(this, type, fn, opts);
+  };
+})();
+
+/**
  * Hub API — fetch wrapper cho frontend
  * Gọi backend proxy → ee88
  */
@@ -28,8 +43,7 @@ const HubAPI = {
     }
 
     return res.json();
-  }
-},
+  },
 
   /**
    * Single-panel date range picker (1 bảng lịch, chọn khoảng ngày)

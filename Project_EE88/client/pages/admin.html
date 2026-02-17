@@ -8,6 +8,26 @@
   <style>
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
+    /* ── Logo ── */
+    .hub-logo {
+      position: fixed;
+      top: 0; left: 0;
+      width: 200px;
+      height: 50px;
+      line-height: 50px;
+      background: #20222A;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      z-index: 101;
+      transition: width .3s;
+    }
+    .hub-logo .layui-icon { font-size: 26px; color: #ff4d4f; margin-right: 8px; vertical-align: middle; }
+    .hub-logo span { vertical-align: middle; transition: opacity .3s; }
+
     /* ── Header ── */
     .hub-header {
       height: 50px;
@@ -15,13 +35,31 @@
       color: #fff;
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      font-size: 16px;
-      font-weight: bold;
+      padding: 0 15px;
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0; left: 200px; right: 0;
       z-index: 100;
+      transition: left .3s;
     }
+    .hub-header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .hub-header-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      color: #ccc;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all .2s;
+    }
+    .hub-header-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+    .hub-header-btn .layui-icon { font-size: 18px; }
 
     /* ── Sidebar ── */
     .hub-sidebar {
@@ -32,6 +70,7 @@
       width: 200px;
       background: #2F3241;
       overflow-y: auto;
+      transition: width .3s;
     }
     .hub-sidebar .layui-nav {
       background: transparent;
@@ -57,7 +96,23 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: left .3s;
     }
+
+    /* ── Collapsed ── */
+    .hub-sidebar .layui-nav-item > a > span { transition: opacity .3s; }
+    body.hub-collapsed .hub-logo { width: 60px; }
+    body.hub-collapsed .hub-logo .layui-icon { margin-right: 0 !important; font-size: 28px; }
+    body.hub-collapsed .hub-logo span { display: none; }
+    body.hub-collapsed .hub-header { left: 60px; }
+    body.hub-collapsed .hub-sidebar { width: 60px; }
+    body.hub-collapsed .hub-body { left: 60px; }
+    body.hub-collapsed .hub-sidebar .layui-nav.layui-nav-tree { width: 60px; }
+    body.hub-collapsed .hub-sidebar .layui-nav-item > a > span { display: none; }
+    body.hub-collapsed .hub-sidebar .layui-nav-item > a > .layui-icon:first-child { width: 100%; margin-right: 0 !important; text-align: center; font-size: 20px; }
+    body.hub-collapsed .hub-sidebar .layui-nav-more { display: none !important; }
+    body.hub-collapsed .hub-sidebar .layui-nav-child { display: none !important; }
+    body.hub-collapsed .hub-sidebar .layui-nav-item > a { padding-left: 0; padding-right: 0; text-align: center; }
 
     /* ── Tabs ── */
     .hub-body .layui-tab {
@@ -93,10 +148,19 @@
 </head>
 <body>
 
+  <!-- Logo -->
+  <div class="hub-logo">
+    <i class="layui-icon layui-icon-firefox"></i><span>Agent Hub</span>
+  </div>
+
   <!-- Header -->
   <div class="hub-header">
-    <i class="layui-icon layui-icon-home" style="margin-right: 8px; font-size: 20px;"></i>
-    Agent Hub
+    <a class="hub-header-btn" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
+    <a class="hub-header-btn" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
+    <div class="hub-header-right">
+      <a class="hub-header-btn" id="btnCloseAll" title="Đóng tất cả tab"><i class="layui-icon layui-icon-close"></i></a>
+      <a class="hub-header-btn" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
+    </div>
   </div>
 
   <!-- Sidebar -->
@@ -105,7 +169,7 @@
       <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i>Quản lí hội viên
+          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i><span>Quản lí hội viên</span>
         </a>
         <dl class="layui-nav-child">
           <dd class="layui-this">
@@ -116,7 +180,7 @@
       <!-- 2. Mã giới thiệu -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i>Mã giới thiệu
+          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i><span>Mã giới thiệu</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -127,7 +191,7 @@
       <!-- 3. Báo cáo -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i>Báo cáo
+          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i><span>Báo cáo</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -144,7 +208,7 @@
       <!-- 4. Rút hoa hồng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i>Rút hoa hồng
+          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i><span>Rút hoa hồng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -158,7 +222,7 @@
       <!-- 5. Đơn cược -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i>Đơn cược
+          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i><span>Đơn cược</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -172,7 +236,7 @@
       <!-- 6. Khách hàng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i>Khách hàng
+          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i><span>Khách hàng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -186,7 +250,7 @@
       <!-- 7. Tỉ lệ hoàn trả -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i>Tỉ lệ hoàn trả
+          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i><span>Tỉ lệ hoàn trả</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
@@ -247,6 +311,45 @@
             delete openedTabs[key];
             break;
           }
+        }
+      });
+
+      // ── Toggle sidebar ──
+      var toggleIcon = document.querySelector('#btnToggle .layui-icon');
+      document.getElementById('btnToggle').addEventListener('click', function () {
+        var collapsed = document.body.classList.toggle('hub-collapsed');
+        if (collapsed) {
+          toggleIcon.className = 'layui-icon layui-icon-spread-left';
+          document.querySelectorAll('.hub-sidebar .layui-nav-itemed').forEach(function (el) { el.classList.remove('layui-nav-itemed'); });
+        } else {
+          toggleIcon.className = 'layui-icon layui-icon-shrink-right';
+        }
+      });
+
+      // ── Refresh tab hiện tại ──
+      document.getElementById('btnRefresh').addEventListener('click', function () {
+        var active = document.querySelector('.hub-body .layui-tab-item.layui-show iframe');
+        if (active) active.contentWindow.location.reload();
+      });
+
+      // ── Đóng tất cả tab ──
+      document.getElementById('btnCloseAll').addEventListener('click', function () {
+        document.querySelectorAll('.layui-tab-title li').forEach(function (li) {
+          var id = li.getAttribute('lay-id');
+          if (id) element.tabDelete('hub-tabs', id);
+        });
+        openedTabs = {};
+      });
+
+      // ── Fullscreen ──
+      var fsIcon = document.querySelector('#btnFullscreen .layui-icon');
+      document.getElementById('btnFullscreen').addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+          fsIcon.className = 'layui-icon layui-icon-screen-restore';
+        } else {
+          document.exitFullscreen();
+          fsIcon.className = 'layui-icon layui-icon-screen-full';
         }
       });
 
