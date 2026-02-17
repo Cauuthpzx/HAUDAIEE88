@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Hub — Quản lý</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+
+    /* ── Header ── */
+    .hub-header {
+      height: 50px;
+      background: #20222A;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-size: 16px;
+      font-weight: bold;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+    }
+
+    /* ── Sidebar ── */
+    .hub-sidebar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      bottom: 0;
+      width: 200px;
+      background: #2F3241;
+      overflow-y: auto;
+    }
+    .hub-sidebar .layui-nav {
+      background: transparent;
+      width: 100%;
+    }
+    .hub-sidebar .layui-nav .layui-nav-item a {
+      color: #ccc;
+    }
+    .hub-sidebar .layui-nav .layui-nav-item a:hover,
+    .hub-sidebar .layui-nav .layui-this a {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+    }
+    .hub-sidebar .layui-nav-bar { display: none; }
+
+    /* ── Body ── */
+    .hub-body {
+      position: fixed;
+      top: 50px;
+      left: 200px;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Tabs ── */
+    .hub-body .layui-tab {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .hub-body .layui-tab-title {
+      background: #fff;
+      border-bottom: 1px solid #e6e6e6;
+      height: 40px;
+      line-height: 40px;
+    }
+    .hub-body .layui-tab-title li {
+      line-height: 40px;
+      height: 40px;
+    }
+    .hub-body .layui-tab-content {
+      flex: 1;
+      padding: 0;
+      overflow: hidden;
+    }
+    .hub-body .layui-tab-item {
+      height: 100%;
+    }
+    .hub-body .layui-tab-item iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="hub-header">
+    <i class="layui-icon layui-icon-home" style="margin-right: 8px; font-size: 20px;"></i>
+    Agent Hub
+  </div>
+
+  <!-- Sidebar -->
+  <div class="hub-sidebar">
+    <ul class="layui-nav layui-nav-tree" lay-filter="hub-menu">
+      <li class="layui-nav-item layui-nav-itemed">
+        <a href="javascript:;">Đại lý</a>
+        <dl class="layui-nav-child">
+          <dd class="layui-this">
+            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Hội viên">
+              <i class="layui-icon layui-icon-user" style="margin-right: 6px;"></i>Hội viên
+            </a>
+          </dd>
+        </dl>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Body -->
+  <div class="hub-body">
+    <div class="layui-tab layui-tab-brief" lay-filter="hub-tabs" lay-allowclose="true">
+      <ul class="layui-tab-title"></ul>
+      <div class="layui-tab-content"></div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script>
+    layui.use(['element'], function () {
+      var element = layui.element;
+      var openedTabs = {};
+
+      // Click menu → mở tab hoặc chuyển sang tab đã mở
+      element.on('nav(hub-menu)', function (elem) {
+        var url = elem.attr('data-url');
+        var title = elem.attr('data-title');
+        if (!url) return;
+
+        if (openedTabs[url]) {
+          // Tab đã mở → chuyển sang
+          element.tabChange('hub-tabs', url);
+        } else {
+          // Mở tab mới
+          element.tabAdd('hub-tabs', {
+            title: title,
+            content: '<iframe src="' + url + '" frameborder="0"></iframe>',
+            id: url
+          });
+          openedTabs[url] = true;
+          element.tabChange('hub-tabs', url);
+        }
+
+        document.title = 'Agent Hub — ' + (title || '');
+      });
+
+      // Xoá tab → dọn dẹp
+      element.on('tabDelete(hub-tabs)', function (data) {
+        var tabs = document.querySelectorAll('.layui-tab-title li');
+        // Tìm url của tab bị xoá từ lay-id
+        for (var key in openedTabs) {
+          var found = false;
+          tabs.forEach(function (li) {
+            if (li.getAttribute('lay-id') === key) found = true;
+          });
+          if (!found) {
+            delete openedTabs[key];
+            break;
+          }
+        }
+      });
+
+      // Auto-load trang đầu tiên
+      var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-url]');
+      if (firstLink) firstLink.click();
+    });
+  </script>
+</body>
+</html>

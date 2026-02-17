@@ -1,0 +1,53 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 67,
+  "data": [
+    {
+      "id": 38538364,
+      "uid": 2242539,
+      "user_parent": 1758915,
+      "date": "2026-02-17",
+      "deposit_count": 1,
+      "deposit_amount": "100000.0000",
+      "withdrawal_count": 0,
+      "withdrawal_amount": "0.0000",
+      "charge_fee": "0.0000",
+      "agent_commission": "0.0000",
+      "promotion": "0.0000",
+      "third_rebate": "72176.0000",
+      "username": "minhdao0808",
+      "user_parent_format": "dian88",
+      "third_activity_amount": 0
+    },
+    {
+      "id": 38538401,
+      "uid": 2078656,
+      "user_parent": 1758915,
+      "date": "2026-02-17",
+      "deposit_count": 2,
+      "deposit_amount": "600000.0000",
+      "withdrawal_count": 1,
+      "withdrawal_amount": "500000.0000",
+      "charge_fee": "0.0000",
+      "agent_commission": "0.0000",
+      "promotion": "150000.0000",
+      "third_rebate": "0.0000",
+      "username": "vanti22",
+      "user_parent_format": "dian88",
+      "third_activity_amount": 0
+    }
+  ],
+  "total_data": {
+    "total_deposit_count": "11",
+    "total_deposit_amount": "3882400.0000",
+    "total_withdrawal_count": "5",
+    "total_withdrawal_amount": "4724303.0000",
+    "total_charge_fee": "7600.0000",
+    "total_agent_commission": "0.0000",
+    "total_promotion": "1230164.0000",
+    "total_third_rebate": "4949200.1380",
+    "third_activity_amount": 0
+  },
+  "hsDateTime": "2026-02-17 10:00:00"
+}

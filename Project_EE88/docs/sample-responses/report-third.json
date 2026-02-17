@@ -1,0 +1,38 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 44,
+  "data": [
+    {
+      "uid": 1174048,
+      "platform_id": 46,
+      "t_bet_amount": "489000.0000",
+      "t_bet_times": "960",
+      "t_turnover": "489000.0000",
+      "t_prize": "383800.0000",
+      "t_win_lose": "-105200.0000",
+      "username": "hung0346114566",
+      "platform_id_name": "JILI"
+    },
+    {
+      "uid": 2078656,
+      "platform_id": 71,
+      "t_bet_amount": "1500000.0000",
+      "t_bet_times": "250",
+      "t_turnover": "1500000.0000",
+      "t_prize": "1380000.0000",
+      "t_win_lose": "-120000.0000",
+      "username": "vanti22",
+      "platform_id_name": "AE"
+    }
+  ],
+  "total_data": {
+    "total_bet_amount": "28451533.0000",
+    "total_turnover": "28201533.0000",
+    "total_prize": "29953316.1762",
+    "total_win_lose": "1501783.1761",
+    "total_bet_times": "12975",
+    "total_bet_number": 33
+  },
+  "hsDateTime": "2026-02-17 10:00:00"
+}

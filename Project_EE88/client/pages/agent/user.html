@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hội viên</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    .layui-field-box .layui-inline { margin-bottom: 8px; }
+    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Toolbar template ── -->
+  <script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-group">
+      <button class="layui-btn layui-btn-xs" lay-event="addMember">
+        <i class="layui-icon layui-icon-addition"></i>Thêm hội viên
+      </button>
+      <button class="layui-btn layui-btn-xs" lay-event="addAgent">
+        <i class="layui-icon layui-icon-addition"></i>Đại lý mới thêm
+      </button>
+    </div>
+  </script>
+
+  <!-- ── Thao tác từng dòng ── -->
+  <script type="text/html" id="rowActionTpl">
+    <button class="layui-btn layui-btn-xs" lay-event="rebate">Cài đặt hoàn trả</button>
+  </script>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div class="layui-card">
+        <div class="layui-form layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend>Quản lí hội viên thuộc cấp</legend>
+            <div class="layui-field-box">
+              <form class="layui-form" lay-filter="searchForm">
+                <div class="layui-inline">
+                  <label>Tên tài khoản：</label>
+                  <div style="width:200px;" class="layui-input-inline">
+                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Thời gian nạp đầu：</label>
+                  <div style="width:290px;" class="layui-input-inline">
+                    <input type="text" name="first_deposit_time" id="firstDepositTime" placeholder="Thời gian bắt đầu - Thời gian kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Trạng thái：</label>
+                  <div class="layui-input-inline">
+                    <select name="status" lay-filter="status" lay-search>
+                      <option value="">Chọn</option>
+                      <option value="0">Chưa đánh giá</option>
+                      <option value="1">Bình thường</option>
+                      <option value="2">Đóng băng</option>
+                      <option value="3">Khoá</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Sắp xếp theo trường：</label>
+                  <div style="width:150px;" class="layui-input-inline">
+                    <select name="sort_field" lay-filter="sort_field" lay-search>
+                      <option value="">Chọn</option>
+                      <option value="money">Số dư</option>
+                      <option value="login_time">Lần đăng nhập cuối</option>
+                      <option value="register_time">Thời gian đăng ký</option>
+                      <option value="deposit_money">Tổng tiền nạp</option>
+                      <option value="withdrawal_money">Tổng tiền rút</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Sắp xếp theo hướng：</label>
+                  <div style="width:150px;" class="layui-input-inline">
+                    <select name="sort_direction" lay-filter="sort_direction" lay-search>
+                      <option value="desc" selected>Từ lớn đến bé</option>
+                      <option value="asc">Từ bé đến lớn</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> Tìm kiếm</button>
+                </div>
+                <div class="layui-inline">
+                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> Đặt lại</button>
+                </div>
+              </form>
+            </div>
+          </fieldset>
+        </div>
+        <div class="layui-card-body">
+          <table id="memberTable" lay-filter="memberTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'laydate'], function () {
+      var table = layui.table;
+      var form = layui.form;
+      var laydate = layui.laydate;
+
+      // ── Date range picker ──
+      laydate.render({
+        elem: '#firstDepositTime',
+        type: 'datetime',
+        range: '|'
+      });
+
+      // ── Khởi tạo bảng ──
+      table.render({
+        elem: '#memberTable',
+        url: '/api/data/members',
+        method: 'get',
+        toolbar: '#toolbarTpl',
+        defaultToolbar: ['filter', 'print', 'exports'],
+        page: true,
+        limit: 10,
+        text: { none: 'Không có dữ liệu' },
+        parseData: function (res) {
+          return {
+            code: res.code === 0 ? 0 : 1,
+            msg: res.msg || '',
+            count: res.count || 0,
+            data: res.data || []
+          };
+        },
+        request: {
+          pageName: 'page',
+          limitName: 'limit'
+        },
+        cols: [[
+          // ── Hiển thị mặc định ──
+          { field: 'username', title: 'Hội viên', width: 150, fixed: 'left' },
+          { field: 'type_format', title: 'Loại hình hội viên', width: 130 },
+          { field: 'parent_user', title: 'Tài khoản đại lý', width: 150 },
+          { field: 'money', title: 'Số dư', width: 150 },
+          { field: 'deposit_count', title: 'Lần nạp', width: 80 },
+          { field: 'withdrawal_count', title: 'Lần rút', width: 80 },
+          { field: 'deposit_amount', title: 'Tổng tiền nạp', width: 130 },
+          { field: 'withdrawal_amount', title: 'Tổng tiền rút', width: 130 },
+          { field: 'login_time', title: 'Lần đăng nhập cuối', width: 160 },
+          { field: 'register_time', title: 'Thời gian đăng ký', width: 160 },
+          { field: 'status_format', title: 'Trạng thái', width: 100 },
+          // ── Ẩn mặc định (bật qua nút lọc) ──
+          { field: 'id', title: 'ID', width: 90, hide: true },
+          { field: 'truename', title: 'Họ tên', width: 150, hide: true },
+          { field: 'phone', title: 'Điện thoại', width: 120, hide: true },
+          { field: 'email', title: 'Email', width: 180, hide: true },
+          { field: 'invite_code', title: 'Mã mời', width: 100, hide: true },
+          { field: 'device', title: 'Thiết bị', width: 100, hide: true },
+          { field: 'login_ip', title: 'IP đăng nhập', width: 150, hide: true },
+          { field: 'first_deposit_time', title: 'Thời gian nạp đầu', width: 160, hide: true },
+          { field: 'level', title: 'Cấp độ', width: 80, hide: true },
+          { field: 'group_id', title: 'Nhóm', width: 80, hide: true },
+          { field: 'agent_type', title: 'Loại đại lý', width: 100, hide: true },
+          { field: 'is_tester', title: 'Thử nghiệm', width: 100, hide: true },
+          { field: 'phone_verified', title: 'XM điện thoại', width: 110, hide: true },
+          { field: 'email_verified', title: 'XM email', width: 100, hide: true },
+          { field: 'useragent', title: 'User Agent', width: 250, hide: true },
+          { field: 'create_time', title: 'Thời gian tạo', width: 160, hide: true },
+          { field: 'update_time', title: 'Cập nhật cuối', width: 160, hide: true },
+          { field: 'remark', title: 'Ghi chú', width: 150, hide: true },
+          { field: 'note', title: 'Ghi chú thêm', width: 150, hide: true },
+          { field: 'user_tree', title: 'Cây đại lý', width: 150, hide: true },
+          { fixed: 'right', title: 'Thao tác', width: 130, toolbar: '#rowActionTpl' }
+        ]],
+        done: function (res) {
+          console.log('[user.html] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' hội viên');
+        }
+      });
+
+      // ── Toolbar events ──
+      table.on('toolbar(memberTable)', function (obj) {
+        switch (obj.event) {
+          case 'addMember':
+            layui.layer.msg('Chức năng thêm hội viên — đang phát triển');
+            break;
+          case 'addAgent':
+            layui.layer.msg('Chức năng đại lý mới thêm — đang phát triển');
+            break;
+        }
+      });
+
+      // ── Row action events ──
+      table.on('tool(memberTable)', function (obj) {
+        if (obj.event === 'rebate') {
+          layui.layer.msg('Cài đặt hoàn trả cho: ' + obj.data.username + ' — đang phát triển');
+        }
+      });
+
+      // ── Tìm kiếm ──
+      form.on('submit(doSearch)', function (data) {
+        table.reload('memberTable', {
+          where: data.field,
+          page: { curr: 1 }
+        });
+        return false;
+      });
+
+      // ── Đặt lại ──
+      document.getElementById('btnReset').addEventListener('click', function () {
+        setTimeout(function () {
+          form.render('select');
+          document.getElementById('firstDepositTime').value = '';
+          table.reload('memberTable', {
+            where: { username: '', first_deposit_time: '', status: '', sort_field: '', sort_direction: 'desc' },
+            page: { curr: 1 }
+          });
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>

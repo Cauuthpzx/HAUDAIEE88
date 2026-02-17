@@ -1,0 +1,46 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 2,
+  "data": [
+    {
+      "uid": 2078656,
+      "lottery_id": "47",
+      "bet_count": "2",
+      "bet_amount": "300000.0000",
+      "valid_amount": "300000.0000",
+      "rebate_amount": "0.0000",
+      "result": "-100100.0000",
+      "win_lose": "-100100.0000",
+      "prize": "199900.0000",
+      "username": "vanti22",
+      "user_parent_format": "dian88",
+      "lottery_name": "Miền Bắc VIP 45 giây"
+    },
+    {
+      "uid": 2242539,
+      "lottery_id": "101",
+      "bet_count": "29",
+      "bet_amount": "3081000.0000",
+      "valid_amount": "3081000.0000",
+      "rebate_amount": "0.0000",
+      "result": "-195500.0000",
+      "win_lose": "-195500.0000",
+      "prize": "2885500.0000",
+      "username": "minhdao0808",
+      "user_parent_format": "dian88",
+      "lottery_name": "Hà Nội"
+    }
+  ],
+  "total_data": {
+    "total_bet_count": "31",
+    "total_bet_amount": "3381000.0000",
+    "total_valid_amount": "3381000.0000",
+    "total_rebate_amount": "0.0000",
+    "total_result": "-295600.0000",
+    "total_win_lose": "-295600.0000",
+    "total_prize": "3085400.0000",
+    "total_bet_number": 2
+  },
+  "hsDateTime": "2026-02-17 10:00:00"
+}

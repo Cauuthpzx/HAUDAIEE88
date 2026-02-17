@@ -1,0 +1,60 @@
+{
+  "code": 1,
+  "data": [
+    {
+      "series_id": 1,
+      "series_name": "Miền Bắc",
+      "lotteries": [
+        {
+          "lottery_id": 101,
+          "lottery_name": "Hà Nội",
+          "play_types": [
+            {
+              "play_type_id": 1,
+              "play_type_name": "Bao lô",
+              "plays": [
+                {
+                  "play_id": 1,
+                  "play_name": "Lô 2 số",
+                  "odds": "99.5",
+                  "rebate": "9.2"
+                },
+                {
+                  "play_id": 2,
+                  "play_name": "Lô 3 số",
+                  "odds": "960.0",
+                  "rebate": "9.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "series_id": 2,
+      "series_name": "Miền Nam",
+      "lotteries": [
+        {
+          "lottery_id": 201,
+          "lottery_name": "Hồ Chí Minh",
+          "play_types": [
+            {
+              "play_type_id": 1,
+              "play_type_name": "Bao lô",
+              "plays": [
+                {
+                  "play_id": 1,
+                  "play_name": "Lô 2 số",
+                  "odds": "99.5",
+                  "rebate": "9.2"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hsDateTime": "2026-02-17 10:00:00"
+}

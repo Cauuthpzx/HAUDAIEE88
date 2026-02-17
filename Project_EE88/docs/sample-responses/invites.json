@@ -1,0 +1,24 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 1,
+  "data": [
+    {
+      "id": 111605,
+      "uid": 1758915,
+      "invite_code": "1278537",
+      "group_id": 0,
+      "user_type": "Hội viên thường",
+      "rebate_arr": "{\"1\": {\"value\": 10, \"series_id\": \"1\"}, \"2\": {\"value\": 10, \"series_id\": \"2\"}, \"3\": {\"value\": 10, \"series_id\": \"3\"}, \"6\": {\"value\": 10, \"series_id\": \"6\"}, \"7\": {\"value\": 10, \"series_id\": \"7\"}}",
+      "reg_count": 20793,
+      "remark": "",
+      "create_time": "2025-06-15 10:00:00",
+      "update_time": "2026-02-17 09:30:00",
+      "recharge_count": 15420,
+      "first_recharge_count": 8200,
+      "register_recharge_count": 12500,
+      "scope_reg_count": 20793
+    }
+  ],
+  "hsDateTime": "2026-02-17 10:00:00"
+}

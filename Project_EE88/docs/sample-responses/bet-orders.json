@@ -1,0 +1,40 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 13138,
+  "data": [
+    {
+      "id": 4954145284,
+      "uid": 1847368,
+      "platform_id": 71,
+      "cid": 1,
+      "serial_no": "BAC-96733489215",
+      "bet_amount": "77000.0000",
+      "turnover": "77000.0000",
+      "prize": "0.0000",
+      "win_lose": "-77000.0000",
+      "bet_time": "2026-02-17 03:06:42",
+      "game_name": "Baccarat Classic",
+      "platform_id_name": "AE",
+      "c_name": "Casino",
+      "platform_username": "lttvanbinh92"
+    },
+    {
+      "id": 4954145300,
+      "uid": 2078656,
+      "platform_id": 46,
+      "cid": 2,
+      "serial_no": "JILI-20260217-001234",
+      "bet_amount": "5000.0000",
+      "turnover": "5000.0000",
+      "prize": "12500.0000",
+      "win_lose": "7500.0000",
+      "bet_time": "2026-02-17 08:30:00",
+      "game_name": "Super Ace",
+      "platform_id_name": "JILI",
+      "c_name": "Slot Game",
+      "platform_username": "ee88_vanti22"
+    }
+  ],
+  "hsDateTime": "2026-02-17 10:00:00"
+}

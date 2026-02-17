@@ -1,0 +1,24 @@
+{
+  "code": 0,
+  "msg": "",
+  "count": 2,
+  "data": [
+    {
+      "id": 201,
+      "is_default": 1,
+      "bank": "Vietcombank",
+      "branch": "Hồ Chí Minh",
+      "card_number": "1234567890123",
+      "create_time": "2025-11-20 08:00:00"
+    },
+    {
+      "id": 202,
+      "is_default": 0,
+      "bank": "Techcombank",
+      "branch": "Hà Nội",
+      "card_number": "9876543210987",
+      "create_time": "2026-01-05 16:45:00"
+    }
+  ],
+  "hsDateTime": "2026-02-17 10:00:00"
+}
