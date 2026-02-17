@@ -14,9 +14,9 @@ var HubLang = (function () {
   var DEFAULT_LANG = 'vi';
 
   var LANGS = {
-    vi:      { label: 'Tiếng Việt', flag: '🇻🇳' },
-    en:      { label: 'English',    flag: '🇺🇸' },
-    'zh-CN': { label: '中文',       flag: '🇨🇳' }
+    vi:      { label: 'Tiếng Việt', short: 'VN', flag: '/images/vn.gif' },
+    en:      { label: 'English',    short: 'EN', flag: '/images/uk.gif' },
+    'zh-CN': { label: '中文',       short: 'CN', flag: '/images/china.gif' }
   };
 
   // ── App-specific messages ──

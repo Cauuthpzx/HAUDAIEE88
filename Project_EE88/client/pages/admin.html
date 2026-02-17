@@ -86,6 +86,8 @@
       height: 100%;
       border: none;
     }
+    /* ── Flag icon ── */
+    .hub-flag { display: inline-block; width: 20px; height: 14px; vertical-align: middle; margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -110,11 +112,11 @@
     </ul>
     <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
       <li class="layui-nav-item" id="navLang">
-        <a href="javascript:;"><i class="layui-icon layui-icon-website" style="margin-right: 4px;"></i><span id="langLabel"></span></a>
+        <a href="javascript:;"><img id="langFlag" class="hub-flag" src=""><span id="langLabel" style="vertical-align:middle;"></span></a>
         <dl class="layui-nav-child">
-          <dd><a href="javascript:;" data-lang="vi">🇻🇳 Tiếng Việt</a></dd>
-          <dd><a href="javascript:;" data-lang="en">🇺🇸 English</a></dd>
-          <dd><a href="javascript:;" data-lang="zh-CN">🇨🇳 中文</a></dd>
+          <dd><a href="javascript:;" data-lang="vi"><img src="/images/vn.gif" class="hub-flag"><span style="vertical-align:middle;">Tiếng Việt</span></a></dd>
+          <dd><a href="javascript:;" data-lang="en"><img src="/images/uk.gif" class="hub-flag"><span style="vertical-align:middle;">English</span></a></dd>
+          <dd><a href="javascript:;" data-lang="zh-CN"><img src="/images/china.gif" class="hub-flag"><span style="vertical-align:middle;">中文</span></a></dd>
         </dl>
       </li>
       <li class="layui-nav-item">
@@ -297,7 +299,8 @@
         HubLang.applyDOM();
         var lang = HubLang.getLang();
         var info = HubLang.LANGS[lang];
-        document.getElementById('langLabel').textContent = info ? info.label : lang;
+        document.getElementById('langLabel').textContent = info ? info.short : lang;
+        document.getElementById('langFlag').src = info ? info.flag : '';
         $('[data-title-i18n]').each(function () {
           $(this).attr('data-title', HubLang.t($(this).attr('data-title-i18n')));
         });
