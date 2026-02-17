@@ -102,14 +102,14 @@
   <!-- Sidebar -->
   <div class="hub-sidebar">
     <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
-      <!-- 1. Quản lí hội viên thuộc cấp -->
+      <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i>Quản lí hội viên thuộc cấp
+          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i>Quản lí hội viên
         </a>
         <dl class="layui-nav-child">
           <dd class="layui-this">
-            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Danh sách hội viên">Danh sách hội viên</a>
+            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Hội viên">Hội viên</a>
           </dd>
         </dl>
       </li>
@@ -120,7 +120,7 @@
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/inviteList.html" data-title="Danh sách mã giới thiệu">Danh sách mã giới thiệu</a>
+            <a href="javascript:;" data-url="/pages/agent/inviteList.html" data-title="Mã giới thiệu">Mã giới thiệu</a>
           </dd>
         </dl>
       </li>
@@ -131,13 +131,13 @@
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/reportLottery.html" data-title="Báo cáo xổ số">Báo cáo xổ số</a>
+            <a href="javascript:;" data-url="/pages/agent/reportLottery.html" data-title="BC xổ số">BC xổ số</a>
           </dd>
           <dd>
             <a href="javascript:;" data-url="/pages/agent/reportFunds.html" data-title="Sao kê giao dịch">Sao kê giao dịch</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/reportThirdGame.html" data-title="Báo cáo nhà cung cấp">Báo cáo nhà cung cấp</a>
+            <a href="javascript:;" data-url="/pages/agent/reportThirdGame.html" data-title="BC nhà cung cấp">BC nhà cung cấp</a>
           </dd>
         </dl>
       </li>
@@ -148,21 +148,49 @@
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/depositAndWithdrawal.html" data-title="Danh sách nạp tiền">Danh sách nạp tiền</a>
+            <a href="javascript:;" data-url="/pages/agent/depositAndWithdrawal.html" data-title="Nạp tiền">Nạp tiền</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/withdrawalsRecord.html" data-title="Lịch sử rút tiền">Lịch sử rút tiền</a>
+            <a href="javascript:;" data-url="/pages/agent/withdrawalsRecord.html" data-title="Rút tiền">Rút tiền</a>
           </dd>
         </dl>
       </li>
-      <!-- 5. Quản lí đơn cược -->
+      <!-- 5. Đơn cược -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i>Quản lí đơn cược
+          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i>Đơn cược
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/betOrder.html" data-title="Đơn cược bên thứ 3">Đơn cược bên thứ 3</a>
+            <a href="javascript:;" data-url="/pages/agent/bet.html" data-title="Đơn cược xổ số">Đơn cược xổ số</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/betOrder.html" data-title="Cược bên thứ 3">Cược bên thứ 3</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 6. Khách hàng -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i>Khách hàng
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/editPassword.html" data-title="Đổi MK đăng nhập">Đổi MK đăng nhập</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/editFundPassword.html" data-title="Đổi MK giao dịch">Đổi MK giao dịch</a>
+          </dd>
+        </dl>
+      </li>
+      <!-- 7. Tỉ lệ hoàn trả -->
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i>Tỉ lệ hoàn trả
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/agent/getRebateOddsPanel.html" data-title="Tỉ lệ hoàn trả">Tỉ lệ hoàn trả</a>
           </dd>
         </dl>
       </li>

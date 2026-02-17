@@ -5,6 +5,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const { createLogger, accessLogStream, LOG_DIR } = require('./utils/logger');
 const proxyRoutes = require('./routes/proxy');
+const actionRoutes = require('./routes/action');
 
 const log = createLogger('server');
 const app = express();
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 
 // ── Routes ──
 app.use('/api/data', proxyRoutes);
+app.use('/api/action', actionRoutes);
 
 app.get('/api/health', (req, res) => {
   log.ok('Kiểm tra sức khoẻ: OK');

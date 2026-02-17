@@ -10,7 +10,7 @@
 **Base URL**: `https://a2u4k.ee88dly.com`
 **Xác thực**: Cookie `PHPSESSID` (lấy từ quá trình login)
 **Method**: Tất cả endpoint đều dùng `POST`
-**Params**: Gửi qua query string (URL params), KHÔNG phải request body
+**Params**: Data endpoints gửi qua query string; Action endpoints (Nhóm 1b) gửi qua POST body (form-urlencoded)
 **Response format**: JSON
 
 ---
@@ -76,7 +76,17 @@ Khi cookie hết hạn, ee88 trả về:
 | `members` | `/agent/user.html`               | Danh sách hội viên |
 | `invites` | `/agent/inviteList.html`         | Mã mời            |
 | `banks`   | `/agent/bankList.html`           | Thẻ ngân hàng     |
-| `rebate`  | `/agent/getRebateOddsPanel.html` | Bảng hoàn trả     |
+
+### Nhóm 1b: Action endpoints (POST body, không phải query string)
+
+| Key                  | URL                              | Mô tả                        |
+| -------------------- | -------------------------------- | ----------------------------- |
+| `getLottery`         | `/agent/getLottery`              | Lấy danh sách series + xổ số |
+| `getRebateOddsPanel` | `/agent/getRebateOddsPanel`     | Bảng tỉ lệ hoàn trả          |
+| `editPassword`       | `/agent/editPassword`           | Đổi mật khẩu đăng nhập       |
+| `editFundPassword`   | `/agent/editFundPassword`       | Đổi mật khẩu rút tiền        |
+
+> **Lưu ý:** Nhóm 1b gửi params qua POST body (form-urlencoded), KHÔNG qua query string. Success code = `1` (không phải 0). Proxy qua `/api/action/:action`.
 
 ### Nhóm 2: Date filter qua param `date` (format: `YYYY-MM-DD | YYYY-MM-DD`)
 

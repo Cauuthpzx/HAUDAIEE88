@@ -1,4 +1,7 @@
 node_modules/
 server/.env
 server/logs/
+dist/
 *.db
+*.xlsx
+~$*

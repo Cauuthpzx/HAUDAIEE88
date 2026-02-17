@@ -1,7 +1,7 @@
-# Chi tiết 11 Endpoint ee88
+# Chi tiết 13 Endpoint ee88
 
 > Base URL: `https://a2u4k.ee88dly.com`
-> Method: POST, params qua query string
+> Method: POST — Data endpoints gửi params qua query string, Action endpoints gửi qua POST body
 > Verified: 2026-02-17 (test thực tế với PHPSESSID)
 
 ---
@@ -73,17 +73,156 @@ POST /agent/bankList.html?page=1&limit=500
 
 ## 4. rebate — Bảng hoàn trả
 
+> **LƯU Ý:** Nhóm endpoint này dùng 2 API hỗ trợ nhau, cả 2 đều POST với body form-urlencoded (KHÔNG phải query string). Success code = `1` (không phải 0). **Không cache** vào DB.
+
+### 4a. getLottery — Lấy danh sách xổ số
+
 ```
-POST /agent/getRebateOddsPanel.html
+POST /agent/getLottery
+Content-Type: application/x-www-form-urlencoded
+Body: type=init
 ```
 
-**LƯU Ý:** Success code = `1` (không phải 0)
+**Body params:**
 
-**Search params:** `type`, `series_id`, `lottery_id`
+| Param       | Kiểu   | Bắt buộc | Mô tả                                              |
+| ----------- | ------ | -------- | --------------------------------------------------- |
+| `type`      | string | Có       | `init` = lần đầu load, `getLottery` = đổi series    |
+| `series_id` | number | Không    | Bắt buộc khi `type=getLottery`, ID series cần lấy   |
 
-**Response:** Cấu trúc đặc biệt (series → lotteries → play_types), không phải data[] table.
+**Response:**
 
-**Không cache** vào DB.
+```json
+{
+  "code": 1,
+  "msg": "",
+  "data": {
+    "seriesData": [
+      { "id": 1, "name": "Miền Nam" },
+      { "id": 2, "name": "Miền Bắc" },
+      { "id": 3, "name": "Miền Trung" },
+      { "id": 6, "name": "Xổ số nhanh" },
+      { "id": 7, "name": "Keno" },
+      { "id": 8, "name": "Xổ số cào" },
+      { "id": 9, "name": "Sicbo" },
+      { "id": 10, "name": "pk" },
+      { "id": 11, "name": "Wingo" }
+    ],
+    "lotteryData": [
+      { "id": 1, "name": "Bạc Liêu", "series_id": 1 },
+      { "id": 2, "name": "Vũng Tàu", "series_id": 1 }
+    ],
+    "tableHead": [
+      { "title": "Kiểu chơi", "field": "odds_11" },
+      { "title": "Hoàn trả 10", "field": "odds_10" }
+    ],
+    "tableBody": [
+      ["Lô 2 Số", 99.5, 99.401, 99.301, "..."],
+      ["Lô 3 Số", 980, 979.02, 978.04, "..."]
+    ],
+    "firsSeriesId": 1,
+    "firsLotteryId": 1
+  }
+}
+```
+
+**Response fields:**
+
+| Field            | Kiểu    | Mô tả                                                         |
+| ---------------- | ------- | -------------------------------------------------------------- |
+| `seriesData`     | array   | Danh sách series xổ số (luôn trả đủ 9 series)                |
+| `seriesData[].id`| number  | ID series                                                      |
+| `seriesData[].name`| string| Tên series (Miền Nam/Bắc/Trung, Xổ số nhanh, Keno...)       |
+| `lotteryData`    | array   | Danh sách xổ số thuộc series đang chọn                        |
+| `lotteryData[].id`| number | ID xổ số                                                      |
+| `lotteryData[].name`| string| Tên xổ số (Bạc Liêu, Miền Bắc VIP 45 giây...)              |
+| `lotteryData[].series_id`| number | ID series mà xổ số thuộc về                           |
+| `tableHead`      | array   | Header bảng tỉ lệ (11 cột: 1 cột tên + 10 cột hoàn trả)    |
+| `tableBody`      | array   | Dữ liệu bảng, mỗi row là array: [tên_kiểu_chơi, odds...]    |
+| `firsSeriesId`   | number  | ID series mặc định đang chọn                                  |
+| `firsLotteryId`  | number  | ID xổ số mặc định đang chọn                                   |
+
+**Ghi chú:**
+- `type=init`: Trả đầy đủ seriesData + lotteryData + tableHead + tableBody cho series đầu tiên
+- `type=getLottery`: Trả lotteryData mới theo `series_id` + tableHead + tableBody cho lottery đầu tiên trong series đó
+- `tableBody` mỗi row: phần tử đầu là tên kiểu chơi (string), 10 phần tử sau là tỉ lệ odds (number)
+- Số lượng kiểu chơi thay đổi theo series (Miền Nam ~40 kiểu, Miền Bắc ~44 kiểu)
+
+### 4b. getRebateOddsPanel — Lấy bảng tỉ lệ hoàn trả theo xổ số
+
+```
+POST /agent/getRebateOddsPanel
+Content-Type: application/x-www-form-urlencoded
+Body: lottery_id=1&series_id=1
+```
+
+**Body params:**
+
+| Param        | Kiểu   | Bắt buộc | Mô tả                           |
+| ------------ | ------ | -------- | -------------------------------- |
+| `lottery_id` | number | Có       | ID xổ số (lấy từ lotteryData)   |
+| `series_id`  | number | Có       | ID series (lấy từ seriesData)    |
+
+**Response:**
+
+```json
+{
+  "code": 1,
+  "msg": "",
+  "data": {
+    "tableHead": [
+      { "title": "Kiểu chơi", "field": "odds_11" },
+      { "title": "Hoàn trả 10", "field": "odds_10" },
+      { "title": "Hoàn trả 9", "field": "odds_9" },
+      { "title": "Hoàn trả 8", "field": "odds_8" },
+      { "title": "Hoàn trả 7", "field": "odds_7" },
+      { "title": "Hoàn trả 6", "field": "odds_6" },
+      { "title": "Hoàn trả 5", "field": "odds_5" },
+      { "title": "Hoàn trả 4", "field": "odds_4" },
+      { "title": "Hoàn trả 3", "field": "odds_3" },
+      { "title": "Hoàn trả 2", "field": "odds_2" },
+      { "title": "Hoàn trả 1", "field": "odds_1" }
+    ],
+    "tableBody": [
+      ["Lô 2 Số", 99.5, 99.401, 99.301, 99.202, 99.102, 99.003, 98.903, 98.804, 98.704, 98.605],
+      ["Lô 3 Số", 980, 979.02, 978.04, 977.06, 976.08, 975.1, 974.12, 973.14, 972.16, 971.18]
+    ]
+  }
+}
+```
+
+**Ghi chú:**
+- Chỉ trả `tableHead` + `tableBody` (không có seriesData/lotteryData)
+- `tableHead` luôn 11 cột: cột đầu "Kiểu chơi", 10 cột hoàn trả giảm dần (10 → 1)
+- `tableBody` mỗi row: `[tên_kiểu_chơi, odds_10, odds_9, ..., odds_1]`
+- Giá trị odds là number (float), không phải string
+- Dùng khi user chọn xổ số khác trong cùng series (không cần gọi lại getLottery)
+
+### Danh sách Series và Lottery IDs (verified)
+
+| Series ID | Tên          | Lottery IDs mẫu                                    |
+| --------- | ------------ | --------------------------------------------------- |
+| 1         | Miền Nam     | 1-17, 42-44, 57-60 (24 xổ số, gồm VIP 45s/1p/90s/2p/5p) |
+| 2         | Miền Bắc     | 32, 45-49 (6 xổ số, gồm VIP nhanh 3p/5p/45s/75s/2p) |
+| 3         | Miền Trung   | (tương tự cấu trúc Miền Nam)                       |
+| 6         | Xổ số nhanh  | (xổ số nhanh VIP)                                   |
+| 7         | Keno         | (Keno games)                                        |
+| 8         | Xổ số cào    | (Scratch lottery)                                   |
+| 9         | Sicbo        | (Sicbo games)                                       |
+| 10        | pk           | (PK games)                                          |
+| 11        | Wingo        | (Wingo games)                                       |
+
+### Kiểu chơi phổ biến (từ tableBody)
+
+Lô: Lô 2 Số, Lô 2 Số 1K, Lô 2 Số Đầu, Lô 3 Số, Lô 4 Số, Lô 2 Số Giải ĐB
+Xiên: Xiên 2, Xiên 3, Xiên 4
+Đề: Đề đầu, Đề đặc biệt, Đề đầu đuôi, Đề đầu đặc biệt, Đề Giải 7, Đề giải nhất, Đề đầu giải nhất
+Đầu/Đuôi: Đầu, Đuôi
+Càng: 3 Càng Đầu, 3 Càng Đặc Biệt, 3 Càng Đầu Đuôi, 3 càng giải nhất, 4 Càng Đặc Biệt
+Trượt xiên: Trượt xiên 4, Trượt xiên 8, Trượt xiên 10
+Khác: Kèo đôi, Đặc sắc-Số Đơn, Đặc sắc-Kèo đôi, Tổng 0-18
+
+**Lưu ý:** Mỗi series/lottery có tập kiểu chơi khác nhau. Miền Bắc có thêm "Lô 2 Số Đầu", "Đề đầu đặc biệt", "Đặc sắc-Số Đơn" mà Miền Nam không có.
 
 ---
 
@@ -275,19 +414,35 @@ POST /agent/betOrder.html?page=1&limit=500&bet_time=2026-02-10 | 2026-02-17
 
 ## Tổng hợp fields count
 
-| # | Endpoint | Fields | Rows (test) | total_data |
-|---|----------|--------|-------------|------------|
-| 1 | members | 43 | 20,793 | Không |
-| 2 | invites | 14 | 1 | Không |
-| 3 | banks | 6 | 0 | Không |
-| 4 | rebate | nested | — | Không |
-| 5 | report-lottery | 12 | 2 | 8 fields |
-| 6 | report-funds | 15 | 67 | 9 fields |
-| 7 | report-third | 9 | 44 | 6 fields |
-| 8 | deposits | 39 | 28 | Không |
-| 9 | withdrawals | 39 | 5 | Không |
-| 10 | bets | 38 | 31 | form_data |
-| 11 | bet-orders | 14 | 13,138 | Không |
+| #  | Endpoint             | Type        | Fields    | Rows (test) | total_data |
+|----|----------------------|-------------|-----------|-------------|------------|
+| 1  | members              | GET proxy   | 43        | 20,793      | Không      |
+| 2  | invites              | GET proxy   | 14        | 1           | Không      |
+| 3  | banks                | GET proxy   | 6         | 0           | Không      |
+| 4a | getLottery           | POST action | nested    | —           | Không      |
+| 4b | getRebateOddsPanel   | POST action | nested    | ~40 rows    | Không      |
+| 5  | report-lottery       | GET proxy   | 12        | 2           | 8 fields   |
+| 6  | report-funds         | GET proxy   | 15        | 67          | 9 fields   |
+| 7  | report-third         | GET proxy   | 9         | 44          | 6 fields   |
+| 8  | deposits             | GET proxy   | 39        | 28          | Không      |
+| 9  | withdrawals          | GET proxy   | 39        | 5           | Không      |
+| 10 | bets                 | GET proxy   | 38        | 31          | form_data  |
+| 11 | bet-orders           | GET proxy   | 14        | 13,138      | Không      |
+
+## Proxy Routes tổng hợp
+
+### GET /api/data/:endpoint (proxy.js)
+Dùng cho endpoints 1-3, 5-11. Params truyền qua query string.
+
+### POST /api/action/:action (action.js)
+Dùng cho endpoints 4a, 4b và các action khác (editPassword, editFundPassword). Params truyền qua POST body (form-urlencoded).
+
+| Action key           | ee88 Path                        | Mô tả                        |
+| -------------------- | -------------------------------- | ----------------------------- |
+| `getLottery`         | `/agent/getLottery`              | Lấy danh sách series + xổ số |
+| `getRebateOddsPanel` | `/agent/getRebateOddsPanel`     | Bảng tỉ lệ hoàn trả          |
+| `editPassword`       | `/agent/editPassword`           | Đổi mật khẩu đăng nhập       |
+| `editFundPassword`   | `/agent/editFundPassword`       | Đổi mật khẩu rút tiền        |
 
 ## Lưu ý chung
 
@@ -297,3 +452,5 @@ POST /agent/betOrder.html?page=1&limit=500&bet_time=2026-02-10 | 2026-02-17
 - **rebate_arr**: String JSON — cần `JSON.parse()` khi sử dụng
 - **Sensitive data**: members trả cả `password` (bcrypt hash), `salt`, `fund_password`
 - **Timeout**: bet-orders cần ≥30s, các endpoint khác 15s đủ
+- **Action endpoints**: getLottery + getRebateOddsPanel dùng POST body (form-urlencoded), success code = `1`, proxy qua `/api/action/`
+- **Rebate data**: Giá trị odds là number (float), không phải string. Mỗi series/lottery có tập kiểu chơi khác nhau

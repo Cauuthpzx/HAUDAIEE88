@@ -11,9 +11,7 @@
     .layui-card-header { padding-bottom: 0; border-bottom: none; }
     .layui-field-box .layui-inline { margin-bottom: 8px; }
     .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
-    .total-data-box { padding: 10px 15px; background: #f8f8f8; border-top: 1px solid #e6e6e6; font-size: 13px; }
-    .total-data-box span { margin-right: 20px; }
-    .total-data-box b { color: #333; }
+    .hs-text { text-align: left; }
   </style>
 </head>
 <body>
@@ -30,6 +28,17 @@
                   <label>Thời gian：</label>
                   <div style="width:290px;" class="layui-input-inline">
                     <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <div style="width:100px;" class="layui-input-inline">
+                    <select lay-filter="quickDateFilter" lay-search="">
+                      <option value="" id="optToday">Hôm nay</option>
+                      <option value="" id="optYesterday">Hôm qua</option>
+                      <option value="" id="optWeek">Tuần này</option>
+                      <option value="" id="optMonth">Tháng này</option>
+                      <option value="" id="optLastMonth">Tháng trước</option>
+                    </select>
                   </div>
                 </div>
                 <div class="layui-inline">
@@ -97,7 +106,33 @@
         </div>
         <div class="layui-card-body">
           <table id="dataTable" lay-filter="dataTable"></table>
-          <div id="totalDataBox" class="total-data-box" style="display:none;"></div>
+        </div>
+        <div class="layui-fluid" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
+          <div>
+            <span style="font-weight: bold;">Dữ liệu tổng hợp:</span>
+            <table class="layui-table" lay-even lay-skin="nob">
+              <thead>
+              <tr>
+                <th>Tiền cược</th>
+                <th>Doanh thu</th>
+                <th>Trúng thưởng</th>
+                <th>Thắng / Thua</th>
+                <th>Lượt cược</th>
+                <th>Số người cược</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+                <td id="total_bet_amount" class="hs-text">0.0000</td>
+                <td id="total_turnover" class="hs-text">0.0000</td>
+                <td id="total_prize" class="hs-text">0.0000</td>
+                <td id="total_win_lose" class="hs-text">0.0000</td>
+                <td id="total_bet_times" class="hs-text">0</td>
+                <td id="total_bet_number" class="hs-text">0</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -111,30 +146,64 @@
       var form = layui.form;
       var laydate = layui.laydate;
 
-      var today = new Date();
-      var weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-      var defaultRange = fmt(weekAgo) + ' | ' + fmt(today);
+      var $ = layui.$;
+
+      function fmt(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+      var now = new Date();
+      var todayStr = fmt(now);
+
+      var yd = new Date(now); yd.setDate(yd.getDate() - 1);
+      var yesterdayStr = fmt(yd);
+
+      var ws = new Date(now);
+      var dow = ws.getDay(); dow = dow === 0 ? 6 : dow - 1;
+      ws.setDate(ws.getDate() - dow);
+      var weekStartStr = fmt(ws);
+
+      var ms = new Date(now.getFullYear(), now.getMonth(), 1);
+      var monthStartStr = fmt(ms);
+
+      var lms = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      var lme = new Date(now.getFullYear(), now.getMonth(), 0);
+      var lastMonthStart = fmt(lms);
+      var lastMonthEnd = fmt(lme);
+
+      document.getElementById('optToday').value = todayStr + ' | ' + todayStr;
+      document.getElementById('optYesterday').value = yesterdayStr + ' | ' + yesterdayStr;
+      document.getElementById('optWeek').value = weekStartStr + ' | ' + todayStr;
+      document.getElementById('optMonth').value = monthStartStr + ' | ' + todayStr;
+      document.getElementById('optLastMonth').value = lastMonthStart + ' | ' + lastMonthEnd;
+      form.render('select');
+
+      var defaultRange = todayStr + ' | ' + todayStr;
 
       laydate.render({
         elem: '#dateRange',
         type: 'date',
         range: '|',
+        max: 0,
         value: defaultRange
       });
 
+      form.on('select(quickDateFilter)', function (data) {
+        if (data.value) {
+          $('#dateRange').val(data.value);
+        }
+      });
+
       function renderTotalData(totalData) {
-        var box = document.getElementById('totalDataBox');
-        if (!totalData) { box.style.display = 'none'; return; }
-        var html = '<b>Dữ liệu tổng hợp：</b>';
-        html += '<span>Tiền cược: <b>' + (totalData.total_bet_amount || '0') + '</b></span>';
-        html += '<span>Doanh thu: <b>' + (totalData.total_turnover || '0') + '</b></span>';
-        html += '<span>Trúng thưởng: <b>' + (totalData.total_prize || '0') + '</b></span>';
-        html += '<span>Thắng/Thua: <b>' + (totalData.total_win_lose || '0') + '</b></span>';
-        html += '<span>Lượt cược: <b>' + (totalData.total_bet_times || 0) + '</b></span>';
-        html += '<span>Số người cược: <b>' + (totalData.total_bet_number || 0) + '</b></span>';
-        box.innerHTML = html;
-        box.style.display = 'block';
+        if (!totalData) return;
+        var fields = ['total_bet_amount', 'total_turnover', 'total_prize', 'total_win_lose', 'total_bet_times', 'total_bet_number'];
+        fields.forEach(function (key) {
+          var val = totalData[key];
+          if (val === undefined || val === null) {
+            val = (key === 'total_bet_times' || key === 'total_bet_number') ? '0' : '0.0000';
+          }
+          var el = document.getElementById(key);
+          if (el) el.textContent = val;
+        });
       }
 
       table.render({
@@ -142,6 +211,7 @@
         url: '/api/data/report-third',
         method: 'get',
         where: { date: defaultRange },
+        toolbar: true,
         defaultToolbar: ['filter', 'print', 'exports'],
         page: true,
         limit: 10,
@@ -179,10 +249,10 @@
         return false;
       });
 
-      document.getElementById('btnReset').addEventListener('click', function () {
+      $('#btnReset').on('click', function () {
         setTimeout(function () {
+          $('#dateRange').val(defaultRange);
           form.render('select');
-          document.getElementById('dateRange').value = defaultRange;
           table.reload('dataTable', {
             where: { date: defaultRange, username: '', platform_id: '' },
             page: { curr: 1 }

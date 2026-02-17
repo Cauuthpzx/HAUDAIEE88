@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Báo cáo xổ số</title>
+  <title>Đơn cược xổ số</title>
   <link rel="stylesheet" href="/lib/layui/css/layui.css">
   <style>
     body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
@@ -21,13 +21,12 @@
       <div class="layui-card">
         <div class="layui-form layui-card-header">
           <fieldset class="layui-elem-field">
-            <legend>Báo cáo xổ số</legend>
+            <legend>Danh sách đơn cược</legend>
             <div class="layui-field-box">
               <form class="layui-form" lay-filter="searchForm">
                 <div class="layui-inline">
-                  <label>Thời gian：</label>
                   <div style="width:290px;" class="layui-input-inline">
-                    <input type="text" name="date" id="dateRange" placeholder="Bắt đầu - Kết thúc" class="layui-input" readonly autocomplete="off">
+                    <input type="text" name="create_time" id="hsDateTime" class="layui-input" readonly autocomplete="off">
                   </div>
                 </div>
                 <div class="layui-inline">
@@ -35,17 +34,26 @@
                     <select lay-filter="quickDateFilter" lay-search="">
                       <option value="" id="optToday">Hôm nay</option>
                       <option value="" id="optYesterday">Hôm qua</option>
-                      <option value="" id="optWeek">Tuần này</option>
-                      <option value="" id="optMonth">Tháng này</option>
-                      <option value="" id="optLastMonth">Tháng trước</option>
                     </select>
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Tên loại xổ：</label>
-                  <div style="width:200px;" class="layui-input-inline">
-                    <select name="lottery_id" lay-search="">
-                      <option value="">Chọn hoặc nhập để tìm kiếm</option>
+                  <label>Tên người dùng：</label>
+                  <div style="width:160px;" class="layui-input-inline">
+                    <input type="text" name="username" placeholder="Vui lòng nhập đầy đủ Tên người dùng" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Mã giao dịch：</label>
+                  <div class="layui-input-inline">
+                    <input type="text" name="serial_no" placeholder="Nhập đầy đủ mã giao dịch" class="layui-input" autocomplete="off">
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Trò chơi：</label>
+                  <div style="width:150px;" class="layui-input-inline">
+                    <select name="lottery_id" lay-filter="lotteryFilter" lay-search="">
+                      <option value="">Chọn</option>
                       <option value="67">Sicbo 30 giây</option>
                       <option value="66">Sicbo 20 giây</option>
                       <option value="68">Sicbo 40 giây</option>
@@ -112,9 +120,35 @@
                   </div>
                 </div>
                 <div class="layui-inline">
-                  <label>Tên tài khoản：</label>
-                  <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" class="layui-input" autocomplete="off">
+                  <label>Loại trò chơi：</label>
+                  <div style="width:180px;" class="layui-input-inline">
+                    <select name="play_type_id" id="playTypeSelect" lay-filter="playTypeFilter" lay-search="">
+                      <option value="">Chọn</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Cách chơi：</label>
+                  <div style="width:180px;" class="layui-input-inline">
+                    <select name="play_id" id="playSelect" lay-search="">
+                      <option value="">Chọn</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="layui-inline">
+                  <label>Trạng thái：</label>
+                  <div style="width:100px;" class="layui-input-inline">
+                    <select name="status" lay-search="">
+                      <option value="">Chọn</option>
+                      <option value="-9">Chưa thanh toán</option>
+                      <option value="1">Trúng</option>
+                      <option value="-1">Không trúng</option>
+                      <option value="2">Hoà</option>
+                      <option value="3">Khách huỷ đơn</option>
+                      <option value="4">Hệ thống huỷ đơn</option>
+                      <option value="5">Đơn cược bất thường</option>
+                      <option value="6">Chưa thanh toán (khôi phục thủ công)</option>
+                    </select>
                   </div>
                 </div>
                 <div class="layui-inline">
@@ -130,32 +164,22 @@
         <div class="layui-card-body">
           <table id="dataTable" lay-filter="dataTable"></table>
         </div>
-        <div class="layui-fluid" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
+        <div class="layui-fluid" id="totalSection" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
           <div>
             <span style="font-weight: bold;">Dữ liệu tổng hợp:</span>
             <table class="layui-table" lay-even lay-skin="nob">
               <thead>
               <tr>
-                <th>Số khách đặt cược</th>
-                <th>Số lần cược</th>
                 <th>Tiền cược</th>
-                <th>Tiền cược hợp lệ (trừ cược hoà)</th>
-                <th>Hoàn trả</th>
+                <th>Tiền hoàn trả</th>
                 <th>Thắng thua</th>
-                <th>Kết quả thắng thua (không gồm hoàn trả)</th>
-                <th>Tiền trúng</th>
               </tr>
               </thead>
               <tbody>
               <tr>
-                <td id="total_bet_number" class="hs-text">0</td>
-                <td id="total_bet_count" class="hs-text">0</td>
-                <td id="total_bet_amount" class="hs-text">0.0000</td>
-                <td id="total_valid_amount" class="hs-text">0.0000</td>
+                <td id="total_money" class="hs-text">0.0000</td>
                 <td id="total_rebate_amount" class="hs-text">0.0000</td>
                 <td id="total_result" class="hs-text">0.0000</td>
-                <td id="total_win_lose" class="hs-text">0.0000</td>
-                <td id="total_prize" class="hs-text">0.0000</td>
               </tr>
               </tbody>
             </table>
@@ -168,11 +192,11 @@
   <script src="/lib/layui/layui.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
-    layui.use(['table', 'form', 'laydate'], function () {
+    layui.use(['table', 'form', 'laydate', 'layer'], function () {
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
-
+      var layer = layui.layer;
       var $ = layui.$;
 
       function fmt(d) {
@@ -184,30 +208,14 @@
       var yd = new Date(now); yd.setDate(yd.getDate() - 1);
       var yesterdayStr = fmt(yd);
 
-      var ws = new Date(now);
-      var dow = ws.getDay(); dow = dow === 0 ? 6 : dow - 1;
-      ws.setDate(ws.getDate() - dow);
-      var weekStartStr = fmt(ws);
-
-      var ms = new Date(now.getFullYear(), now.getMonth(), 1);
-      var monthStartStr = fmt(ms);
-
-      var lms = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      var lme = new Date(now.getFullYear(), now.getMonth(), 0);
-      var lastMonthStart = fmt(lms);
-      var lastMonthEnd = fmt(lme);
-
       document.getElementById('optToday').value = todayStr + ' | ' + todayStr;
       document.getElementById('optYesterday').value = yesterdayStr + ' | ' + yesterdayStr;
-      document.getElementById('optWeek').value = weekStartStr + ' | ' + todayStr;
-      document.getElementById('optMonth').value = monthStartStr + ' | ' + todayStr;
-      document.getElementById('optLastMonth').value = lastMonthStart + ' | ' + lastMonthEnd;
       form.render('select');
 
       var defaultRange = todayStr + ' | ' + todayStr;
 
       laydate.render({
-        elem: '#dateRange',
+        elem: '#hsDateTime',
         type: 'date',
         range: '|',
         max: 0,
@@ -216,36 +224,93 @@
 
       form.on('select(quickDateFilter)', function (data) {
         if (data.value) {
-          $('#dateRange').val(data.value);
+          $('#hsDateTime').val(data.value);
         }
       });
 
-      function renderTotalData(totalData) {
-        if (!totalData) return;
-        var fields = ['total_bet_number', 'total_bet_count', 'total_bet_amount', 'total_valid_amount', 'total_rebate_amount', 'total_result', 'total_win_lose', 'total_prize'];
-        fields.forEach(function (key) {
-          var val = totalData[key];
-          if (val === undefined || val === null) {
-            val = (key === 'total_bet_count' || key === 'total_bet_number') ? '0' : '0.0000';
+      // ── Cascading dropdowns: Lottery → Play Type → Play ──
+      form.on('select(lotteryFilter)', function (data) {
+        var lotteryId = data.value;
+        $('#playTypeSelect').html('<option value="">Chọn</option>');
+        $('#playSelect').html('<option value="">Chọn</option>');
+        form.render('select');
+        if (!lotteryId) return;
+
+        $.ajax({
+          url: '/api/action/getLottery',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ type: 'getPlayType', lottery_id: lotteryId }),
+          success: function (res) {
+            if (res.data && res.data.playTypeData) {
+              var html = '<option value="">Chọn</option>';
+              res.data.playTypeData.forEach(function (item) {
+                html += '<option value="' + item.id + '">' + item.name + '</option>';
+              });
+              $('#playTypeSelect').html(html);
+              form.render('select');
+            }
           }
-          var el = document.getElementById(key);
-          if (el) el.textContent = val;
+        });
+      });
+
+      form.on('select(playTypeFilter)', function (data) {
+        var playTypeId = data.value;
+        $('#playSelect').html('<option value="">Chọn</option>');
+        form.render('select');
+        if (!playTypeId) return;
+
+        var lotteryId = $('select[name="lottery_id"]').val();
+        $.ajax({
+          url: '/api/action/getLottery',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ type: 'getPlay', lottery_id: lotteryId, play_type_id: playTypeId }),
+          success: function (res) {
+            if (res.data && res.data.playData) {
+              var html = '<option value="">Chọn</option>';
+              res.data.playData.forEach(function (item) {
+                html += '<option value="' + item.id + '">' + item.name + '</option>';
+              });
+              $('#playSelect').html(html);
+              form.render('select');
+            }
+          }
+        });
+      });
+
+      // ── Load total data asynchronously ──
+      function loadTotalData(searchParams) {
+        var params = $.extend({}, searchParams);
+        $.ajax({
+          url: '/api/data/lottery-bets-summary',
+          method: 'GET',
+          data: params,
+          success: function (res) {
+            var totalData = res.total_data;
+            if (!totalData) return;
+            var fields = ['total_money', 'total_rebate_amount', 'total_result'];
+            fields.forEach(function (key) {
+              var val = totalData[key];
+              if (val === undefined || val === null) val = '0.0000';
+              var el = document.getElementById(key);
+              if (el) el.textContent = val;
+            });
+          }
         });
       }
 
       table.render({
         elem: '#dataTable',
-        url: '/api/data/report-lottery',
+        url: '/api/data/lottery-bets',
         method: 'get',
-        where: { date: defaultRange },
+        where: { create_time: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: ['filter'],
         page: true,
         limit: 10,
         text: { none: 'Không có dữ liệu' },
         parseData: function (res) {
-          // Lưu total_data để hiển thị sau
-          window._lastTotalData = res.total_data || null;
           return {
             code: res.code === 0 ? 0 : 1,
             msg: res.msg || '',
@@ -255,23 +320,24 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'username', title: 'Tài khoản', width: 130 },
-          { field: 'user_parent_format', title: 'Đại lý', width: 120 },
-          { field: 'lottery_name', title: 'Loại xổ số', width: 200 },
-          { field: 'bet_count', title: 'Lượt cược', width: 100 },
-          { field: 'bet_amount', title: 'Tiền cược', width: 140 },
-          { field: 'valid_amount', title: 'Cược hợp lệ', width: 140 },
-          { field: 'rebate_amount', title: 'Hoàn trả', width: 120 },
-          { field: 'prize', title: 'Trúng thưởng', width: 140 },
-          { field: 'result', title: 'Kết quả', width: 140 },
-          { field: 'win_lose', title: 'Thắng / Thua', width: 140 },
-          // ── Ẩn mặc định ──
-          { field: 'uid', title: 'UID', width: 90, hide: true },
-          { field: 'lottery_id', title: 'ID xổ số', width: 90, hide: true }
+          { field: 'serial_no', title: 'Mã giao dịch', width: 200, fixed: 'left' },
+          { field: 'username', title: 'Tên người dùng', width: 150 },
+          { field: 'create_time', title: 'Thời gian cược', width: 160 },
+          { field: 'lottery_name', title: 'Trò chơi', minWidth: 150 },
+          { field: 'play_type_name', title: 'Loại trò chơi', minWidth: 150 },
+          { field: 'play_name', title: 'Cách chơi', minWidth: 150 },
+          { field: 'issue', title: 'Kỳ', minWidth: 150 },
+          { field: 'content', title: 'Thông tin cược', minWidth: 150 },
+          { field: 'money', title: 'Tiền cược', minWidth: 150 },
+          { field: 'rebate_amount', title: 'Tiền hoàn trả', minWidth: 150 },
+          { field: 'result', title: 'Thắng thua', minWidth: 150 },
+          { field: 'status_text', title: 'Trạng thái', fixed: 'right', width: 100 }
         ]],
         done: function (res) {
-          console.log('[reportLottery] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
-          renderTotalData(window._lastTotalData);
+          console.log('[lotteryBet] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
+          if (res.count > 0) {
+            loadTotalData(form.val('searchForm'));
+          }
         }
       });
 
@@ -282,10 +348,12 @@
 
       $('#btnReset').on('click', function () {
         setTimeout(function () {
-          $('#dateRange').val(defaultRange);
+          $('#hsDateTime').val(defaultRange);
+          $('#playTypeSelect').html('<option value="">Chọn</option>');
+          $('#playSelect').html('<option value="">Chọn</option>');
           form.render('select');
           table.reload('dataTable', {
-            where: { date: defaultRange, username: '', lottery_id: '' },
+            where: { create_time: defaultRange, username: '', serial_no: '', lottery_id: '', play_type_id: '', play_id: '', status: '' },
             page: { curr: 1 }
           });
         }, 50);

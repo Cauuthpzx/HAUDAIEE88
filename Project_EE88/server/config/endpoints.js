@@ -49,6 +49,18 @@ const ENDPOINTS = {
     description: 'Báo cáo nhà cung cấp game',
     defaultParams: { page: 1, limit: 500 },
     timeout: 15000
+  },
+  'lottery-bets': {
+    path: '/agent/bet.html',
+    description: 'Đơn cược xổ số',
+    defaultParams: { page: 1, limit: 10, es: 1 },
+    timeout: 30000
+  },
+  'lottery-bets-summary': {
+    path: '/agent/bet.html',
+    description: 'Tổng hợp đơn cược xổ số',
+    defaultParams: { is_summary: 1, es: 1 },
+    timeout: 30000
   }
 };
 

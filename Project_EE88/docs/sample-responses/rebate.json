@@ -1,60 +1,138 @@
 {
-  "code": 1,
-  "data": [
-    {
-      "series_id": 1,
-      "series_name": "Miền Bắc",
-      "lotteries": [
-        {
-          "lottery_id": 101,
-          "lottery_name": "Hà Nội",
-          "play_types": [
-            {
-              "play_type_id": 1,
-              "play_type_name": "Bao lô",
-              "plays": [
-                {
-                  "play_id": 1,
-                  "play_name": "Lô 2 số",
-                  "odds": "99.5",
-                  "rebate": "9.2"
-                },
-                {
-                  "play_id": 2,
-                  "play_name": "Lô 3 số",
-                  "odds": "960.0",
-                  "rebate": "9.0"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "series_id": 2,
-      "series_name": "Miền Nam",
-      "lotteries": [
-        {
-          "lottery_id": 201,
-          "lottery_name": "Hồ Chí Minh",
-          "play_types": [
-            {
-              "play_type_id": 1,
-              "play_type_name": "Bao lô",
-              "plays": [
-                {
-                  "play_id": 1,
-                  "play_name": "Lô 2 số",
-                  "odds": "99.5",
-                  "rebate": "9.2"
-                }
-              ]
-            }
-          ]
-        }
+  "_comment": "2 API responses cho trang Tỉ lệ hoàn trả",
+
+  "getLottery_init": {
+    "_request": "POST /agent/getLottery | Body: type=init",
+    "code": 1,
+    "msg": "",
+    "data": {
+      "seriesData": [
+        { "id": 1, "name": "Miền Nam" },
+        { "id": 2, "name": "Miền Bắc" },
+        { "id": 3, "name": "Miền Trung" },
+        { "id": 6, "name": "Xổ số nhanh" },
+        { "id": 7, "name": "Keno" },
+        { "id": 8, "name": "Xổ số cào" },
+        { "id": 9, "name": "Sicbo" },
+        { "id": 10, "name": "pk" },
+        { "id": 11, "name": "Wingo" }
+      ],
+      "lotteryData": [
+        { "id": 1, "name": "Bạc Liêu", "series_id": 1 },
+        { "id": 2, "name": "Vũng Tàu", "series_id": 1 },
+        { "id": 3, "name": "Tiền Giang", "series_id": 1 },
+        { "id": 4, "name": "Kiên Giang", "series_id": 1 },
+        { "id": 5, "name": "Đà Lạt", "series_id": 1 },
+        { "id": 6, "name": "Bình Phước", "series_id": 1 },
+        { "id": 7, "name": "Bình Dương", "series_id": 1 },
+        { "id": 8, "name": "An Giang", "series_id": 1 },
+        { "id": 9, "name": "Bình Thuận", "series_id": 1 },
+        { "id": 10, "name": "Cà Mau", "series_id": 1 },
+        { "id": 11, "name": "Cần Thơ", "series_id": 1 },
+        { "id": 12, "name": "Hậu Giang", "series_id": 1 },
+        { "id": 13, "name": "Đồng Tháp", "series_id": 1 },
+        { "id": 14, "name": "Tây Ninh", "series_id": 1 },
+        { "id": 15, "name": "Sóc Trăng", "series_id": 1 },
+        { "id": 16, "name": "TP Hồ Chí Minh", "series_id": 1 },
+        { "id": 17, "name": "Đồng Nai", "series_id": 1 },
+        { "id": 42, "name": "Trà Vinh", "series_id": 1 },
+        { "id": 43, "name": "Vĩnh Long", "series_id": 1 },
+        { "id": 44, "name": "Miền Nam VIP 5 phút", "series_id": 1 },
+        { "id": 57, "name": "Miền Nam VIP 45 giây", "series_id": 1 },
+        { "id": 58, "name": "Miền Nam VIP 1 phút", "series_id": 1 },
+        { "id": 59, "name": "Miền Nam VIP 90 giây", "series_id": 1 },
+        { "id": 60, "name": "Miền Nam VIP 2 phút", "series_id": 1 }
+      ],
+      "tableHead": [
+        { "title": "Kiểu chơi", "field": "odds_11" },
+        { "title": "Hoàn trả 10", "field": "odds_10" },
+        { "title": "Hoàn trả 9", "field": "odds_9" },
+        { "title": "Hoàn trả 8", "field": "odds_8" },
+        { "title": "Hoàn trả 7", "field": "odds_7" },
+        { "title": "Hoàn trả 6", "field": "odds_6" },
+        { "title": "Hoàn trả 5", "field": "odds_5" },
+        { "title": "Hoàn trả 4", "field": "odds_4" },
+        { "title": "Hoàn trả 3", "field": "odds_3" },
+        { "title": "Hoàn trả 2", "field": "odds_2" },
+        { "title": "Hoàn trả 1", "field": "odds_1" }
+      ],
+      "tableBody": [
+        ["Lô 2 Số", 99.5, 99.401, 99.301, 99.202, 99.102, 99.003, 98.903, 98.804, 98.704, 98.605],
+        ["Lô 2 Số 1K", 5.5, 5.495, 5.489, 5.484, 5.478, 5.473, 5.467, 5.462, 5.456, 5.451],
+        ["Lô 3 Số", 980, 979.02, 978.04, 977.06, 976.08, 975.1, 974.12, 973.14, 972.16, 971.18],
+        ["Xiên 2", 28, 27.972, 27.944, 27.916, 27.888, 27.86, 27.832, 27.804, 27.776, 27.748],
+        ["Đề đặc biệt", 99.5, 99.401, 99.301, 99.202, 99.102, 99.003, 98.903, 98.804, 98.704, 98.605],
+        ["_truncated_", "... 35 more rows"]
+      ],
+      "firsSeriesId": 1,
+      "firsLotteryId": 1
+    }
+  },
+
+  "getLottery_change_series": {
+    "_request": "POST /agent/getLottery | Body: type=getLottery&series_id=2",
+    "code": 1,
+    "msg": "",
+    "data": {
+      "seriesData": [
+        { "id": 1, "name": "Miền Nam" },
+        { "id": 2, "name": "Miền Bắc" },
+        { "id": 3, "name": "Miền Trung" },
+        { "id": 6, "name": "Xổ số nhanh" },
+        { "id": 7, "name": "Keno" },
+        { "id": 8, "name": "Xổ số cào" },
+        { "id": 9, "name": "Sicbo" },
+        { "id": 10, "name": "pk" },
+        { "id": 11, "name": "Wingo" }
+      ],
+      "lotteryData": [
+        { "id": 32, "name": "Miền Bắc", "series_id": 2 },
+        { "id": 45, "name": "M.bắc nhanh 5 phút", "series_id": 2 },
+        { "id": 46, "name": "M.bắc nhanh 3 phút", "series_id": 2 },
+        { "id": 47, "name": "Miền Bắc VIP 45 giây", "series_id": 2 },
+        { "id": 48, "name": "Miền Bắc VIP 75 giây ", "series_id": 2 },
+        { "id": 49, "name": "Miền Bắc VIP 2 phút", "series_id": 2 }
+      ],
+      "tableHead": [
+        { "title": "Kiểu chơi", "field": "odds_11" },
+        { "title": "Hoàn trả 10", "field": "odds_10" },
+        "... 9 more columns"
+      ],
+      "tableBody": [
+        ["Lô 2 Số", 99.9, 99.8, 99.7, 99.6, 99.5, 99.401, 99.301, 99.201, 99.101, 99.001],
+        ["Lô 2 Số Đầu", 99.9, 99.8, 99.7, 99.6, 99.5, 99.401, 99.301, 99.201, 99.101, 99.001],
+        ["_truncated_", "... 42 more rows"]
+      ],
+      "firsSeriesId": 2,
+      "firsLotteryId": 32
+    }
+  },
+
+  "getRebateOddsPanel": {
+    "_request": "POST /agent/getRebateOddsPanel | Body: lottery_id=18&series_id=2",
+    "code": 1,
+    "msg": "",
+    "data": {
+      "tableHead": [
+        { "title": "Kiểu chơi", "field": "odds_11" },
+        { "title": "Hoàn trả 10", "field": "odds_10" },
+        { "title": "Hoàn trả 9", "field": "odds_9" },
+        { "title": "Hoàn trả 8", "field": "odds_8" },
+        { "title": "Hoàn trả 7", "field": "odds_7" },
+        { "title": "Hoàn trả 6", "field": "odds_6" },
+        { "title": "Hoàn trả 5", "field": "odds_5" },
+        { "title": "Hoàn trả 4", "field": "odds_4" },
+        { "title": "Hoàn trả 3", "field": "odds_3" },
+        { "title": "Hoàn trả 2", "field": "odds_2" },
+        { "title": "Hoàn trả 1", "field": "odds_1" }
+      ],
+      "tableBody": [
+        ["Lô 2 Số", 99.9, 99.8, 99.7, 99.6, 99.5, 99.401, 99.301, 99.201, 99.101, 99.001],
+        ["Lô 2 Số Đầu", 99.9, 99.8, 99.7, 99.6, 99.5, 99.401, 99.301, 99.201, 99.101, 99.001],
+        ["Lô 3 Số", 980, 979.02, 978.04, 977.06, 976.08, 975.1, 974.12, 973.14, 972.16, 971.18],
+        ["Đề đặc biệt", 99.5, 99.401, 99.301, 99.202, 99.102, 99.003, 98.903, 98.804, 98.704, 98.605],
+        ["_truncated_", "... 36 more rows"]
       ]
     }
-  ],
-  "hsDateTime": "2026-02-17 10:00:00"
+  }
 }

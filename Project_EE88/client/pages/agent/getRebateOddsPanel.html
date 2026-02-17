@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tỉ lệ hoàn trả</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .layui-card-header { padding-bottom: 0; border-bottom: none; }
+    select {
+      display: block;
+      height: 32px;
+      line-height: 32px;
+      font-size: 14px;
+      width: 150px;
+    }
+    .hsDiv {
+      border: 1px dotted #555;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+      line-height: 38px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12" style="padding: 0;">
+      <div id="app" class="layui-card">
+        <div class="layui-card-header layuiadmin-card-header-auto" style="padding: 0px; border-bottom: none;">
+          <div id="condition">
+            <div class="layui-field-box" style="padding-left: 5px; padding-bottom: 0px;">
+              <div class="layui-inline">
+                <div class="layui-input-inline">
+                  <select v-model="series_id" @change="getLottery">
+                    <option v-for="item in seriesData" :key="item.id" :value="item.id">{{ item.name }}</option>
+                  </select>
+                </div>
+                <div class="layui-input-inline" style="margin-left: 10px;">
+                  <select v-model="lottery_id" @change="getData" ref="lottery">
+                    <option v-for="item in lotteryData" :key="item.id" :value="item.id" :series_id="item.series_id">{{ item.name }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="layui-card-body" style="padding-top: 0px;">
+          <div class="layui-form">
+            <div>
+              <table class="layui-table">
+                <thead>
+                  <tr>
+                    <th v-for="head in tableHead" :key="head.field">{{ head.title }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in tableBody" :key="idx">
+                    <td v-for="(val, i) in row" :key="i">{{ val }}</td>
+                  </tr>
+                  <tr v-if="tableBody.length === 0">
+                    <td :colspan="tableHead.length" style="text-align:center;">{{ noData }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        tableHead: [],
+        tableBody: [],
+        layer: null,
+        noData: 'Không có dữ liệu',
+        getSelectDataUrl: '/api/action/getLottery',
+        getDataUrl: '/api/action/getRebateOddsPanel',
+        seriesData: [],
+        lotteryData: [],
+        series_id: '',
+        lottery_id: ''
+      },
+      created: function () {
+        var that = this;
+        layui.use(['layer'], function () {
+          that.layer = layui.layer;
+          that.init();
+        });
+      },
+      methods: {
+        init: function () {
+          var that = this;
+          var load = this.layer.load();
+          axios.post(this.getSelectDataUrl, { type: 'init' }).then(function (res) {
+            var result = res.data.data;
+            that.layer.close(load);
+            that.seriesData = result.seriesData;
+            that.lotteryData = result.lotteryData;
+            that.tableBody = result.tableBody;
+            that.tableHead = result.tableHead;
+            that.lottery_id = result.firsLotteryId;
+            that.series_id = result.firsSeriesId;
+          }).catch(function () {
+            that.layer.close(load);
+            that.layer.msg('Thất bại');
+          });
+        },
+        getLottery: function () {
+          var that = this;
+          var load = this.layer.load();
+          axios.post(this.getSelectDataUrl, { type: 'getLottery', series_id: this.series_id }).then(function (res) {
+            var result = res.data.data;
+            that.layer.close(load);
+            that.seriesData = result.seriesData;
+            that.lotteryData = result.lotteryData;
+            that.tableBody = result.tableBody;
+            that.tableHead = result.tableHead;
+            that.lottery_id = result.firsLotteryId;
+            that.series_id = result.firsSeriesId;
+          }).catch(function () {
+            that.layer.close(load);
+            that.layer.msg('Thất bại');
+          });
+        },
+        getData: function () {
+          var series_id = this.$refs.lottery.selectedOptions[0].getAttribute('series_id');
+          var that = this;
+          var load = this.layer.load();
+          axios.post(this.getDataUrl, { lottery_id: this.lottery_id, series_id: series_id }).then(function (res) {
+            var result = res.data.data;
+            that.layer.close(load);
+            that.tableBody = result.tableBody;
+            that.tableHead = result.tableHead;
+          }).catch(function () {
+            that.layer.close(load);
+            that.layer.msg('Thất bại');
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
