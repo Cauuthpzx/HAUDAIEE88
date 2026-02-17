@@ -117,7 +117,16 @@
           { field: 'id', title: 'ID', width: 90},
           { field: 'uid', title: 'UID', width: 90},
           { field: 'group_id', title: 'Nhóm', width: 80},
-          { field: 'rebate_arr', title: 'Hoàn trả', width: 200},
+          { field: 'rebate_arr', title: 'Hoàn trả', minWidth: 260, templet: function(d) {
+            try {
+              var obj = typeof d.rebate_arr === 'string' ? JSON.parse(d.rebate_arr) : d.rebate_arr;
+              if (!obj || typeof obj !== 'object') return d.rebate_arr || '';
+              var names = {'1':'MN','2':'MB','3':'MT','4':'XSN','5':'Sicbo','6':'XSN','7':'Keno','8':'WinGo','9':'Game'};
+              var parts = [];
+              for (var k in obj) { parts.push((names[k]||k) + ':' + obj[k].value); }
+              return parts.join(', ');
+            } catch(e) { return d.rebate_arr || ''; }
+          }},
           { field: 'update_time', title: 'Cập nhật', width: 160},
           { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' }
         ]],
