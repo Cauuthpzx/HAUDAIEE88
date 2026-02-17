@@ -109,6 +109,14 @@
       </li>
     </ul>
     <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
+      <li class="layui-nav-item" id="navLang">
+        <a href="javascript:;"><i class="layui-icon layui-icon-website" style="margin-right: 4px;"></i><span id="langLabel"></span></a>
+        <dl class="layui-nav-child">
+          <dd><a href="javascript:;" data-lang="vi">🇻🇳 Tiếng Việt</a></dd>
+          <dd><a href="javascript:;" data-lang="en">🇺🇸 English</a></dd>
+          <dd><a href="javascript:;" data-lang="zh-CN">🇨🇳 中文</a></dd>
+        </dl>
+      </li>
       <li class="layui-nav-item">
         <a href="javascript:;" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
       </li>
@@ -118,10 +126,10 @@
           <span id="userInfo"></span>
         </a>
         <dl class="layui-nav-child">
-          <dd><a href="javascript:;" data-url="/pages/agent/editPassword.html" data-title="Đổi MK đăng nhập">Đổi MK đăng nhập</a></dd>
-          <dd><a href="javascript:;" data-url="/pages/agent/editFundPassword.html" data-title="Đổi MK giao dịch">Đổi MK giao dịch</a></dd>
+          <dd><a href="javascript:;" id="navProfile" data-i18n="accountInfo">Thông tin tài khoản</a></dd>
+          <dd><a href="javascript:;" id="navSettings" data-i18n="settings">Cài đặt</a></dd>
           <hr>
-          <dd style="text-align: center;"><a href="javascript:;" id="navLogout">Đăng xuất</a></dd>
+          <dd style="text-align: center;"><a href="javascript:;" id="navLogout" data-i18n="logout">Đăng xuất</a></dd>
         </dl>
       </li>
       <li class="layui-nav-item" lay-header-event="menuRight">
@@ -138,106 +146,106 @@
       <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i><span>Quản lí hội viên</span>
+          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i><span data-i18n="memberMgmt">Quản lí hội viên</span>
         </a>
         <dl class="layui-nav-child">
           <dd class="layui-this">
-            <a href="javascript:;" data-url="/pages/agent/user.html" data-title="Hội viên">Hội viên</a>
+            <a href="javascript:;" data-url="/pages/agent/user.html" data-title-i18n="members" data-title="Hội viên" data-i18n="members">Hội viên</a>
           </dd>
         </dl>
       </li>
       <!-- 2. Mã giới thiệu -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i><span>Mã giới thiệu</span>
+          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i><span data-i18n="referralCode">Mã giới thiệu</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/inviteList.html" data-title="Mã giới thiệu">Mã giới thiệu</a>
+            <a href="javascript:;" data-url="/pages/agent/inviteList.html" data-title-i18n="referralCode" data-title="Mã giới thiệu" data-i18n="referralCode">Mã giới thiệu</a>
           </dd>
         </dl>
       </li>
       <!-- 3. Báo cáo -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i><span>Báo cáo</span>
+          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i><span data-i18n="reports">Báo cáo</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/reportLottery.html" data-title="BC xổ số">BC xổ số</a>
+            <a href="javascript:;" data-url="/pages/agent/reportLottery.html" data-title-i18n="lotteryReport" data-title="BC xổ số" data-i18n="lotteryReport">BC xổ số</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/reportFunds.html" data-title="Sao kê giao dịch">Sao kê giao dịch</a>
+            <a href="javascript:;" data-url="/pages/agent/reportFunds.html" data-title-i18n="transStatement" data-title="Sao kê giao dịch" data-i18n="transStatement">Sao kê giao dịch</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/reportThirdGame.html" data-title="BC nhà cung cấp">BC nhà cung cấp</a>
+            <a href="javascript:;" data-url="/pages/agent/reportThirdGame.html" data-title-i18n="providerReport" data-title="BC nhà cung cấp" data-i18n="providerReport">BC nhà cung cấp</a>
           </dd>
         </dl>
       </li>
       <!-- 4. Rút hoa hồng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i><span>Rút hoa hồng</span>
+          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i><span data-i18n="commission">Rút hoa hồng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/depositAndWithdrawal.html" data-title="Nạp tiền">Nạp tiền</a>
+            <a href="javascript:;" data-url="/pages/agent/depositAndWithdrawal.html" data-title-i18n="deposit" data-title="Nạp tiền" data-i18n="deposit">Nạp tiền</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/withdrawalsRecord.html" data-title="Rút tiền">Rút tiền</a>
+            <a href="javascript:;" data-url="/pages/agent/withdrawalsRecord.html" data-title-i18n="withdraw" data-title="Rút tiền" data-i18n="withdraw">Rút tiền</a>
           </dd>
         </dl>
       </li>
       <!-- 5. Đơn cược -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i><span>Đơn cược</span>
+          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i><span data-i18n="betOrders">Đơn cược</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/bet.html" data-title="Đơn cược xổ số">Đơn cược xổ số</a>
+            <a href="javascript:;" data-url="/pages/agent/bet.html" data-title-i18n="lotteryBet" data-title="Đơn cược xổ số" data-i18n="lotteryBet">Đơn cược xổ số</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/betOrder.html" data-title="Cược bên thứ 3">Cược bên thứ 3</a>
+            <a href="javascript:;" data-url="/pages/agent/betOrder.html" data-title-i18n="thirdPartyBet" data-title="Cược bên thứ 3" data-i18n="thirdPartyBet">Cược bên thứ 3</a>
           </dd>
         </dl>
       </li>
       <!-- 6. Khách hàng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i><span>Khách hàng</span>
+          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i><span data-i18n="customer">Khách hàng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/editPassword.html" data-title="Đổi MK đăng nhập">Đổi MK đăng nhập</a>
+            <a href="javascript:;" data-url="/pages/agent/editPassword.html" data-title-i18n="changeLoginPw" data-title="Đổi MK đăng nhập" data-i18n="changeLoginPw">Đổi MK đăng nhập</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/editFundPassword.html" data-title="Đổi MK giao dịch">Đổi MK giao dịch</a>
+            <a href="javascript:;" data-url="/pages/agent/editFundPassword.html" data-title-i18n="changeFundPw" data-title="Đổi MK giao dịch" data-i18n="changeFundPw">Đổi MK giao dịch</a>
           </dd>
         </dl>
       </li>
       <!-- 7. Tỉ lệ hoàn trả -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i><span>Tỉ lệ hoàn trả</span>
+          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/agent/getRebateOddsPanel.html" data-title="Tỉ lệ hoàn trả">Tỉ lệ hoàn trả</a>
+            <a href="javascript:;" data-url="/pages/agent/getRebateOddsPanel.html" data-title-i18n="rebateRate" data-title="Tỉ lệ hoàn trả" data-i18n="rebateRate">Tỉ lệ hoàn trả</a>
           </dd>
         </dl>
       </li>
       <!-- 8. Quản lý (admin only) -->
       <li class="layui-nav-item" id="menuManage" style="display:none;">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-set" style="margin-right: 6px;"></i><span>Quản lý</span>
+          <i class="layui-icon layui-icon-set" style="margin-right: 6px;"></i><span data-i18n="management">Quản lý</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-url="/pages/manage/manageAgents.html" data-title="Quản lý Agents">Quản lý Agents</a>
+            <a href="javascript:;" data-url="/pages/manage/manageAgents.html" data-title-i18n="manageAgents" data-title="Quản lý Agents" data-i18n="manageAgents">Quản lý Agents</a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/manage/manageUsers.html" data-title="Quản lý Users">Quản lý Users</a>
+            <a href="javascript:;" data-url="/pages/manage/manageUsers.html" data-title-i18n="manageUsers" data-title="Quản lý Users" data-i18n="manageUsers">Quản lý Users</a>
           </dd>
         </dl>
       </li>
@@ -255,13 +263,17 @@
 
   <script src="/lib/layui/layui.js"></script>
   <script src="/js/hub-api.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script>
     // ── Auth guard ──
     if (!HubAPI.isLoggedIn()) {
       window.location.href = '/pages/login.html';
     }
 
-    layui.use(['element', 'tabs', 'dropdown', 'layer', 'util'], function () {
+    // ── Init i18n trước khi layui.use ──
+    HubLang.init();
+
+    layui.use(['element', 'tabs', 'dropdown', 'layer', 'util', 'i18n'], function () {
       var $ = layui.$;
       var element = layui.element;
       var tabs = layui.tabs;
@@ -275,41 +287,39 @@
       var user = HubAPI.getUser();
       if (user) {
         document.getElementById('userInfo').textContent = user.username;
-
-        // Hiện menu Quản lý nếu admin
         if (user.role === 'admin') {
           document.getElementById('menuManage').style.display = '';
         }
       }
 
-      // ── Header events (layui util.event pattern) ──
-      util.event('lay-header-event', {
-        menuLeft: function () {
-          // Mobile toggle — trigger same as desktop toggle
-          document.getElementById('btnToggle').click();
-        },
-        menuRight: function () {
-          layer.open({
-            type: 1,
-            title: 'Tuỳ chọn',
-            content: '<div style="padding: 15px;">'
-              + '<p>Chưa có tuỳ chọn nào.</p>'
-              + '</div>',
-            area: ['260px', '100%'],
-            offset: 'rt',
-            anim: 'slideLeft',
-            shadeClose: true,
-            scrollbar: false
-          });
-        }
-      });
+      // ── i18n: apply DOM + update lang label ──
+      function applyI18n() {
+        HubLang.applyDOM();
+        var lang = HubLang.getLang();
+        var info = HubLang.LANGS[lang];
+        document.getElementById('langLabel').textContent = info ? info.label : lang;
+        $('[data-title-i18n]').each(function () {
+          $(this).attr('data-title', HubLang.t($(this).attr('data-title-i18n')));
+        });
+      }
+      applyI18n();
 
-      // ── Header nav "Tài khoản" ──
+      // ── Header nav events (language switch + account) ──
       element.on('nav(hub-account)', function (elem) {
+        // Language switch
+        var lang = elem.attr('data-lang');
+        if (lang) {
+          HubLang.setLang(lang);
+          applyI18n();
+          dropdownInst.config.data = getContextMenuData();
+          return;
+        }
+        // Logout
         if (elem.attr('id') === 'navLogout') {
           HubAPI.logout();
           return;
         }
+        // Open tab
         var url = elem.attr('data-url');
         var title = elem.attr('data-title');
         if (!url) return;
@@ -329,17 +339,39 @@
         document.title = 'Agent Hub — ' + (title || '');
       });
 
+      // ── Header events (layui util.event pattern) ──
+      util.event('lay-header-event', {
+        menuLeft: function () {
+          document.getElementById('btnToggle').click();
+        },
+        menuRight: function () {
+          layer.open({
+            type: 1,
+            title: HubLang.t('options'),
+            content: '<div style="padding: 15px;"><p>' + HubLang.t('noOptions') + '</p></div>',
+            area: ['260px', '100%'],
+            offset: 'rt',
+            anim: 'slideLeft',
+            shadeClose: true,
+            scrollbar: false
+          });
+        }
+      });
+
       // ── Right-click context menu cho tab header ──
+      function getContextMenuData() {
+        return [
+          { title: HubLang.t('closeTab'), action: 'close', mode: 'this' },
+          { title: HubLang.t('closeOther'), action: 'close', mode: 'other' },
+          { title: HubLang.t('closeRight'), action: 'close', mode: 'right' },
+          { type: '-' },
+          { title: HubLang.t('closeAll'), action: 'close', mode: 'all' }
+        ];
+      }
       var dropdownInst = dropdown.render({
         elem: '#' + TABS_ID + ' .layui-tabs-header>li',
         trigger: 'contextmenu',
-        data: [
-          { title: 'Đóng', action: 'close', mode: 'this' },
-          { title: 'Đóng tab khác', action: 'close', mode: 'other' },
-          { title: 'Đóng tab bên phải', action: 'close', mode: 'right' },
-          { type: '-' },
-          { title: 'Đóng tất cả', action: 'close', mode: 'all' }
-        ],
+        data: getContextMenuData(),
         click: function (data) {
           var index = this.elem.index();
           if (data.mode === 'this') {
@@ -353,7 +385,8 @@
       // ── Click menu → mở tab hoặc chuyển sang tab đã mở ──
       element.on('nav(hub-menu)', function (elem) {
         var url = elem.attr('data-url');
-        var title = elem.attr('data-title');
+        var titleKey = elem.attr('data-title-i18n');
+        var title = titleKey ? HubLang.t(titleKey) : elem.attr('data-title');
         if (!url) return;
 
         if (openedTabs[url]) {
@@ -364,14 +397,11 @@
             content: '<iframe src="' + url + '"></iframe>',
             id: url,
             done: function (data) {
-              dropdown.render($.extend({}, dropdownInst.config, {
-                elem: data.headerItem
-              }));
+              dropdown.render($.extend({}, dropdownInst.config, { elem: data.headerItem }));
             }
           });
           openedTabs[url] = true;
         }
-
         document.title = 'Agent Hub — ' + (title || '');
       });
 
@@ -411,26 +441,27 @@
         }
       });
 
-      // ── Layer tips cho header buttons ──
+      // ── Layer tips cho header buttons (i18n) ──
+      var tipKeys = { btnToggle: 'toggleMenu', btnRefresh: 'reload', btnFullscreen: 'fullscreen' };
       $('#btnToggle, #btnRefresh, #btnFullscreen').each(function () {
         var el = this;
-        var tip = el.getAttribute('title');
         el.removeAttribute('title');
         $(el).on('mouseenter', function () {
-          layer.tips(tip, el, { tips: [3, '#393D49'], time: 1500 });
+          layer.tips(HubLang.t(tipKeys[el.id]), el, { tips: [3, '#393D49'], time: 1500 });
         }).on('mouseleave', function () {
           layer.closeAll('tips');
         });
       });
 
-      // ── Layer tips cho sidebar khi collapsed ──
+      // ── Layer tips cho sidebar khi collapsed (i18n) ──
       $('.hub-sidebar .layui-nav-item > a').each(function () {
         var el = this;
-        var tip = $(el).find('span').text();
-        if (!tip) return;
+        var span = $(el).find('span[data-i18n]');
+        if (!span.length) return;
+        var key = span.attr('data-i18n');
         $(el).on('mouseenter', function () {
           if (!document.body.classList.contains('hub-collapsed')) return;
-          layer.tips(tip, el, { tips: [2, '#393D49'], time: 1500 });
+          layer.tips(HubLang.t(key), el, { tips: [2, '#393D49'], time: 1500 });
         }).on('mouseleave', function () {
           layer.closeAll('tips');
         });

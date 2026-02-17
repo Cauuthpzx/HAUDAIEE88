@@ -64,13 +64,13 @@
       </div>
       <form class="layui-form" lay-filter="loginForm">
         <div class="layui-form-item">
-          <input type="text" name="username" placeholder="Tên đăng nhập" class="layui-input" lay-verify="required" autocomplete="off" autofocus>
+          <input type="text" name="username" data-i18n="username" data-i18n-attr="placeholder" placeholder="Tên đăng nhập" class="layui-input" lay-verify="required" autocomplete="off" autofocus>
         </div>
         <div class="layui-form-item">
-          <input type="password" name="password" placeholder="Mật khẩu" class="layui-input" lay-verify="required" autocomplete="off">
+          <input type="password" name="password" data-i18n="password" data-i18n-attr="placeholder" placeholder="Mật khẩu" class="layui-input" lay-verify="required" autocomplete="off">
         </div>
         <div class="layui-form-item">
-          <button type="button" class="layui-btn layui-btn-fluid" lay-submit lay-filter="doLogin">Đăng nhập</button>
+          <button type="button" class="layui-btn layui-btn-fluid" lay-submit lay-filter="doLogin" data-i18n="loginBtn">Đăng nhập</button>
         </div>
       </form>
       <div class="login-footer">Agent Hub &copy; 2024</div>
@@ -79,15 +79,20 @@
 
   <script src="/lib/layui/layui.js"></script>
   <script src="/js/hub-api.js"></script>
+  <script src="/js/hub-lang.js"></script>
   <script>
     // Nếu đã đăng nhập → redirect admin
     if (HubAPI.isLoggedIn()) {
       window.location.href = '/pages/admin.html';
     }
 
-    layui.use(['form', 'layer'], function () {
+    HubLang.init();
+
+    layui.use(['form', 'layer', 'i18n'], function () {
       var form = layui.form;
       var layer = layui.layer;
+
+      HubLang.applyDOM();
 
       form.on('submit(doLogin)', function (data) {
         var username = data.field.username;
@@ -98,15 +103,15 @@
         HubAPI.login(username, password).then(function (res) {
           layer.close(loadIdx);
           if (res.code === 0) {
-            layer.msg('Đăng nhập thành công!', { icon: 1, time: 1000 }, function () {
+            layer.msg(HubLang.t('loginSuccess'), { icon: 1, time: 1000 }, function () {
               window.location.href = '/pages/admin.html';
             });
           } else {
-            layer.msg(res.msg || 'Đăng nhập thất bại', { icon: 2 });
+            layer.msg(res.msg || HubLang.t('loginFailed'), { icon: 2 });
           }
         }).catch(function (err) {
           layer.close(loadIdx);
-          layer.msg('Lỗi kết nối', { icon: 2 });
+          layer.msg(HubLang.t('connectionError'), { icon: 2 });
         });
 
         return false;
