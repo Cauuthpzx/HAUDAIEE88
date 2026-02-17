@@ -15,9 +15,13 @@ CREATE TABLE IF NOT EXISTS ee88_agents (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   label TEXT NOT NULL,
   base_url TEXT NOT NULL,
-  cookie TEXT NOT NULL,
+  cookie TEXT DEFAULT '',
+  user_agent TEXT DEFAULT '',
+  ee88_username TEXT DEFAULT '',
+  ee88_password TEXT DEFAULT '',
   status INTEGER NOT NULL DEFAULT 1,
   last_check TEXT,
+  last_login TEXT,
   created_at TEXT DEFAULT (datetime('now', 'localtime')),
   updated_at TEXT DEFAULT (datetime('now', 'localtime'))
 );

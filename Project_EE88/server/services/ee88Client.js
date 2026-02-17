@@ -4,15 +4,18 @@ const { createLogger } = require('../utils/logger');
 
 const log = createLogger('ee88Client');
 
+const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
 /**
  * Tạo axios client cho 1 agent cụ thể
+ * Dùng agent.user_agent (từ cloudscraper lúc login) để khớp cf_clearance
  */
 function createClient(agent) {
   return axios.create({
     baseURL: agent.base_url,
     headers: {
       'X-Requested-With': 'XMLHttpRequest',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': agent.user_agent || DEFAULT_UA,
       Cookie: agent.cookie
     }
   });

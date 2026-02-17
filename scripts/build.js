@@ -15,7 +15,8 @@
  *       ├── index.html
  *       ├── js/
  *       ├── lib/
- *       └── pages/
+ *       ├── pages/
+ *       └── spa/          (SPA version)
  *
  * Sử dụng: node scripts/build.js
  *   --no-restart   Chỉ build, không restart server
@@ -31,7 +32,7 @@ const PORT = 3001;
 const NO_RESTART = process.argv.includes('--no-restart');
 
 // ── Cấu hình copy ──
-const SERVER_DIRS = ['config', 'database', 'middleware', 'routes', 'services', 'utils'];
+const SERVER_DIRS = ['config', 'database', 'middleware', 'routes', 'services', 'utils', 'workers'];
 const SERVER_FILES = ['server.js', 'package.json'];
 
 const CLIENT_COPY = ['index.html', 'js', 'lib', 'pages', 'images'];
@@ -135,7 +136,7 @@ console.log('=== EE88 Agent Hub — Build ===');
 console.log('');
 
 // 1. Tìm và tắt server đang chạy
-console.log('[1/6] Kiểm tra server đang chạy ...');
+console.log('[1/8] Kiểm tra server đang chạy ...');
 const serverPID = findServerPID();
 let wasRunning = false;
 
@@ -151,11 +152,11 @@ if (serverPID) {
 }
 
 // 2. Dọn dẹp dist/
-console.log('[2/6] Dọn dẹp dist/ ...');
+console.log('[2/8] Dọn dẹp dist/ ...');
 cleanDir(DIST);
 
 // 3. Copy server files
-console.log('[3/6] Copy server/ ...');
+console.log('[3/8] Copy server/ ...');
 const serverSrc = path.join(ROOT, 'server');
 const serverDest = path.join(DIST, 'server');
 fs.mkdirSync(serverDest, { recursive: true });
@@ -177,7 +178,7 @@ for (const dir of SERVER_DIRS) {
 }
 
 // 4. Tạo .env.example
-console.log('[4/6] Tạo .env.example ...');
+console.log('[4/8] Tạo .env.example ...');
 const envExample = [
   '# EE88 Agent Hub — Cấu hình môi trường',
   '# Copy file này thành .env và điền giá trị thực',
@@ -195,7 +196,7 @@ fs.writeFileSync(path.join(serverDest, '.env.example'), envExample);
 console.log('  + server/.env.example');
 
 // 5. Copy client files
-console.log('[5/6] Copy client/ ...');
+console.log('[5/8] Copy client/ ...');
 const clientSrc = path.join(ROOT, 'client');
 const clientDest = path.join(DIST, 'client');
 fs.mkdirSync(clientDest, { recursive: true });
@@ -210,16 +211,41 @@ for (const item of CLIENT_COPY) {
   }
 }
 
-// 6. Thống kê + Restart
-console.log('[6/6] Thống kê ...');
+// 6. Copy spa/ → dist/client/spa/
+console.log('[6/8] Copy spa/ ...');
+const spaSrc = path.join(ROOT, 'spa');
+const spaDest = path.join(clientDest, 'spa');
+if (fs.existsSync(spaSrc)) {
+  copyRecursive(spaSrc, spaDest);
+  const spaCount = countFiles(spaDest);
+  console.log('  + client/spa/ (' + spaCount + ' files)');
+} else {
+  console.log('  (không có spa/)');
+}
+
+// 7. Copy captcha/ (Python solver)
+console.log('[7/8] Copy captcha/ ...');
+const captchaSrc = path.join(ROOT, 'captcha');
+const captchaDest = path.join(DIST, 'captcha');
+if (fs.existsSync(captchaSrc)) {
+  copyRecursive(captchaSrc, captchaDest);
+  console.log('  + captcha/');
+} else {
+  console.log('  (không có captcha/)');
+}
+
+// 8. Thống kê + Restart
+console.log('[8/8] Thống kê ...');
 const serverCount = countFiles(serverDest);
 const clientCount = countFiles(clientDest);
+const captchaCount = countFiles(captchaDest);
 console.log('');
 console.log('=== Build hoàn tất ===');
-console.log('  Output:  ' + DIST);
-console.log('  Server:  ' + serverCount + ' files');
-console.log('  Client:  ' + clientCount + ' files');
-console.log('  Tổng:    ' + (serverCount + clientCount) + ' files');
+console.log('  Output:   ' + DIST);
+console.log('  Server:   ' + serverCount + ' files');
+console.log('  Client:   ' + clientCount + ' files (incl. spa/)');
+console.log('  Captcha:  ' + captchaCount + ' files');
+console.log('  Tổng:     ' + (serverCount + clientCount + captchaCount) + ' files');
 console.log('');
 
 // Auto-restart server

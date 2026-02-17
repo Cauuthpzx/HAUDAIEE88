@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -81,7 +82,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Auto kill port trước khi listen ──
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 
 function killPort(port) {
   try {
@@ -104,18 +105,117 @@ function killPort(port) {
 
 killPort(PORT);
 
-// ── Graceful shutdown ──
-process.on('SIGTERM', () => {
-  log.info('Nhận SIGTERM — đang tắt...');
-  closeDb();
-  process.exit(0);
-});
+// ── Python Captcha Solver (chạy kèm server) ──
+const SOLVER_PORT = parseInt(process.env.SOLVER_PORT) || 5000;
+let solverProcess = null;
 
-process.on('SIGINT', () => {
-  log.info('Nhận SIGINT — đang tắt...');
+function startSolver() {
+  // Tìm solver.py: thử captcha/ kế bên server/, hoặc ../../captcha/
+  const candidates = [
+    path.join(__dirname, '..', 'captcha', 'solver.py'),
+    path.join(__dirname, '..', '..', 'captcha', 'solver.py')
+  ];
+  let solverPath = null;
+  for (const p of candidates) {
+    if (fs.existsSync(p)) { solverPath = p; break; }
+  }
+
+  if (!solverPath) {
+    log.warn('Không tìm thấy captcha/solver.py — bỏ qua auto-login');
+    return;
+  }
+
+  // Kill port cũ nếu có
+  killPort(SOLVER_PORT);
+
+  // Tìm Python (thử python, python3)
+  let pythonCmd = 'python';
+  try {
+    execSync('python --version', { stdio: 'pipe' });
+  } catch {
+    try {
+      execSync('python3 --version', { stdio: 'pipe' });
+      pythonCmd = 'python3';
+    } catch {
+      log.warn('Không tìm thấy Python — captcha solver không khởi động');
+      return;
+    }
+  }
+
+  log.info(`Khởi động Captcha Solver: ${pythonCmd} ${solverPath} ${SOLVER_PORT}`);
+  solverProcess = spawn(pythonCmd, [solverPath, String(SOLVER_PORT)], {
+    cwd: path.dirname(solverPath),
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+
+  const solverLog = createLogger('solver');
+
+  solverProcess.stdout.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => { if (line) solverLog.info(line); });
+  });
+
+  solverProcess.stderr.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => {
+      // Flask ghi log ra stderr, không phải lỗi thực sự
+      if (line && !line.includes('WARNING') && !line.includes('Press CTRL'))
+        solverLog.info(line);
+    });
+  });
+
+  solverProcess.on('exit', (code) => {
+    if (code !== null && code !== 0) {
+      solverLog.error(`Solver thoát với code ${code}`);
+    }
+    solverProcess = null;
+  });
+
+  solverProcess.on('error', (err) => {
+    solverLog.error(`Solver lỗi: ${err.message}`);
+    solverProcess = null;
+  });
+}
+
+startSolver();
+
+// ── Login Worker Thread ──
+const { Worker } = require('worker_threads');
+let loginWorker = null;
+
+try {
+  const workerPath = path.join(__dirname, 'workers', 'loginWorker.js');
+  if (fs.existsSync(workerPath)) {
+    loginWorker = new Worker(workerPath);
+    loginWorker.on('message', (msg) => {
+      if (msg.type === 'login_result') {
+        const status = msg.success ? 'thành công' : `thất bại: ${msg.error}`;
+        log.info(`[LoginWorker] Agent #${msg.agentId} — ${status} (${msg.source})`);
+      }
+    });
+    loginWorker.on('error', (err) => {
+      log.error(`LoginWorker lỗi: ${err.message}`);
+    });
+    log.ok('Login Worker đã khởi động');
+  }
+} catch (err) {
+  log.warn(`Không thể khởi động Login Worker: ${err.message}`);
+}
+
+// ── Graceful shutdown ──
+function shutdown() {
+  if (loginWorker) loginWorker.postMessage({ type: 'shutdown' });
+  if (solverProcess) {
+    log.info('Tắt Captcha Solver...');
+    solverProcess.kill();
+    solverProcess = null;
+  }
   closeDb();
   process.exit(0);
-});
+}
+
+process.on('SIGTERM', () => { log.info('Nhận SIGTERM — đang tắt...'); shutdown(); });
+process.on('SIGINT', () => { log.info('Nhận SIGINT — đang tắt...'); shutdown(); });
 
 // ── Khởi động ──
 app.listen(PORT, () => {

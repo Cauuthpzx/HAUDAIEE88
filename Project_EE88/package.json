@@ -1,0 +1,13 @@
+{
+  "name": "ee88-agent-hub-root",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "nodemon",
+    "start": "node dist/server/server.js",
+    "solver": "python dist/captcha/solver.py"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

@@ -18,12 +18,12 @@ function permissionMiddleware(req, res, next) {
     if (user.role === 'admin') {
       // Admin: tất cả agents active
       agents = db.prepare(
-        'SELECT id, label, base_url, cookie FROM ee88_agents WHERE status = 1'
+        'SELECT id, label, base_url, cookie, user_agent, ee88_username, ee88_password FROM ee88_agents WHERE status = 1'
       ).all();
     } else {
       // User: chỉ agents được phân quyền + active
       agents = db.prepare(`
-        SELECT a.id, a.label, a.base_url, a.cookie
+        SELECT a.id, a.label, a.base_url, a.cookie, a.user_agent, a.ee88_username, a.ee88_password
         FROM ee88_agents a
         JOIN user_agent_permissions p ON p.agent_id = a.id
         WHERE p.user_id = ? AND a.status = 1

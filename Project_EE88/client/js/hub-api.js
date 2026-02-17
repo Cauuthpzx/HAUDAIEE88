@@ -21,6 +21,7 @@
 var HubAPI = {
   TOKEN_KEY: 'hub_token',
   USER_KEY: 'hub_user',
+  LOGIN_URL: '/pages/login.html',
 
   /**
    * Lấy token từ localStorage
@@ -68,7 +69,7 @@ var HubAPI = {
    */
   requireAuth: function () {
     if (!this.isLoggedIn()) {
-      window.top.location.href = '/pages/login.html';
+      window.top.location.href = HubAPI.LOGIN_URL;
       return false;
     }
     return true;
@@ -98,7 +99,7 @@ var HubAPI = {
    */
   logout: function () {
     this.clearAuth();
-    window.top.location.href = '/pages/login.html';
+    window.top.location.href = this.LOGIN_URL;
   },
 
   /**
@@ -118,7 +119,7 @@ var HubAPI = {
       // Token hết hạn → redirect login
       if (res.status === 401) {
         self.clearAuth();
-        window.top.location.href = '/pages/login.html';
+        window.top.location.href = HubAPI.LOGIN_URL;
         throw new Error('SESSION_EXPIRED');
       }
       return res;
@@ -232,7 +233,7 @@ if (typeof layui !== 'undefined') {
         statusCode: {
           401: function () {
             HubAPI.clearAuth();
-            window.top.location.href = '/pages/login.html';
+            window.top.location.href = HubAPI.LOGIN_URL;
           }
         }
       });

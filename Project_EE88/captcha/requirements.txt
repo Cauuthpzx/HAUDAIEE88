@@ -1,0 +1,4 @@
+flask>=3.0
+requests>=2.31
+ddddocr>=1.4.11
+pycryptodome>=3.20

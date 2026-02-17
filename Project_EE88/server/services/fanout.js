@@ -1,10 +1,30 @@
 const pLimit = require('p-limit');
 const { fetchEndpointForAgent } = require('./ee88Client');
+const { autoRelogin } = require('./loginService');
 const config = require('../config/default');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('fanout');
 const limit = pLimit(config.fanout.concurrency);
+
+/**
+ * Gọi endpoint cho 1 agent, tự động re-login nếu session expired
+ */
+async function fetchWithRelogin(agent, endpointKey, params) {
+  try {
+    return await fetchEndpointForAgent(agent, endpointKey, params);
+  } catch (err) {
+    if (err.code === 'SESSION_EXPIRED') {
+      log.warn(`[${agent.label}] Session expired — thử auto-login...`);
+      const newAgent = await autoRelogin(agent);
+      if (newAgent) {
+        log.ok(`[${agent.label}] Re-login thành công, retry request...`);
+        return await fetchEndpointForAgent(newAgent, endpointKey, params);
+      }
+    }
+    throw err;
+  }
+}
 
 /**
  * Fan-out: gọi N agents song song, gộp kết quả
@@ -21,7 +41,7 @@ async function fanoutFetch(agents, endpointKey, params) {
   // Nếu chỉ 1 agent, gọi trực tiếp không cần gộp
   if (agents.length === 1) {
     const agent = agents[0];
-    const result = await fetchEndpointForAgent(agent, endpointKey, params);
+    const result = await fetchWithRelogin(agent, endpointKey, params);
     // Thêm _agent_label vào mỗi row
     if (Array.isArray(result.data)) {
       result.data.forEach(row => {
@@ -40,7 +60,7 @@ async function fanoutFetch(agents, endpointKey, params) {
 
   const results = await Promise.allSettled(
     agents.map(agent =>
-      limit(() => fetchEndpointForAgent(agent, endpointKey, params)
+      limit(() => fetchWithRelogin(agent, endpointKey, params)
         .then(data => ({ agent, data }))
       )
     )
@@ -109,28 +129,50 @@ async function fanoutFetch(agents, endpointKey, params) {
 }
 
 /**
- * Fan-out action: gửi action đến 1 agent cụ thể
- * @param {object} agent — {id, label, base_url, cookie}
- * @param {string} actionPath — ee88 path (vd: '/agent/addUser')
- * @param {object} body — request body
+ * Gửi action request tới 1 agent
  */
-async function fanoutAction(agent, actionPath, body) {
+function sendAction(agent, actionPath, body) {
   const axios = require('axios');
+  const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   const client = axios.create({
     baseURL: agent.base_url,
     headers: {
       'X-Requested-With': 'XMLHttpRequest',
       'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': agent.user_agent || DEFAULT_UA,
       Cookie: agent.cookie
     },
     timeout: 15000
   });
 
   const params = new URLSearchParams(body).toString();
-  const response = await client.post(actionPath, params);
+  return client.post(actionPath, params);
+}
+
+/**
+ * Fan-out action: gửi action đến 1 agent cụ thể, auto-relogin nếu cần
+ * @param {object} agent — {id, label, base_url, cookie}
+ * @param {string} actionPath — ee88 path (vd: '/agent/addUser')
+ * @param {object} body — request body
+ */
+async function fanoutAction(agent, actionPath, body) {
+  let response = await sendAction(agent, actionPath, body);
 
   if (response.data && response.data.url === '/agent/login') {
+    // Thử auto-relogin
+    log.warn(`[${agent.label}] Action session expired — thử auto-login...`);
+    const newAgent = await autoRelogin(agent);
+    if (newAgent) {
+      log.ok(`[${agent.label}] Re-login thành công, retry action...`);
+      response = await sendAction(newAgent, actionPath, body);
+      if (response.data && response.data.url === '/agent/login') {
+        const err = new Error('Phiên EE88 đã hết hạn (sau re-login)');
+        err.code = 'SESSION_EXPIRED';
+        throw err;
+      }
+      return response.data;
+    }
+
     const err = new Error('Phiên EE88 đã hết hạn');
     err.code = 'SESSION_EXPIRED';
     throw err;

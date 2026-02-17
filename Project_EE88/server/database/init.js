@@ -28,6 +28,25 @@ function getDb() {
   db.exec(schema);
   log.ok('Schema đã sẵn sàng');
 
+  // Migrate: thêm cột mới cho ee88_agents (Phase 5: auto-login)
+  const cols = db.prepare("PRAGMA table_info(ee88_agents)").all().map(c => c.name);
+  if (!cols.includes('ee88_username')) {
+    db.exec("ALTER TABLE ee88_agents ADD COLUMN ee88_username TEXT DEFAULT ''");
+    log.info('Migrate: thêm cột ee88_username');
+  }
+  if (!cols.includes('ee88_password')) {
+    db.exec("ALTER TABLE ee88_agents ADD COLUMN ee88_password TEXT DEFAULT ''");
+    log.info('Migrate: thêm cột ee88_password');
+  }
+  if (!cols.includes('last_login')) {
+    db.exec("ALTER TABLE ee88_agents ADD COLUMN last_login TEXT");
+    log.info('Migrate: thêm cột last_login');
+  }
+  if (!cols.includes('user_agent')) {
+    db.exec("ALTER TABLE ee88_agents ADD COLUMN user_agent TEXT DEFAULT ''");
+    log.info('Migrate: thêm cột user_agent');
+  }
+
   // Seed admin nếu chưa có user nào
   const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users').get().cnt;
   if (userCount === 0) {

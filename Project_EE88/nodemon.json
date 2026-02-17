@@ -1,0 +1,16 @@
+{
+  "watch": ["dist/server", "dist/captcha"],
+  "ignore": [
+    "dist/server/node_modules",
+    "dist/server/logs",
+    "dist/server/database/*.db",
+    "dist/server/database/*.db-shm",
+    "dist/server/database/*.db-wal"
+  ],
+  "ext": "js,json,py,html,css",
+  "delay": "1000",
+  "exec": "node dist/server/server.js",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
