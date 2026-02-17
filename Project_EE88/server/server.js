@@ -4,12 +4,20 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { createLogger, accessLogStream, LOG_DIR } = require('./utils/logger');
+const { getDb, closeDb } = require('./database/init');
 const proxyRoutes = require('./routes/proxy');
 const actionRoutes = require('./routes/action');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const errorHandler = require('./middleware/errorHandler');
 
 const log = createLogger('server');
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// ── Khởi tạo database ──
+const db = getDb();
+log.ok('Database đã khởi tạo');
 
 // ── Middleware ──
 app.use(cors());
@@ -32,12 +40,26 @@ app.use((req, res, next) => {
 });
 
 // ── Routes ──
+// Auth: không cần JWT
+app.use('/api/auth', authRoutes);
+
+// Data + Action: cần JWT + permission
 app.use('/api/data', proxyRoutes);
 app.use('/api/action', actionRoutes);
 
+// Admin: cần JWT + admin role
+app.use('/api/admin', adminRoutes);
+
 app.get('/api/health', (req, res) => {
+  const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents WHERE status = 1').get().cnt;
+  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users WHERE status = 1').get().cnt;
   log.ok('Kiểm tra sức khoẻ: OK');
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    agents: agentCount,
+    users: userCount
+  });
 });
 
 // ── Phục vụ file tĩnh từ client/ ──
@@ -55,11 +77,8 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(clientDir, 'index.html'));
 });
 
-// ── Xử lý lỗi toàn cục ──
-app.use((err, req, res, _next) => {
-  log.error(`Lỗi không xử lý được: ${err.message}`, { stack: err.stack });
-  res.status(500).json({ code: -1, msg: 'Lỗi máy chủ nội bộ' });
-});
+// ── Global error handler ──
+app.use(errorHandler);
 
 // ── Auto kill port trước khi listen ──
 const { execSync } = require('child_process');
@@ -85,16 +104,30 @@ function killPort(port) {
 
 killPort(PORT);
 
+// ── Graceful shutdown ──
+process.on('SIGTERM', () => {
+  log.info('Nhận SIGTERM — đang tắt...');
+  closeDb();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  log.info('Nhận SIGINT — đang tắt...');
+  closeDb();
+  process.exit(0);
+});
+
 // ── Khởi động ──
 app.listen(PORT, () => {
   log.ok(`Máy chủ Agent Hub đang chạy tại http://localhost:${PORT}`);
   log.info(`Thư mục log: ${LOG_DIR}`);
-  log.info(`Kiểm thử: curl http://localhost:${PORT}/api/data/members`);
-  const cookie = process.env.EE88_COOKIE || '';
-  const sessId = cookie.match(/PHPSESSID=([^;]+)/)?.[1];
+
+  const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents').get().cnt;
+  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users').get().cnt;
   log.info('Cấu hình', {
     cổng: PORT,
-    ee88_url: process.env.EE88_BASE_URL,
-    phiên: sessId ? `${sessId.substring(0, 8)}...` : 'CHƯA CÀI ĐẶT'
+    agents: agentCount,
+    users: userCount,
+    jwt: 'enabled'
   });
 });

@@ -7,17 +7,29 @@
     "dev": "nodemon server.js"
   },
   "nodemonConfig": {
-    "watch": ["*.js", "config/", "services/", "routes/", "utils/"],
-    "ignore": ["logs/"],
+    "watch": [
+      "*.js",
+      "config/",
+      "services/",
+      "routes/",
+      "utils/"
+    ],
+    "ignore": [
+      "logs/"
+    ],
     "ext": "js,json",
     "delay": "500"
   },
   "dependencies": {
     "axios": "^1.7.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "express": "^4.21.0",
-    "morgan": "^1.10.0"
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "p-limit": "^3.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

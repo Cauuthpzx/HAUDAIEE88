@@ -27,7 +27,7 @@ const ROOT = path.resolve(__dirname, '..', 'Project_EE88');
 const DIST = path.join(ROOT, 'dist');
 
 // ── Cấu hình copy ──
-const SERVER_DIRS = ['config', 'routes', 'services', 'utils'];
+const SERVER_DIRS = ['config', 'database', 'middleware', 'routes', 'services', 'utils'];
 const SERVER_FILES = ['server.js', 'package.json'];
 
 const CLIENT_COPY = ['index.html', 'js', 'lib', 'pages'];
@@ -108,6 +108,10 @@ const envExample = [
   '# Copy file này thành .env và điền giá trị thực',
   '',
   'PORT=3001',
+  'JWT_SECRET=your-secret-key-here',
+  'JWT_EXPIRES_IN=24h',
+  '',
+  '# Agent EE88 mặc định (sẽ tự migrate vào DB lần đầu)',
   'EE88_BASE_URL=https://example.com',
   'EE88_COOKIE=PHPSESSID=your_session_id_here',
   ''

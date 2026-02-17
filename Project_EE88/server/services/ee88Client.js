@@ -4,28 +4,30 @@ const { createLogger } = require('../utils/logger');
 
 const log = createLogger('ee88Client');
 
-const BASE_URL = process.env.EE88_BASE_URL;
-const COOKIE = process.env.EE88_COOKIE;
-
-const client = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'X-Requested-With': 'XMLHttpRequest',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    Cookie: COOKIE
-  }
-});
+/**
+ * Tạo axios client cho 1 agent cụ thể
+ */
+function createClient(agent) {
+  return axios.create({
+    baseURL: agent.base_url,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      Cookie: agent.cookie
+    }
+  });
+}
 
 /**
- * Gọi 1 endpoint ee88
+ * Gọi 1 endpoint ee88 cho 1 agent cụ thể
+ * @param {object} agent — { id, label, base_url, cookie }
  * @param {string} endpointKey — key trong ENDPOINTS (vd: 'members')
  * @param {object} extraParams — params bổ sung từ client (page, limit, search…)
  * @returns {object} raw JSON response từ ee88
  */
-async function fetchEndpoint(endpointKey, extraParams = {}) {
+async function fetchEndpointForAgent(agent, endpointKey, extraParams = {}) {
   const cfg = ENDPOINTS[endpointKey];
   if (!cfg) {
-    log.error(`Endpoint không tồn tại: ${endpointKey}`);
     throw new Error(`Endpoint không tồn tại: ${endpointKey}`);
   }
 
@@ -37,10 +39,12 @@ async function fetchEndpoint(endpointKey, extraParams = {}) {
     .join('&');
 
   const url = qs ? `${cfg.path}?${qs}` : cfg.path;
+  const agentLabel = agent.label || `Agent#${agent.id}`;
 
-  log.info(`Gửi yêu cầu → EE88 POST ${url}`, { endpoint: endpointKey, params });
+  log.info(`[${agentLabel}] → EE88 POST ${url}`, { endpoint: endpointKey });
 
   const startTime = Date.now();
+  const client = createClient(agent);
 
   try {
     const res = await client.post(url, null, { timeout: cfg.timeout });
@@ -48,18 +52,18 @@ async function fetchEndpoint(endpointKey, extraParams = {}) {
 
     // Phát hiện phiên hết hạn
     if (res.data && res.data.url === '/agent/login') {
-      log.error(`Phiên đã hết hạn khi gọi [${endpointKey}]`, { tốnThờiGian: `${duration}ms` });
-      const err = new Error('Phiên EE88 đã hết hạn');
+      log.error(`[${agentLabel}] Phiên hết hạn [${endpointKey}] — ${duration}ms`);
+      const err = new Error(`Phiên EE88 đã hết hạn (${agentLabel})`);
       err.code = 'SESSION_EXPIRED';
+      err.agentId = agent.id;
       throw err;
     }
 
     const rowCount = Array.isArray(res.data.data) ? res.data.data.length : 'N/A';
-    log.ok(`Nhận phản hồi ← EE88 [${endpointKey}] ${duration}ms`, {
+    log.ok(`[${agentLabel}] ← EE88 [${endpointKey}] ${duration}ms`, {
       mã: res.data.code,
-      tổngSố: res.data.count,
       sốDòng: rowCount,
-      httpStatus: res.status
+      tổngSố: res.data.count
     });
 
     return res.data;
@@ -67,13 +71,25 @@ async function fetchEndpoint(endpointKey, extraParams = {}) {
     const duration = Date.now() - startTime;
     if (err.code === 'SESSION_EXPIRED') throw err;
 
-    log.error(`Lỗi ← EE88 [${endpointKey}] THẤT BẠI ${duration}ms`, {
+    log.error(`[${agentLabel}] ← EE88 [${endpointKey}] THẤT BẠI ${duration}ms`, {
       lỗi: err.message,
-      mãLỗi: err.code,
-      httpStatus: err.response?.status
+      mãLỗi: err.code
     });
     throw err;
   }
 }
 
-module.exports = { fetchEndpoint };
+/**
+ * Backward-compatible: gọi endpoint với agent từ .env (legacy)
+ */
+async function fetchEndpoint(endpointKey, extraParams = {}) {
+  const agent = {
+    id: 0,
+    label: 'Legacy',
+    base_url: process.env.EE88_BASE_URL,
+    cookie: process.env.EE88_COOKIE
+  };
+  return fetchEndpointForAgent(agent, endpointKey, extraParams);
+}
+
+module.exports = { fetchEndpoint, fetchEndpointForAgent, createClient };

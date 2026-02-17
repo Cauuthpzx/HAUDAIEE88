@@ -16,45 +16,181 @@
 /**
  * Hub API — fetch wrapper cho frontend
  * Gọi backend proxy → ee88
+ * Tự động gắn JWT token vào header
  */
-const HubAPI = {
+var HubAPI = {
+  TOKEN_KEY: 'hub_token',
+  USER_KEY: 'hub_user',
+
   /**
-   * Lấy dữ liệu từ backend
+   * Lấy token từ localStorage
+   */
+  getToken: function () {
+    return localStorage.getItem(this.TOKEN_KEY);
+  },
+
+  /**
+   * Lưu token + user info
+   */
+  setAuth: function (token, user) {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  },
+
+  /**
+   * Lấy user info
+   */
+  getUser: function () {
+    try {
+      return JSON.parse(localStorage.getItem(this.USER_KEY));
+    } catch (e) {
+      return null;
+    }
+  },
+
+  /**
+   * Xoá auth
+   */
+  clearAuth: function () {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+  },
+
+  /**
+   * Kiểm tra đã đăng nhập chưa
+   */
+  isLoggedIn: function () {
+    return !!this.getToken();
+  },
+
+  /**
+   * Redirect về login nếu chưa đăng nhập
+   */
+  requireAuth: function () {
+    if (!this.isLoggedIn()) {
+      window.top.location.href = '/pages/login.html';
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * Đăng nhập
+   */
+  login: function (username, password) {
+    var self = this;
+    return fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    }).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      if (data.code === 0 && data.data) {
+        self.setAuth(data.data.token, data.data.user);
+      }
+      return data;
+    });
+  },
+
+  /**
+   * Đăng xuất
+   */
+  logout: function () {
+    this.clearAuth();
+    window.top.location.href = '/pages/login.html';
+  },
+
+  /**
+   * Fetch wrapper với JWT token
+   */
+  _fetch: function (url, options) {
+    var self = this;
+    options = options || {};
+    options.headers = options.headers || {};
+
+    var token = this.getToken();
+    if (token) {
+      options.headers['Authorization'] = 'Bearer ' + token;
+    }
+
+    return fetch(url, options).then(function (res) {
+      // Token hết hạn → redirect login
+      if (res.status === 401) {
+        self.clearAuth();
+        window.top.location.href = '/pages/login.html';
+        throw new Error('SESSION_EXPIRED');
+      }
+      return res;
+    });
+  },
+
+  /**
+   * Lấy dữ liệu từ backend (data endpoints)
    * @param {string} endpoint — tên endpoint (vd: 'members')
    * @param {object} params — query params (page, limit, username…)
    * @returns {Promise<object>} — { code, count, data[], total_data }
    */
-  async fetch(endpoint, params = {}) {
-    const qs = Object.entries(params)
-      .filter(([, v]) => v !== undefined && v !== '')
-      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+  fetch: function (endpoint, params) {
+    params = params || {};
+    var qs = Object.entries(params)
+      .filter(function (e) { return e[1] !== undefined && e[1] !== ''; })
+      .map(function (e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); })
       .join('&');
 
-    const url = qs ? `/api/data/${endpoint}?${qs}` : `/api/data/${endpoint}`;
+    var url = qs ? '/api/data/' + endpoint + '?' + qs : '/api/data/' + endpoint;
 
-    const res = await fetch(url);
+    return this._fetch(url).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  },
 
-    if (res.status === 401) {
-      throw new Error('SESSION_EXPIRED');
-    }
+  /**
+   * Gọi action endpoint
+   * @param {string} action — tên action (vd: 'addUser')
+   * @param {object} body — request body
+   * @returns {Promise<object>}
+   */
+  action: function (action, body) {
+    return this._fetch('/api/action/' + action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  },
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
+  /**
+   * Gọi admin endpoint (GET)
+   */
+  adminGet: function (path) {
+    return this._fetch('/api/admin/' + path).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  },
 
-    return res.json();
+  /**
+   * Gọi admin endpoint (POST/PUT/DELETE)
+   */
+  adminRequest: function (path, method, body) {
+    return this._fetch('/api/admin/' + path, {
+      method: method || 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
   },
 
   /**
    * Single-panel date range picker (1 bảng lịch, chọn khoảng ngày)
-   * - Click 1: chọn ngày bắt đầu (đậm)
-   * - Click 2: chọn ngày kết thúc (đậm), dải giữa nhạt màu
-   *
-   * @param {string} elem — CSS selector (#myInput)
-   * @param {object} opts — laydate options bổ sung (max, value, done…)
-   * @returns laydate instance
    */
-  singleRangePicker(elem, opts) {
+  singleRangePicker: function (elem, opts) {
     opts = opts || {};
     var sep = opts.separator || '|';
     var userReady = opts.ready;
@@ -75,3 +211,27 @@ const HubAPI = {
     }));
   }
 };
+
+/**
+ * Global jQuery AJAX interceptor
+ * Tự động gắn JWT token vào tất cả $.ajax calls (bao gồm layui table)
+ * Tự động redirect login khi 401
+ */
+(function () {
+  if (typeof layui !== 'undefined' && layui.$) {
+    layui.$.ajaxSetup({
+      beforeSend: function (xhr) {
+        var token = HubAPI.getToken();
+        if (token) {
+          xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        }
+      },
+      statusCode: {
+        401: function () {
+          HubAPI.clearAuth();
+          window.top.location.href = '/pages/login.html';
+        }
+      }
+    });
+  }
+})();

@@ -1,12 +1,17 @@
 const express = require('express');
 const ENDPOINTS = require('../config/endpoints');
-const { fetchEndpoint } = require('../services/ee88Client');
+const { fanoutFetch } = require('../services/fanout');
+const { authMiddleware } = require('../middleware/auth');
+const { permissionMiddleware } = require('../middleware/permission');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('proxy');
 const router = express.Router();
 
-// GET /api/data/:endpoint  (dynamic — hỗ trợ tất cả endpoints trong config)
+// Tất cả data routes cần JWT + permission
+router.use(authMiddleware, permissionMiddleware);
+
+// GET /api/data/:endpoint  (dynamic — fan-out tới N agents)
 router.get('/:endpoint', async (req, res) => {
   const endpointKey = req.params.endpoint;
 
@@ -17,16 +22,19 @@ router.get('/:endpoint', async (req, res) => {
   }
 
   const startTime = Date.now();
-  log.info(`Nhận yêu cầu /${endpointKey}`, { truyVấn: req.query, ip: req.ip });
+  log.info(`[${req.user.username}] Yêu cầu /${endpointKey}`, {
+    agents: req.agents.length,
+    truyVấn: req.query
+  });
 
   try {
-    const data = await fetchEndpoint(endpointKey, req.query);
+    const data = await fanoutFetch(req.agents, endpointKey, req.query);
     const duration = Date.now() - startTime;
 
-    log.ok(`Trả kết quả /${endpointKey} thành công — ${duration}ms`, {
-      mã: data.code,
+    log.ok(`[${req.user.username}] /${endpointKey} — ${duration}ms`, {
       sốDòng: Array.isArray(data.data) ? data.data.length : 0,
-      tổngSố: data.count
+      tổngSố: data.count,
+      agents: req.agents.length
     });
 
     res.json(data);

@@ -60,12 +60,13 @@
     }
     .hub-header-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
     .hub-header-btn .layui-icon { font-size: 18px; }
-    .hub-header-nav { background: transparent !important; padding: 0 !important; margin: 0 0 0 6px !important; }
-    .hub-header-nav .layui-nav-bar { display: none; }
-    .hub-header-nav .layui-nav-item > a { color: #ccc !important; padding-right: 30px; }
-    .hub-header-nav .layui-nav-item:hover > a,
-    .hub-header-nav .layui-this > a { color: #fff !important; background: rgba(255,255,255,.1) !important; }
-    .hub-header-nav .layui-nav-child { top: 50px; }
+
+    .hub-user-info {
+      color: #aaa;
+      font-size: 13px;
+      margin-right: 10px;
+    }
+    .hub-user-info b { color: #fff; }
 
     /* ── Sidebar ── */
     .hub-sidebar {
@@ -154,20 +155,11 @@
     <a class="hub-header-btn" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
     <a class="hub-header-btn" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
     <div class="hub-header-right">
+      <span class="hub-user-info" id="userInfo"></span>
       <a class="hub-header-btn" id="btnCloseAll" title="Đóng tất cả tab"><i class="layui-icon layui-icon-close"></i></a>
       <a class="hub-header-btn" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
+      <a class="hub-header-btn" id="btnLogout" title="Đăng xuất"><i class="layui-icon layui-icon-logout"></i></a>
     </div>
-    <ul class="layui-nav hub-header-nav" lay-filter="hub-account">
-      <li class="layui-nav-item" lay-unselect>
-        <a href="javascript:;"><i class="layui-icon layui-icon-username" style="font-size:18px;margin-right:5px;"></i>Agent</a>
-        <dl class="layui-nav-child">
-          <dd><a href="javascript:;" data-id="editPassword"><i class="layui-icon layui-icon-edit" style="margin-right:6px;"></i>Đổi MK đăng nhập</a></dd>
-          <dd><a href="javascript:;" data-id="editFundPassword"><i class="layui-icon layui-icon-password" style="margin-right:6px;"></i>Đổi MK giao dịch</a></dd>
-          <hr>
-          <dd style="text-align:center;"><a href="javascript:;" data-id="logout" style="color:#ff5722;">Đăng xuất</a></dd>
-        </dl>
-      </li>
-    </ul>
   </div>
 
   <!-- Sidebar -->
@@ -265,6 +257,20 @@
           </dd>
         </dl>
       </li>
+      <!-- 8. Quản lý (admin only) -->
+      <li class="layui-nav-item" id="menuManage" style="display:none;">
+        <a href="javascript:;">
+          <i class="layui-icon layui-icon-set" style="margin-right: 6px;"></i><span>Quản lý</span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd>
+            <a href="javascript:;" data-url="/pages/manage/manageAgents.html" data-title="Quản lý Agents">Quản lý Agents</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-url="/pages/manage/manageUsers.html" data-title="Quản lý Users">Quản lý Users</a>
+          </dd>
+        </dl>
+      </li>
     </ul>
   </div>
 
@@ -277,7 +283,13 @@
   </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-api.js"></script>
   <script>
+    // ── Auth guard ──
+    if (!HubAPI.isLoggedIn()) {
+      window.location.href = '/pages/login.html';
+    }
+
     layui.use(['element', 'tabs', 'dropdown'], function () {
       var $ = layui.$;
       var element = layui.element;
@@ -285,6 +297,22 @@
       var dropdown = layui.dropdown;
       var openedTabs = {};
       var TABS_ID = 'hubTabs';
+
+      // ── Hiển thị user info ──
+      var user = HubAPI.getUser();
+      if (user) {
+        document.getElementById('userInfo').innerHTML = '<b>' + user.username + '</b> (' + user.role + ')';
+
+        // Hiện menu Quản lý nếu admin
+        if (user.role === 'admin') {
+          document.getElementById('menuManage').style.display = '';
+        }
+      }
+
+      // ── Logout ──
+      document.getElementById('btnLogout').addEventListener('click', function () {
+        HubAPI.logout();
+      });
 
       // ── Right-click context menu cho tab header ──
       var dropdownInst = dropdown.render({
@@ -372,33 +400,6 @@
         } else {
           document.exitFullscreen();
           fsIcon.className = 'layui-icon layui-icon-screen-full';
-        }
-      });
-
-      // ── Account nav dropdown ──
-      element.on('nav(hub-account)', function (elem) {
-        var id = elem.attr('data-id');
-        if (!id) return;
-        var map = {
-          editPassword: { url: '/pages/agent/editPassword.html', title: 'Đổi MK đăng nhập' },
-          editFundPassword: { url: '/pages/agent/editFundPassword.html', title: 'Đổi MK giao dịch' }
-        };
-        if (map[id]) {
-          var info = map[id];
-          if (openedTabs[info.url]) {
-            tabs.change(TABS_ID, info.url);
-          } else {
-            tabs.add(TABS_ID, {
-              title: info.title,
-              content: '<iframe src="' + info.url + '"></iframe>',
-              id: info.url
-            });
-            openedTabs[info.url] = true;
-          }
-        } else if (id === 'logout') {
-          layui.layer.confirm('Bạn có chắc muốn đăng xuất?', { title: 'Xác nhận', btn: ['Đăng xuất', 'Hủy'] }, function () {
-            window.location.href = '/';
-          });
         }
       });
 

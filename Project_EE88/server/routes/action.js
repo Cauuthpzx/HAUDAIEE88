@@ -1,23 +1,11 @@
 const express = require('express');
-const axios = require('axios');
+const { fanoutAction } = require('../services/fanout');
+const { authMiddleware } = require('../middleware/auth');
+const { permissionMiddleware } = require('../middleware/permission');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('action');
 const router = express.Router();
-
-const BASE_URL = process.env.EE88_BASE_URL;
-const COOKIE = process.env.EE88_COOKIE;
-
-const client = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'X-Requested-With': 'XMLHttpRequest',
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    Cookie: COOKIE
-  },
-  timeout: 15000
-});
 
 // Danh sách action cho phép
 const ALLOWED_ACTIONS = {
@@ -31,6 +19,9 @@ const ALLOWED_ACTIONS = {
   editInvite: '/agent/editInvite'
 };
 
+// Tất cả action routes cần JWT + permission
+router.use(authMiddleware, permissionMiddleware);
+
 // POST /api/action/:action
 router.post('/:action', async (req, res) => {
   const actionKey = req.params.action;
@@ -42,21 +33,39 @@ router.post('/:action', async (req, res) => {
 
   const ee88Path = ALLOWED_ACTIONS[actionKey];
   const startTime = Date.now();
-  log.info(`Nhận yêu cầu action /${actionKey}`, { body: req.body, ip: req.ip });
+
+  // Xác định agent: dùng agent_id từ body, hoặc agent đầu tiên
+  const agentId = req.body._agent_id;
+  let agent;
+
+  if (agentId) {
+    agent = req.agents.find(a => a.id === parseInt(agentId));
+    if (!agent) {
+      return res.status(403).json({ code: -1, msg: 'Không có quyền truy cập agent này' });
+    }
+  } else {
+    // Mặc định dùng agent đầu tiên
+    agent = req.agents[0];
+  }
+
+  // Loại bỏ _agent_id khỏi body trước khi gửi
+  const body = { ...req.body };
+  delete body._agent_id;
+
+  log.info(`[${req.user.username}] Action /${actionKey} → ${agent.label}`, { body });
 
   try {
-    const params = new URLSearchParams(req.body).toString();
-    const response = await client.post(ee88Path, params);
+    const data = await fanoutAction(agent, ee88Path, body);
     const duration = Date.now() - startTime;
 
     // Phát hiện phiên hết hạn
-    if (response.data && response.data.url === '/agent/login') {
+    if (data && data.url === '/agent/login') {
       log.error(`Action [${actionKey}] — Phiên hết hạn — ${duration}ms`);
       return res.status(401).json({ code: -1, msg: 'Phiên EE88 đã hết hạn' });
     }
 
-    log.ok(`Action [${actionKey}] thành công — ${duration}ms`, { mã: response.data.code });
-    res.json(response.data);
+    log.ok(`[${req.user.username}] Action [${actionKey}] → ${agent.label} — ${duration}ms`, { mã: data.code });
+    res.json(data);
   } catch (err) {
     const duration = Date.now() - startTime;
     log.error(`Action [${actionKey}] — Thất bại — ${duration}ms`, { lỗi: err.message });
