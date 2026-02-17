@@ -114,12 +114,12 @@
           { field: 'register_recharge_count', title: 'Nạp đầu trong ngày đăng kí' },
           { field: 'remark', title: 'Ghi chú' },
           { field: 'create_time', title: 'Thời gian thêm vào' },
-          { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' },
           { field: 'id', title: 'ID', width: 90},
           { field: 'uid', title: 'UID', width: 90},
           { field: 'group_id', title: 'Nhóm', width: 80},
           { field: 'rebate_arr', title: 'Hoàn trả', width: 200},
-          { field: 'update_time', title: 'Cập nhật', width: 160}
+          { field: 'update_time', title: 'Cập nhật', width: 160},
+          { fixed: 'right', title: 'Thao tác', minWidth: 360, toolbar: '#rowActionTpl' }
         ]],
         done: function (res) {
           console.log('[inviteList] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' mã giới thiệu');
