@@ -216,22 +216,26 @@ var HubAPI = {
  * Global jQuery AJAX interceptor
  * Tự động gắn JWT token vào tất cả $.ajax calls (bao gồm layui table)
  * Tự động redirect login khi 401
+ * Phải dùng layui.use() vì layui.$ chỉ có sau khi modules sẵn sàng
  */
-(function () {
-  if (typeof layui !== 'undefined' && layui.$) {
-    layui.$.ajaxSetup({
-      beforeSend: function (xhr) {
-        var token = HubAPI.getToken();
-        if (token) {
-          xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+if (typeof layui !== 'undefined') {
+  layui.use(function () {
+    var $ = layui.$;
+    if ($) {
+      $.ajaxSetup({
+        beforeSend: function (xhr) {
+          var token = HubAPI.getToken();
+          if (token) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          }
+        },
+        statusCode: {
+          401: function () {
+            HubAPI.clearAuth();
+            window.top.location.href = '/pages/login.html';
+          }
         }
-      },
-      statusCode: {
-        401: function () {
-          HubAPI.clearAuth();
-          window.top.location.href = '/pages/login.html';
-        }
-      }
-    });
-  }
-})();
+      });
+    }
+  });
+}

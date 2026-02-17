@@ -29,7 +29,7 @@
     .hub-logo span { vertical-align: middle; transition: opacity .3s; }
 
     /* ── Header ── */
-    .hub-header {
+    .layui-header {
       height: 50px;
       background: #20222A;
       color: #fff;
@@ -41,12 +41,17 @@
       z-index: 100;
       transition: left .3s;
     }
-    .hub-header-right {
+    .hub-header-right-nav {
+      background: transparent !important;
+      padding: 0;
       margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 2px;
     }
+    .hub-header-right-nav .layui-nav-bar { display: none; }
+    .hub-header-right-nav .layui-nav-item > a { color: #ccc !important; height: 50px; line-height: 50px; }
+    .hub-header-right-nav .layui-nav-item:hover > a { color: #fff !important; }
+    .hub-header-right-nav .layui-nav-item > a > .layui-icon { font-size: 18px; }
+    .hub-header-right-nav .layui-nav-more { border-top-color: #ccc; border-width: 5px; margin-left: 4px; }
+    .hub-header-right-nav .layui-nav-item:hover .layui-nav-more { border-top-color: #fff; }
     .hub-header-btn {
       display: inline-flex;
       align-items: center;
@@ -111,7 +116,7 @@
     body.hub-collapsed .hub-logo { width: 60px; }
     body.hub-collapsed .hub-logo .layui-icon { margin-right: 0 !important; font-size: 28px; }
     body.hub-collapsed .hub-logo span { display: none; }
-    body.hub-collapsed .hub-header { left: 60px; }
+    body.hub-collapsed .layui-header { left: 60px; }
     body.hub-collapsed .hub-sidebar { width: 60px; }
     body.hub-collapsed .hub-body { left: 60px; }
     body.hub-collapsed .hub-sidebar .layui-nav.layui-nav-tree { width: 60px; }
@@ -151,15 +156,29 @@
   </div>
 
   <!-- Header -->
-  <div class="hub-header">
+  <div class="layui-header">
     <a class="hub-header-btn" id="btnToggle" title="Thu gọn menu"><i class="layui-icon layui-icon-shrink-right"></i></a>
     <a class="hub-header-btn" id="btnRefresh" title="Tải lại trang"><i class="layui-icon layui-icon-refresh"></i></a>
-    <div class="hub-header-right">
-      <span class="hub-user-info" id="userInfo"></span>
-      <a class="hub-header-btn" id="btnCloseAll" title="Đóng tất cả tab"><i class="layui-icon layui-icon-close"></i></a>
-      <a class="hub-header-btn" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
-      <a class="hub-header-btn" id="btnLogout" title="Đăng xuất"><i class="layui-icon layui-icon-logout"></i></a>
-    </div>
+    <ul class="layui-nav hub-header-right-nav" lay-bar="disabled" lay-filter="hub-account">
+      <li class="layui-nav-item" lay-unselect>
+        <a href="javascript:;" id="btnFullscreen" title="Toàn màn hình"><i class="layui-icon layui-icon-screen-full"></i></a>
+      </li>
+      <li class="layui-nav-item layui-hide layui-show-sm-inline-block" lay-unselect>
+        <a href="javascript:;">
+          <img src="//unpkg.com/outeres@0.0.10/img/layui/icon-v2.png" class="layui-nav-img">
+          <span id="userInfo"></span>
+        </a>
+        <dl class="layui-nav-child">
+          <dd><a href="javascript:;" data-url="/pages/agent/editPassword.html" data-title="Đổi MK đăng nhập">Đổi MK đăng nhập</a></dd>
+          <dd><a href="javascript:;" data-url="/pages/agent/editFundPassword.html" data-title="Đổi MK giao dịch">Đổi MK giao dịch</a></dd>
+          <hr>
+          <dd style="text-align: center;"><a href="javascript:;" id="navLogout">Đăng xuất</a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item" lay-unselect>
+        <a href="javascript:;" id="btnMore" title="Tuỳ chọn"><i class="layui-icon layui-icon-more-vertical"></i></a>
+      </li>
+    </ul>
   </div>
 
   <!-- Sidebar -->
@@ -290,7 +309,7 @@
       window.location.href = '/pages/login.html';
     }
 
-    layui.use(['element', 'tabs', 'dropdown'], function () {
+    layui.use(['element', 'tabs', 'dropdown', 'layer'], function () {
       var $ = layui.$;
       var element = layui.element;
       var tabs = layui.tabs;
@@ -301,7 +320,7 @@
       // ── Hiển thị user info ──
       var user = HubAPI.getUser();
       if (user) {
-        document.getElementById('userInfo').innerHTML = '<b>' + user.username + '</b> (' + user.role + ')';
+        document.getElementById('userInfo').textContent = user.username;
 
         // Hiện menu Quản lý nếu admin
         if (user.role === 'admin') {
@@ -309,9 +328,29 @@
         }
       }
 
-      // ── Logout ──
-      document.getElementById('btnLogout').addEventListener('click', function () {
-        HubAPI.logout();
+      // ── Header nav "Tài khoản" ──
+      element.on('nav(hub-account)', function (elem) {
+        if (elem.attr('id') === 'navLogout') {
+          HubAPI.logout();
+          return;
+        }
+        var url = elem.attr('data-url');
+        var title = elem.attr('data-title');
+        if (!url) return;
+        if (openedTabs[url]) {
+          tabs.change(TABS_ID, url);
+        } else {
+          tabs.add(TABS_ID, {
+            title: title,
+            content: '<iframe src="' + url + '"></iframe>',
+            id: url,
+            done: function (data) {
+              dropdown.render($.extend({}, dropdownInst.config, { elem: data.headerItem }));
+            }
+          });
+          openedTabs[url] = true;
+        }
+        document.title = 'Agent Hub — ' + (title || '');
       });
 
       // ── Right-click context menu cho tab header ──
@@ -385,12 +424,6 @@
         if (active) active.contentWindow.location.reload();
       });
 
-      // ── Đóng tất cả tab ──
-      document.getElementById('btnCloseAll').addEventListener('click', function () {
-        tabs.closeMult(TABS_ID, 'all');
-        openedTabs = {};
-      });
-
       // ── Fullscreen ──
       var fsIcon = document.querySelector('#btnFullscreen .layui-icon');
       document.getElementById('btnFullscreen').addEventListener('click', function () {
@@ -401,6 +434,23 @@
           document.exitFullscreen();
           fsIcon.className = 'layui-icon layui-icon-screen-full';
         }
+      });
+
+      // ── More options (menu right) ──
+      var layer = layui.layer;
+      document.getElementById('btnMore').addEventListener('click', function () {
+        layer.open({
+          type: 1,
+          title: 'Tuỳ chọn',
+          content: '<div style="padding: 15px;">'
+            + '<p>Chưa có tuỳ chọn nào.</p>'
+            + '</div>',
+          area: ['260px', '100%'],
+          offset: 'rt',
+          anim: 'slideLeft',
+          shadeClose: true,
+          scrollbar: false
+        });
       });
 
       // Auto-load trang đầu tiên
