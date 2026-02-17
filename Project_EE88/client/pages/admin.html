@@ -115,31 +115,21 @@
     body.hub-collapsed .hub-sidebar .layui-nav-item > a { padding-left: 0; padding-right: 0; text-align: center; }
 
     /* ── Tabs ── */
-    .hub-body .layui-tab {
+    .hub-body .layui-tabs {
       margin: 0;
       display: flex;
       flex-direction: column;
       height: 100%;
     }
-    .hub-body .layui-tab-title {
-      background: #fff;
-      border-bottom: 1px solid #e6e6e6;
-      height: 40px;
-      line-height: 40px;
-    }
-    .hub-body .layui-tab-title li {
-      line-height: 40px;
-      height: 40px;
-    }
-    .hub-body .layui-tab-content {
+    .hub-body .layui-tabs-body {
       flex: 1;
       padding: 0;
       overflow: hidden;
     }
-    .hub-body .layui-tab-item {
+    .hub-body .layui-tabs-item {
       height: 100%;
     }
-    .hub-body .layui-tab-item iframe {
+    .hub-body .layui-tabs-item iframe {
       width: 100%;
       height: 100%;
       border: none;
@@ -263,55 +253,73 @@
 
   <!-- Body -->
   <div class="hub-body">
-    <div class="layui-tab layui-tab-brief" lay-filter="hub-tabs" lay-allowclose="true">
-      <ul class="layui-tab-title"></ul>
-      <div class="layui-tab-content"></div>
+    <div class="layui-tabs layui-hide-v" id="hubTabs" lay-options="{closable: true, headerMode: 'scroll'}">
+      <ul class="layui-tabs-header"></ul>
+      <div class="layui-tabs-body"></div>
     </div>
   </div>
 
   <script src="/lib/layui/layui.js"></script>
   <script>
-    layui.use(['element'], function () {
+    layui.use(['element', 'tabs', 'dropdown'], function () {
+      var $ = layui.$;
       var element = layui.element;
+      var tabs = layui.tabs;
+      var dropdown = layui.dropdown;
       var openedTabs = {};
+      var TABS_ID = 'hubTabs';
 
-      // Click menu → mở tab hoặc chuyển sang tab đã mở
+      // ── Right-click context menu cho tab header ──
+      var dropdownInst = dropdown.render({
+        elem: '#' + TABS_ID + ' .layui-tabs-header>li',
+        trigger: 'contextmenu',
+        data: [
+          { title: 'Đóng', action: 'close', mode: 'this' },
+          { title: 'Đóng tab khác', action: 'close', mode: 'other' },
+          { title: 'Đóng tab bên phải', action: 'close', mode: 'right' },
+          { type: '-' },
+          { title: 'Đóng tất cả', action: 'close', mode: 'all' }
+        ],
+        click: function (data) {
+          var index = this.elem.index();
+          if (data.mode === 'this') {
+            tabs.close(TABS_ID, index);
+          } else {
+            tabs.closeMult(TABS_ID, data.mode, index);
+          }
+        }
+      });
+
+      // ── Click menu → mở tab hoặc chuyển sang tab đã mở ──
       element.on('nav(hub-menu)', function (elem) {
         var url = elem.attr('data-url');
         var title = elem.attr('data-title');
         if (!url) return;
 
         if (openedTabs[url]) {
-          // Tab đã mở → chuyển sang
-          element.tabChange('hub-tabs', url);
+          tabs.change(TABS_ID, url);
         } else {
-          // Mở tab mới
-          element.tabAdd('hub-tabs', {
+          tabs.add(TABS_ID, {
             title: title,
-            content: '<iframe src="' + url + '" frameborder="0"></iframe>',
-            id: url
+            content: '<iframe src="' + url + '"></iframe>',
+            id: url,
+            done: function (data) {
+              // Thêm context menu cho tab mới
+              dropdown.render($.extend({}, dropdownInst.config, {
+                elem: data.headerItem
+              }));
+            }
           });
           openedTabs[url] = true;
-          element.tabChange('hub-tabs', url);
         }
 
         document.title = 'Agent Hub — ' + (title || '');
       });
 
-      // Xoá tab → dọn dẹp
-      element.on('tabDelete(hub-tabs)', function (data) {
-        var tabs = document.querySelectorAll('.layui-tab-title li');
-        // Tìm url của tab bị xoá từ lay-id
-        for (var key in openedTabs) {
-          var found = false;
-          tabs.forEach(function (li) {
-            if (li.getAttribute('lay-id') === key) found = true;
-          });
-          if (!found) {
-            delete openedTabs[key];
-            break;
-          }
-        }
+      // ── Xoá tab → dọn dẹp openedTabs ──
+      tabs.on('close(' + TABS_ID + ')', function (data) {
+        var id = data.id;
+        if (id) delete openedTabs[id];
       });
 
       // ── Toggle sidebar ──
@@ -328,16 +336,13 @@
 
       // ── Refresh tab hiện tại ──
       document.getElementById('btnRefresh').addEventListener('click', function () {
-        var active = document.querySelector('.hub-body .layui-tab-item.layui-show iframe');
+        var active = document.querySelector('.hub-body .layui-tabs-item.layui-show iframe');
         if (active) active.contentWindow.location.reload();
       });
 
       // ── Đóng tất cả tab ──
       document.getElementById('btnCloseAll').addEventListener('click', function () {
-        document.querySelectorAll('.layui-tab-title li').forEach(function (li) {
-          var id = li.getAttribute('lay-id');
-          if (id) element.tabDelete('hub-tabs', id);
-        });
+        tabs.closeMult(TABS_ID, 'all');
         openedTabs = {};
       });
 

@@ -24,7 +24,11 @@ const ALLOWED_ACTIONS = {
   editPassword: '/agent/editPassword',
   editFundPassword: '/agent/editFundPassword',
   getLottery: '/agent/getLottery',
-  getRebateOddsPanel: '/agent/getRebateOddsPanel'
+  getRebateOddsPanel: '/agent/getRebateOddsPanel',
+  addUser: '/agent/addUser',
+  setRebate: '/agent/setRebate',
+  addInvite: '/agent/addInvite',
+  editInvite: '/agent/editInvite'
 };
 
 // POST /api/action/:action

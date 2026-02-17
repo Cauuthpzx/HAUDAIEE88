@@ -4,7 +4,7 @@ blockquote,body,button,dd,div,dl,dt,form,h1,h2,h3,h4,h5,h6,input,li,ol,p,pre,td,
 .layui-laydate-range.layui-laydate-linkage .laydate-main-list-0 .laydate-next-m,.layui-laydate-range.layui-laydate-linkage .laydate-main-list-0 .laydate-next-y{display:inline-block!important}
 .layui-laydate-range .layui-laydate-content td.layui-this>div{font-weight:700}
 .layui-laydate-range .layui-laydate-content td.laydate-selected>div{background-color:rgba(22,183,119,.15)!important}
-.layui-table-tool{background:#f2f2f2!important;border:none!important;border-bottom:1px solid #e6e6e6!important}
+.layui-table-tool{background:#f2f2f2!important;border:none!important;border-bottom:1px solid #e6e6e6!important;min-height:45px!important}
 .layui-table-header{background:#f2f2f2!important;border:none!important;border-bottom:1px solid #e6e6e6!important}
 .layui-table-header th{background:#f2f2f2!important}
 .layui-table th{background:#f2f2f2!important}

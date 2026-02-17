@@ -106,10 +106,14 @@
   <script src="/lib/layui/layui.js"></script>
   <script src="/js/hub-api.js"></script>
   <script>
-    layui.use(['table', 'form', 'laydate'], function () {
+    layui.use(['table', 'form', 'laydate', 'layer'], function () {
       var table = layui.table;
       var form = layui.form;
       var laydate = layui.laydate;
+      var layer = layui.layer;
+      var $ = layui.$;
+
+      var SERIES_NAMES = {'1':'MN','2':'MB','3':'MT','4':'XSN','5':'Sicbo','7':'Keno','8':'WinGo','9':'Game'};
 
       // ── Date range picker ──
       laydate.render({ elem: '#firstDepositTime', type: 'datetime', range: '|', rangeLinked: true });
@@ -180,10 +184,10 @@
       table.on('toolbar(memberTable)', function (obj) {
         switch (obj.event) {
           case 'addMember':
-            layui.layer.msg('Chức năng thêm hội viên — đang phát triển');
+            openAddUserForm('member');
             break;
           case 'addAgent':
-            layui.layer.msg('Chức năng đại lý mới thêm — đang phát triển');
+            openAddUserForm('agent');
             break;
         }
       });
@@ -191,9 +195,140 @@
       // ── Row action events ──
       table.on('tool(memberTable)', function (obj) {
         if (obj.event === 'rebate') {
-          layui.layer.msg('Cài đặt hoàn trả cho: ' + obj.data.username + ' — đang phát triển');
+          openRebateForm(obj.data);
         }
       });
+
+      // ── Form thêm hội viên / đại lý ──
+      function openAddUserForm(type) {
+        var isAgent = type === 'agent';
+        var title = isAgent ? 'Thêm đại lý mới' : 'Thêm hội viên mới';
+
+        var formHtml = '<form class="layui-form" lay-filter="addUserForm" style="padding:15px 30px 0 0;">'
+          + '<div class="layui-form-item">'
+          + '<label class="layui-form-label">Tên tài khoản</label>'
+          + '<div class="layui-input-block"><input type="text" name="username" required lay-verify="required" placeholder="4-16 ký tự" class="layui-input"></div>'
+          + '</div>'
+          + '<div class="layui-form-item">'
+          + '<label class="layui-form-label">Mật khẩu</label>'
+          + '<div class="layui-input-block"><input type="password" name="password" required lay-verify="required" placeholder="6-20 ký tự" class="layui-input"></div>'
+          + '</div>'
+          + '<div class="layui-form-item">'
+          + '<label class="layui-form-label">Xác nhận MK</label>'
+          + '<div class="layui-input-block"><input type="password" name="confirm_password" required lay-verify="required" placeholder="Nhập lại mật khẩu" class="layui-input"></div>'
+          + '</div>'
+          + '<input type="hidden" name="type" value="' + (isAgent ? '1' : '0') + '">'
+          + '<div class="layui-form-item">'
+          + '<div class="layui-input-block">'
+          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitAddUser">Xác nhận</button>'
+          + '<button type="reset" class="layui-btn layui-btn-primary">Đặt lại</button>'
+          + '</div></div></form>';
+
+        var layerIdx = layer.open({
+          type: 1, title: title,
+          area: ['450px', 'auto'],
+          content: formHtml,
+          success: function () { form.render(); }
+        });
+
+        form.on('submit(submitAddUser)', function (formData) {
+          if (formData.field.password !== formData.field.confirm_password) {
+            layer.msg('Mật khẩu không khớp', { icon: 2 });
+            return false;
+          }
+          var loadIdx = layer.load();
+          $.ajax({
+            url: '/api/action/addUser', type: 'POST', contentType: 'application/json',
+            data: JSON.stringify(formData.field),
+            success: function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0 || res.code === 1) {
+                layer.close(layerIdx);
+                layer.msg(isAgent ? 'Đã thêm đại lý' : 'Đã thêm hội viên', { icon: 1 });
+                table.reload('memberTable');
+              } else {
+                layer.msg(res.msg || 'Thất bại', { icon: 2 });
+              }
+            },
+            error: function () {
+              layer.close(loadIdx);
+              layer.msg('Lỗi kết nối', { icon: 2 });
+            }
+          });
+          return false;
+        });
+      }
+
+      // ── Form cài đặt hoàn trả ──
+      function openRebateForm(userData) {
+        var defaultSeries = [
+          { id: '1', name: 'MN' }, { id: '2', name: 'MB' }, { id: '3', name: 'MT' },
+          { id: '4', name: 'XSN' }, { id: '5', name: 'Sicbo' }, { id: '7', name: 'Keno' },
+          { id: '8', name: 'WinGo' }, { id: '9', name: 'Game' }
+        ];
+
+        var rebateInputs = '';
+        for (var i = 0; i < defaultSeries.length; i++) {
+          rebateInputs += '<div class="layui-form-item">'
+            + '<label class="layui-form-label">' + defaultSeries[i].name + '</label>'
+            + '<div class="layui-input-block">'
+            + '<input type="number" name="rebate_' + defaultSeries[i].id + '" value="" placeholder="0" class="layui-input" step="0.1" min="0" max="15">'
+            + '</div></div>';
+        }
+
+        var formHtml = '<form class="layui-form" lay-filter="rebateForm" style="padding:15px 30px 0 0;">'
+          + '<div class="layui-form-item"><label class="layui-form-label">Hội viên</label>'
+          + '<div class="layui-input-block"><input type="text" value="' + userData.username + '" class="layui-input" disabled></div></div>'
+          + '<fieldset class="layui-elem-field" style="margin:0 0 10px 110px;">'
+          + '<legend style="font-size:13px;">Tỉ lệ hoàn trả</legend>'
+          + '<div class="layui-field-box" style="padding:5px 15px;">' + rebateInputs + '</div>'
+          + '</fieldset>'
+          + '<div class="layui-form-item"><div class="layui-input-block">'
+          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitRebate">Xác nhận</button>'
+          + '<button type="reset" class="layui-btn layui-btn-primary">Đặt lại</button>'
+          + '</div></div></form>';
+
+        var layerIdx = layer.open({
+          type: 1, title: 'Cài đặt hoàn trả — ' + userData.username,
+          area: ['550px', 'auto'],
+          content: formHtml,
+          success: function () { form.render(); }
+        });
+
+        form.on('submit(submitRebate)', function (formData) {
+          var rebateObj = {};
+          for (var key in formData.field) {
+            if (key.indexOf('rebate_') === 0) {
+              var sid = key.replace('rebate_', '');
+              rebateObj[sid] = { value: formData.field[key] || '0' };
+            }
+          }
+          var body = {
+            uid: userData.id,
+            username: userData.username,
+            rebate_arr: JSON.stringify(rebateObj)
+          };
+          var loadIdx = layer.load();
+          $.ajax({
+            url: '/api/action/setRebate', type: 'POST', contentType: 'application/json',
+            data: JSON.stringify(body),
+            success: function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0 || res.code === 1) {
+                layer.close(layerIdx);
+                layer.msg('Đã cập nhật hoàn trả', { icon: 1 });
+              } else {
+                layer.msg(res.msg || 'Thất bại', { icon: 2 });
+              }
+            },
+            error: function () {
+              layer.close(loadIdx);
+              layer.msg('Lỗi kết nối', { icon: 2 });
+            }
+          });
+          return false;
+        });
+      }
 
       // ── Tìm kiếm ──
       form.on('submit(doSearch)', function (data) {
