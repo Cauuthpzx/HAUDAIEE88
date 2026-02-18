@@ -5,7 +5,7 @@
         + '<div class="layui-col-md12">'
         + '<div class="layui-card">'
         + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="depositWithdrawTitle">' + HubLang.t('depositWithdrawTitle') + '</legend>'
         + '<div class="layui-field-box">'
         + '<form class="layui-form" lay-filter="dw_searchForm">'
@@ -88,11 +88,12 @@
 
       table.render({
         elem: '#dw_dataTable',
+        id: 'dw_dataTable',
         url: '/api/data/deposits',
         method: 'get',
         where: { create_time: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -150,6 +151,12 @@
         ]],
         done: function (res) {
           console.log('[deposits] Loaded ' + (res.data ? res.data.length : 0) + '/' + res.count + ' records');
+        }
+      });
+
+      table.on('toolbar(dw_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('dw_dataTable', 'deposit_withdrawal');
         }
       });
 

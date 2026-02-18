@@ -104,11 +104,12 @@
 
       table.render({
         elem: '#rt_dataTable',
+        id: 'rt_dataTable',
         url: '/api/data/report-third',
         method: 'get',
         where: { date: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -130,6 +131,12 @@
         ]],
         done: function (res) {
           renderTotalData(window._rt_totalData);
+        }
+      });
+
+      table.on('toolbar(rt_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('rt_dataTable', 'report_third_game');
         }
       });
 

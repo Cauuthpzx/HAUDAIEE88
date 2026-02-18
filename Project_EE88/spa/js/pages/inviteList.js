@@ -6,7 +6,7 @@
         + '<div class="layui-col-md12">'
         + '<div class="layui-card">'
         + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="referralCode">' + HubLang.t('referralCode') + '</legend>'
         + '<div class="layui-field-box">'
         + '<form class="layui-form" lay-filter="inv_searchForm">'
@@ -138,7 +138,7 @@
         url: '/api/data/invites',
         method: 'get',
         toolbar: '#inv_toolbarTpl',
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -180,6 +180,10 @@
 
       // ── Toolbar events ──
       table.on('toolbar(inv_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('inv_dataTable', 'invites');
+          return;
+        }
         if (obj.event === 'addInvite') {
           openInviteForm();
         }

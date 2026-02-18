@@ -69,7 +69,7 @@
       var t = HubLang.t.bind(HubLang);
       return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
         + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="betListTitle">' + t('betListTitle') + '</legend>'
         + '<div class="layui-field-box">'
         + '<form class="layui-form" lay-filter="bet_searchForm">'

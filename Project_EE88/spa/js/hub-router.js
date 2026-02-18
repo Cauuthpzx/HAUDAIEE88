@@ -16,6 +16,26 @@ var HubRouter = (function () {
   var loadedScripts = {}; // pageId → true (script already loaded)
   var tabs, dropdown, dropdownInst, $;
 
+  // Menu groups for script prefetching
+  var MENU_GROUPS = {
+    'user':                   ['user', 'inviteList'],
+    'inviteList':             ['user', 'inviteList'],
+    'reportLottery':          ['reportLottery', 'reportFunds', 'reportThirdGame'],
+    'reportFunds':            ['reportLottery', 'reportFunds', 'reportThirdGame'],
+    'reportThirdGame':        ['reportLottery', 'reportFunds', 'reportThirdGame'],
+    'depositAndWithdrawal':   ['depositAndWithdrawal', 'withdrawalsRecord'],
+    'withdrawalsRecord':      ['depositAndWithdrawal', 'withdrawalsRecord'],
+    'bet':                    ['bet', 'betOrder'],
+    'betOrder':               ['bet', 'betOrder'],
+    'editPassword':           ['editPassword', 'editFundPassword'],
+    'editFundPassword':       ['editPassword', 'editFundPassword'],
+    'manageAgents':           ['manageAgents', 'manageUsers', 'activityLog', 'syncStatus'],
+    'manageUsers':            ['manageAgents', 'manageUsers', 'activityLog', 'syncStatus'],
+    'activityLog':            ['manageAgents', 'manageUsers', 'activityLog', 'syncStatus'],
+    'syncStatus':             ['manageAgents', 'manageUsers', 'activityLog', 'syncStatus'],
+    'dashboard':              ['dashboard']
+  };
+
   function init(tabsRef, dropdownRef, dropdownInstRef, jq) {
     tabs = tabsRef;
     dropdown = dropdownRef;
@@ -68,6 +88,9 @@ var HubRouter = (function () {
     loadPageScript(pageId, function () {
       renderPage(pageId);
     });
+
+    // Prefetch sibling page scripts in background
+    prefetchSiblings(pageId);
   }
 
   /**
@@ -182,6 +205,24 @@ var HubRouter = (function () {
       try { mod.destroy(); } catch (e) {}
     }
     renderPage(pageId);
+  }
+
+  /**
+   * Prefetch sibling page scripts (low-priority background load)
+   */
+  function prefetchSiblings(pageId) {
+    var siblings = MENU_GROUPS[pageId];
+    if (!siblings) return;
+    siblings.forEach(function (sid) {
+      if (loadedScripts[sid] || SpaPages[sid]) return;
+      if (document.querySelector('link[data-prefetch="' + sid + '"]')) return;
+      var link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.as = 'script';
+      link.href = '/spa/js/pages/' + sid + '.js';
+      link.setAttribute('data-prefetch', sid);
+      document.head.appendChild(link);
+    });
   }
 
   return {

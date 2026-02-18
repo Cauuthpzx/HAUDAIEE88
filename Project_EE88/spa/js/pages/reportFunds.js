@@ -84,11 +84,12 @@
 
       table.render({
         elem: '#rf_dataTable',
+        id: 'rf_dataTable',
         url: '/api/data/report-funds',
         method: 'get',
         where: { date: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -116,6 +117,12 @@
         ]],
         done: function (res) {
           renderTotalData(window._rf_totalData);
+        }
+      });
+
+      table.on('toolbar(rf_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('rf_dataTable', 'report_funds');
         }
       });
 

@@ -2,7 +2,7 @@
   SpaPages.manageAgents = {
     getHTML: function () {
       return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
-        + '<div class="layui-card-header"><fieldset class="layui-elem-field">'
+        + '<div class="layui-card-header"><fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="manageAgentsTitle">Quản lý tài khoản Agent EE88</legend>'
         + '</fieldset></div>'
         + '<div class="layui-card-body"><table id="ma_dataTable" lay-filter="ma_dataTable"></table></div>'
@@ -19,6 +19,7 @@
       var toolbarHtml = '<div class="layui-btn-group">'
         + '<button class="layui-btn layui-btn-xs" lay-event="addAgent"><i class="layui-icon layui-icon-addition"></i> ' + HubLang.t('addAgentMgmt') + '</button>'
         + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="checkAll"><i class="layui-icon layui-icon-refresh"></i> ' + HubLang.t('checkAll') + '</button>'
+        + '<button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="loginAll"><i class="layui-icon layui-icon-fire"></i> ' + HubLang.t('loginAllBtn') + '</button>'
         + '</div><span id="ma_solverStatus"></span>';
 
       function checkSolverStatus() {
@@ -62,6 +63,7 @@
                   var btns = '<button class="layui-btn layui-btn-xs" lay-event="edit">' + HubLang.t('edit') + '</button>'
                     + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="check">' + HubLang.t('check') + '</button>';
                   if (d.has_credentials) btns += '<button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="login">' + HubLang.t('login') + '</button>';
+                  btns += '<button class="layui-btn layui-btn-xs" lay-event="history" style="background:#7c4dff;border-color:#7c4dff;">' + HubLang.t('loginHistory') + '</button>';
                   btns += '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">' + HubLang.t('delete') + '</button>';
                   return btns;
                 }}
@@ -83,6 +85,7 @@
       table.on('toolbar(ma_dataTable)', function (obj) {
         if (obj.event === 'addAgent') openAgentForm();
         else if (obj.event === 'checkAll') checkAllAgents();
+        else if (obj.event === 'loginAll') loginAllAgents();
       });
 
       // Row
@@ -92,6 +95,7 @@
           case 'edit': openAgentForm(d); break;
           case 'check': checkAgent(d.id); break;
           case 'login': loginAgent(d); break;
+          case 'history': showLoginHistory(d); break;
           case 'delete':
             layer.confirm(HubLang.t('confirmDeleteAgent') + d.label + '"?', { icon: 3 }, function (idx) {
               layer.close(idx);
@@ -172,6 +176,66 @@
             loadAgents();
           }).catch(function () { layer.close(loadIdx); layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
         });
+      }
+
+      function loginAllAgents() {
+        layer.confirm(HubLang.t('loginAllConfirm'), { icon: 3 }, function (idx) {
+          layer.close(idx);
+          var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
+          HubAPI.adminRequest('agents/login-all', 'POST').then(function (res) {
+            layer.close(loadIdx);
+            if (res.code === 0) {
+              var d = res.data;
+              var msg = HubLang.t('loginAllDone') + ': ' + d.success + ' OK, ' + d.fail + ' fail';
+              layer.msg(msg, { icon: d.fail === 0 ? 1 : 0, time: 4000 });
+              loadAgents();
+            } else {
+              layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
+            }
+          }).catch(function () { layer.close(loadIdx); layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
+        });
+      }
+
+      function showLoginHistory(d) {
+        var loadIdx = layer.load();
+        HubAPI.adminGet('agents/' + d.id + '/login-history').then(function (res) {
+          layer.close(loadIdx);
+          if (res.code !== 0) return layer.msg(HubLang.t('error'), { icon: 2 });
+          var rows = res.data || [];
+          var html = '<table class="layui-table" style="margin:0;">'
+            + '<thead><tr>'
+            + '<th>' + HubLang.t('time') + '</th>'
+            + '<th>' + HubLang.t('successCol') + '</th>'
+            + '<th>' + HubLang.t('attemptsCol') + '</th>'
+            + '<th>' + HubLang.t('durationCol') + '</th>'
+            + '<th>' + HubLang.t('sourceCol') + '</th>'
+            + '<th>' + HubLang.t('triggeredByCol') + '</th>'
+            + '<th>' + HubLang.t('errorCol') + '</th>'
+            + '</tr></thead><tbody>';
+          if (rows.length === 0) {
+            html += '<tr><td colspan="7" style="text-align:center;">' + HubLang.t('noData') + '</td></tr>';
+          } else {
+            rows.forEach(function (r) {
+              var icon = r.success ? '<span style="color:#16b777;">OK</span>' : '<span style="color:#ff5722;">FAIL</span>';
+              html += '<tr>'
+                + '<td>' + (r.created_at || '') + '</td>'
+                + '<td>' + icon + '</td>'
+                + '<td>' + (r.attempts || 0) + '</td>'
+                + '<td>' + (r.duration_ms || '-') + '</td>'
+                + '<td>' + (r.source || '') + '</td>'
+                + '<td>' + (r.triggered_by || '-') + '</td>'
+                + '<td>' + (r.error_msg || '') + '</td>'
+                + '</tr>';
+            });
+          }
+          html += '</tbody></table>';
+          layer.open({
+            type: 1,
+            title: HubLang.t('loginHistoryTitle') + ' — ' + d.label,
+            area: ['750px', '450px'],
+            content: '<div style="padding:10px;overflow:auto;max-height:380px;">' + html + '</div>'
+          });
+        }).catch(function () { layer.close(loadIdx); layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
       }
 
       function checkAllAgents() {

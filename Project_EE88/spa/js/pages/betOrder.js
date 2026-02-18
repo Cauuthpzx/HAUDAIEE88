@@ -3,7 +3,7 @@
     getHTML: function () {
       return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
         + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="thirdPartyBetTitle">Đơn cược bên thứ 3</legend>'
         + '<div class="layui-field-box">'
         + '<form class="layui-form" lay-filter="betOrder_searchForm">'
@@ -69,7 +69,7 @@
         method: 'get',
         where: { bet_time: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -93,6 +93,12 @@
         ]],
         done: function (res) {
           console.log('[betOrder] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' đơn cược');
+        }
+      });
+
+      table.on('toolbar(betOrder_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('betOrder_dataTable', 'bet_orders');
         }
       });
 

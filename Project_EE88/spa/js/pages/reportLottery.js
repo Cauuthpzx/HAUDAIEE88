@@ -126,11 +126,12 @@
 
       table.render({
         elem: '#rl_dataTable',
+        id: 'rl_dataTable',
         url: '/api/data/report-lottery',
         method: 'get',
         where: { date: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -155,6 +156,12 @@
         ]],
         done: function (res) {
           renderTotalData(window._rl_totalData);
+        }
+      });
+
+      table.on('toolbar(rl_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('rl_dataTable', 'report_lottery');
         }
       });
 

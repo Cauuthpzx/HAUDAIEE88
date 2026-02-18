@@ -5,6 +5,7 @@ const { getDb } = require('../database/init');
 const config = require('../config/default');
 const { authMiddleware } = require('../middleware/auth');
 const { createLogger } = require('../utils/logger');
+const { logActivity } = require('../services/activityLogger');
 
 const log = createLogger('auth');
 const router = express.Router();
@@ -37,6 +38,7 @@ router.post('/login', (req, res) => {
   );
 
   log.ok(`Đăng nhập thành công: ${username} (role: ${user.role})`, { ip: req.ip });
+  logActivity({ userId: user.id, username: user.username, action: 'hub_login', ip: req.ip });
 
   res.json({
     code: 0,

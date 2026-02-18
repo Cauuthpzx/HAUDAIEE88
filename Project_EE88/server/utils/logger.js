@@ -67,4 +67,32 @@ const accessLogStream = fs.createWriteStream(
   { flags: 'a' }
 );
 
-module.exports = { createLogger, accessLogStream, LOG_DIR };
+// ── Dọn log cũ (log rotation) ──
+function cleanOldLogs(retentionDays) {
+  if (!retentionDays || retentionDays <= 0) return;
+
+  const now = Date.now();
+  const maxAge = retentionDays * 24 * 60 * 60 * 1000;
+  let cleaned = 0;
+
+  try {
+    const files = fs.readdirSync(LOG_DIR);
+    for (const file of files) {
+      if (!file.endsWith('.log')) continue;
+      const filePath = path.join(LOG_DIR, file);
+      try {
+        const stat = fs.statSync(filePath);
+        if (now - stat.mtimeMs > maxAge) {
+          fs.unlinkSync(filePath);
+          cleaned++;
+        }
+      } catch {}
+    }
+    if (cleaned > 0) {
+      const line = formatMsg('OK', 'logger', `Đã dọn ${cleaned} file log cũ hơn ${retentionDays} ngày`);
+      console.log(colorize('OK', line));
+    }
+  } catch {}
+}
+
+module.exports = { createLogger, accessLogStream, LOG_DIR, cleanOldLogs };

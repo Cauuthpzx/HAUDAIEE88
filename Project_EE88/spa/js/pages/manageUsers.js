@@ -2,7 +2,7 @@
   SpaPages.manageUsers = {
     getHTML: function () {
       return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
-        + '<div class="layui-card-header"><fieldset class="layui-elem-field">'
+        + '<div class="layui-card-header"><fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="manageUsersTitle">Quản lý tài khoản Hub</legend>'
         + '</fieldset></div>'
         + '<div class="layui-card-body"><table id="mu_dataTable" lay-filter="mu_dataTable"></table></div>'

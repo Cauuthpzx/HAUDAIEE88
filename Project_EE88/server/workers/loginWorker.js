@@ -82,7 +82,7 @@ async function healthCheckAll() {
       // Auto-login nếu có credentials
       if (agent.ee88_username && agent.ee88_password) {
         log.info(`[${agent.label}] Auto-login...`);
-        const result = await loginAgent(agent.id);
+        const result = await loginAgent(agent.id, 'worker');
         if (result.success) {
           parentPort.postMessage({
             type: 'login_result',
@@ -110,7 +110,7 @@ async function healthCheckAll() {
 parentPort.on('message', async (msg) => {
   if (msg.type === 'login') {
     // Login 1 agent theo yêu cầu
-    const result = await loginAgent(msg.agentId);
+    const result = await loginAgent(msg.agentId, 'worker');
     parentPort.postMessage({
       type: 'login_result',
       agentId: msg.agentId,
@@ -121,21 +121,26 @@ parentPort.on('message', async (msg) => {
     // Chạy health check theo yêu cầu
     await healthCheckAll();
   } else if (msg.type === 'shutdown') {
+    if (_healthCheckTimer) clearInterval(_healthCheckTimer);
+    if (_initialTimeout) clearTimeout(_initialTimeout);
     closeDb();
     process.exit(0);
   }
 });
 
 // ── Periodic health check ──
+let _initialTimeout = null;
+let _healthCheckTimer = null;
+
 log.info('Login Worker đã khởi động');
 log.info(`Health check mỗi ${HEALTH_CHECK_INTERVAL / 60000} phút`);
 
 // Chạy health check lần đầu sau 10s (chờ server khởi động)
-setTimeout(() => {
+_initialTimeout = setTimeout(() => {
   healthCheckAll().catch(err => log.error('Health check lỗi:', err.message));
 }, 10000);
 
 // Lặp lại mỗi 30 phút
-setInterval(() => {
+_healthCheckTimer = setInterval(() => {
   healthCheckAll().catch(err => log.error('Health check lỗi:', err.message));
 }, HEALTH_CHECK_INTERVAL);

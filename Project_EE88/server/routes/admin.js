@@ -4,7 +4,10 @@ const axios = require('axios');
 const { getDb } = require('../database/init');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { loginAgent, isSolverReady } = require('../services/loginService');
+const { logActivity } = require('../services/activityLogger');
+const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
+const { encrypt } = require('../utils/crypto');
 
 const log = createLogger('admin');
 const router = express.Router();
@@ -13,8 +16,124 @@ const router = express.Router();
 router.use(authMiddleware, adminOnly);
 
 // ═══════════════════════════════════════
+// ── Dashboard + Activity Log ──
+// ═══════════════════════════════════════
+
+// GET /api/admin/dashboard/stats — Aggregated data cho dashboard
+router.get('/dashboard/stats', (req, res) => {
+  const db = getDb();
+
+  const agents = db.prepare(`
+    SELECT id, label, status, base_url, last_login, last_check,
+      (SELECT COUNT(*) FROM user_agent_permissions WHERE agent_id = ee88_agents.id) as user_count
+    FROM ee88_agents ORDER BY id
+  `).all();
+
+  const active = agents.filter(a => a.status === 1).length;
+  const expired = agents.filter(a => a.status === 0).length;
+
+  const recentActivity = db.prepare(`
+    SELECT id, username, action, target_type, target_label, detail, ip, created_at
+    FROM hub_activity_log ORDER BY created_at DESC LIMIT 10
+  `).all();
+
+  // Login stats 7 ngày per agent
+  const loginStats = db.prepare(`
+    SELECT agent_id, agent_label,
+      SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
+      SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as fail_count,
+      MAX(created_at) as last_attempt
+    FROM agent_login_history
+    WHERE created_at >= datetime('now', 'localtime', '-7 days')
+    GROUP BY agent_id
+  `).all();
+
+  res.json({
+    code: 0,
+    data: {
+      agents,
+      agentCount: { active, expired, total: agents.length },
+      recentActivity,
+      loginStats
+    }
+  });
+});
+
+// GET /api/admin/activity-log — Phân trang + filter
+router.get('/activity-log', (req, res) => {
+  const db = getDb();
+  const page = parseInt(req.query.page) || 1;
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  const offset = (page - 1) * limit;
+  const action = req.query.action || '';
+  const username = req.query.username || '';
+
+  let where = '1=1';
+  const params = [];
+
+  if (action) {
+    where += ' AND action = ?';
+    params.push(action);
+  }
+  if (username) {
+    where += ' AND username LIKE ?';
+    params.push('%' + username + '%');
+  }
+
+  const total = db.prepare(`SELECT COUNT(*) as cnt FROM hub_activity_log WHERE ${where}`).get(...params).cnt;
+  const rows = db.prepare(`
+    SELECT * FROM hub_activity_log WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, offset);
+
+  res.json({ code: 0, data: rows, count: total, page, limit });
+});
+
+// ═══════════════════════════════════════
 // ── EE88 Agents CRUD ──
 // ═══════════════════════════════════════
+
+// POST /api/admin/agents/login-all — Login hàng loạt agents expired
+// Phải đăng ký TRƯỚC routes có :id
+router.post('/agents/login-all', async (req, res) => {
+  const db = getDb();
+  const solverReady = await isSolverReady();
+  if (!solverReady) {
+    return res.json({ code: -1, msg: 'Python captcha solver chưa chạy' });
+  }
+
+  const agents = db.prepare(`
+    SELECT * FROM ee88_agents
+    WHERE status = 0 AND ee88_username != '' AND ee88_password != ''
+  `).all();
+
+  if (agents.length === 0) {
+    return res.json({ code: 0, msg: 'Không có agent nào cần login', data: { success: 0, fail: 0 } });
+  }
+
+  log.info(`[${req.user.username}] Login All: ${agents.length} agents expired`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'agent_login_all',
+    detail: `${agents.length} agents`,
+    ip: req.ip
+  });
+
+  let success = 0, fail = 0;
+  const results = [];
+
+  for (const agent of agents) {
+    const result = await loginAgent(agent.id, 'auto', req.user.username);
+    if (result.success) {
+      success++;
+      results.push({ id: agent.id, label: agent.label, ok: true, attempts: result.attempts });
+    } else {
+      fail++;
+      results.push({ id: agent.id, label: agent.label, ok: false, error: result.error });
+    }
+  }
+
+  res.json({ code: 0, msg: `Login xong: ${success} OK, ${fail} thất bại`, data: { success, fail, results } });
+});
 
 // GET /api/admin/agents — Danh sách tất cả agents
 router.get('/agents', (req, res) => {
@@ -48,17 +167,36 @@ router.post('/agents', async (req, res) => {
   }
 
   const db = getDb();
+  const encryptedPassword = encrypt(ee88_password);
   const result = db.prepare(
     'INSERT INTO ee88_agents (label, base_url, cookie, ee88_username, ee88_password, status) VALUES (?, ?, ?, ?, ?, 0)'
-  ).run(label, base_url, '', ee88_username, ee88_password);
+  ).run(label, base_url, '', ee88_username, encryptedPassword);
 
   const agentId = result.lastInsertRowid;
   log.ok(`Thêm agent: ${label} (id=${agentId}) — đang auto-login...`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'agent_add', targetType: 'agent', targetId: agentId, targetLabel: label,
+    ip: req.ip
+  });
 
   // Auto-login ngay sau khi tạo
   try {
-    const loginResult = await loginAgent(agentId);
+    const loginResult = await loginAgent(agentId, 'manual', req.user.username);
     if (loginResult.success) {
+      // Auto-create hub user cho agent (nếu chưa có) — atomic transaction
+      const autoCreateUser = db.transaction(() => {
+        const existingUser = db.prepare('SELECT id FROM hub_users WHERE username = ?').get(ee88_username);
+        if (!existingUser) {
+          const hash = bcrypt.hashSync(ee88_password, 10);
+          const userResult = db.prepare(
+            "INSERT INTO hub_users (username, password_hash, display_name, role) VALUES (?, ?, ?, 'user')"
+          ).run(ee88_username, hash, label);
+          db.prepare('INSERT INTO user_agent_permissions (user_id, agent_id) VALUES (?, ?)').run(userResult.lastInsertRowid, agentId);
+          log.ok(`Auto-tạo user "${ee88_username}" (id=${userResult.lastInsertRowid}) gắn agent #${agentId}`);
+        }
+      });
+      autoCreateUser();
       res.json({ code: 0, msg: `Đã thêm + login thành công (${loginResult.attempts} lần thử)`, data: { id: agentId } });
     } else {
       res.json({ code: 0, msg: `Đã thêm agent, login thất bại: ${loginResult.error}`, data: { id: agentId } });
@@ -79,6 +217,9 @@ router.put('/agents/:id', (req, res) => {
     return res.status(404).json({ code: -1, msg: 'Agent không tồn tại' });
   }
 
+  // Encrypt password mới nếu có, giữ nguyên password cũ (đã encrypted) nếu không
+  const newPassword = ee88_password ? encrypt(ee88_password) : (agent.ee88_password || '');
+
   db.prepare(`
     UPDATE ee88_agents
     SET label = ?, base_url = ?, cookie = ?, ee88_username = ?, ee88_password = ?,
@@ -89,12 +230,17 @@ router.put('/agents/:id', (req, res) => {
     base_url || agent.base_url,
     cookie || agent.cookie,
     ee88_username !== undefined ? ee88_username : (agent.ee88_username || ''),
-    ee88_password || agent.ee88_password || '',
+    newPassword,
     status !== undefined ? status : agent.status,
     id
   );
 
   log.ok(`Sửa agent #${id}: ${label || agent.label}`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'agent_edit', targetType: 'agent', targetId: parseInt(id), targetLabel: label || agent.label,
+    ip: req.ip
+  });
   res.json({ code: 0, msg: 'Đã cập nhật agent' });
 });
 
@@ -110,6 +256,11 @@ router.delete('/agents/:id', (req, res) => {
 
   db.prepare('DELETE FROM ee88_agents WHERE id = ?').run(id);
   log.ok(`Xoá agent #${id}: ${agent.label}`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'agent_delete', targetType: 'agent', targetId: parseInt(id), targetLabel: agent.label,
+    ip: req.ip
+  });
   res.json({ code: 0, msg: 'Đã xoá agent' });
 });
 
@@ -172,18 +323,92 @@ router.post('/agents/:id/login', async (req, res) => {
 
   log.info(`[${req.user.username}] Yêu cầu login agent #${id}: ${agent.label}`);
 
-  const result = await loginAgent(id);
+  const result = await loginAgent(id, 'manual', req.user.username);
   if (result.success) {
+    logActivity({
+      userId: req.user.id, username: req.user.username,
+      action: 'agent_login_success', targetType: 'agent', targetId: parseInt(id), targetLabel: agent.label,
+      detail: `${result.attempts} attempts`, ip: req.ip
+    });
     res.json({ code: 0, msg: `Login thành công (${result.attempts} lần thử)`, attempts: result.attempts });
   } else {
+    logActivity({
+      userId: req.user.id, username: req.user.username,
+      action: 'agent_login_fail', targetType: 'agent', targetId: parseInt(id), targetLabel: agent.label,
+      detail: result.error, ip: req.ip
+    });
     res.json({ code: -1, msg: result.error || 'Login thất bại', attempts: result.attempts || 0 });
   }
+});
+
+// GET /api/admin/agents/:id/login-history — Lịch sử login 1 agent
+router.get('/agents/:id/login-history', (req, res) => {
+  const id = req.params.id;
+  const db = getDb();
+
+  const rows = db.prepare(`
+    SELECT * FROM agent_login_history
+    WHERE agent_id = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).all(id);
+
+  res.json({ code: 0, data: rows });
 });
 
 // GET /api/admin/solver-status — Kiểm tra Python solver service
 router.get('/solver-status', async (req, res) => {
   const ready = await isSolverReady();
   res.json({ code: 0, data: { running: ready } });
+});
+
+// ═══════════════════════════════════════
+// ── Data Store — query data đã lưu ──
+// ═══════════════════════════════════════
+
+// GET /api/admin/data-store/stats — Thống kê data đã lưu
+router.get('/data-store/stats', (req, res) => {
+  const stats = dataStore.getDataStats();
+  res.json({ code: 0, data: stats });
+});
+
+// GET /api/admin/data-store/:endpoint — Query data từ bảng
+router.get('/data-store/:endpoint', (req, res) => {
+  const endpointKey = req.params.endpoint;
+  if (!dataStore.COLUMN_MAP[endpointKey]) {
+    return res.status(404).json({ code: -1, msg: `Endpoint không tồn tại: ${endpointKey}` });
+  }
+
+  const { agent_id, date_key, page, limit, search, order_by, order } = req.query;
+  const result = dataStore.queryData(endpointKey, {
+    agentId: agent_id ? parseInt(agent_id) : undefined,
+    dateKey: date_key,
+    page: parseInt(page) || 1,
+    limit: Math.min(parseInt(limit) || 50, 500),
+    search,
+    orderBy: order_by,
+    order: order || 'DESC'
+  });
+
+  res.json({ code: 0, ...result });
+});
+
+// DELETE /api/admin/data-store/:endpoint — Xoá data
+router.delete('/data-store/:endpoint', (req, res) => {
+  const endpointKey = req.params.endpoint;
+  if (!dataStore.COLUMN_MAP[endpointKey]) {
+    return res.status(404).json({ code: -1, msg: `Endpoint không tồn tại: ${endpointKey}` });
+  }
+
+  const agentId = req.query.agent_id ? parseInt(req.query.agent_id) : undefined;
+  const deleted = dataStore.clearData(endpointKey, agentId);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'data_clear', targetType: 'data', targetLabel: endpointKey,
+    detail: `${deleted} rows` + (agentId ? ` agent=${agentId}` : ''),
+    ip: req.ip
+  });
+  res.json({ code: 0, msg: `Đã xoá ${deleted} dòng` });
 });
 
 // ═══════════════════════════════════════
@@ -256,6 +481,11 @@ router.post('/users', (req, res) => {
 
   const userId = insertUser();
   log.ok(`Thêm user: ${username} (id=${userId}, role=${role || 'user'})`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'user_add', targetType: 'user', targetId: userId, targetLabel: username,
+    ip: req.ip
+  });
   res.json({ code: 0, msg: 'Đã thêm user', data: { id: userId } });
 });
 
@@ -300,6 +530,11 @@ router.put('/users/:id', (req, res) => {
 
   updateUser();
   log.ok(`Sửa user #${id}: ${user.username}`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'user_edit', targetType: 'user', targetId: id, targetLabel: user.username,
+    ip: req.ip
+  });
   res.json({ code: 0, msg: 'Đã cập nhật user' });
 });
 
@@ -320,6 +555,11 @@ router.delete('/users/:id', (req, res) => {
 
   db.prepare('DELETE FROM hub_users WHERE id = ?').run(id);
   log.ok(`Xoá user #${id}: ${user.username}`);
+  logActivity({
+    userId: req.user.id, username: req.user.username,
+    action: 'user_delete', targetType: 'user', targetId: id, targetLabel: user.username,
+    ip: req.ip
+  });
   res.json({ code: 0, msg: 'Đã xoá user' });
 });
 

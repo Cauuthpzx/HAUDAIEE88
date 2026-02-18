@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sync Status</title>
+  <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <style>
+    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+    .layui-card { margin: 15px; }
+    .stat-cards { display: flex; gap: 15px; padding: 0 15px; flex-wrap: wrap; }
+    .stat-card {
+      flex: 1; min-width: 160px; background: #fff; border-radius: 4px;
+      padding: 15px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .stat-card .label { font-size: 13px; color: #999; margin-bottom: 6px; }
+    .stat-card .value { font-size: 22px; font-weight: 600; color: #333; }
+    .stat-card .value.green { color: #16b777; }
+    .stat-card .value.blue { color: #1e9fff; }
+    .stat-card .value.orange { color: #ffb800; }
+    .status-success { color: #16b777; font-weight: 600; }
+    .status-error { color: #ff5722; font-weight: 600; }
+    .status-syncing { color: #1e9fff; font-weight: 600; }
+    .status-pending { color: #999; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- Status template -->
+  <script type="text/html" id="statusTpl">
+    {{# if(d.status === 'success'){ }}
+      <span class="status-success" data-i18n="syncSuccess">Thành công</span>
+    {{# } else if(d.status === 'error'){ }}
+      <span class="status-error" data-i18n="syncError">Lỗi</span>
+    {{# } else if(d.status === 'syncing'){ }}
+      <span class="status-syncing" data-i18n="syncing">Đang đồng bộ</span>
+    {{# } else { }}
+      <span class="status-pending" data-i18n="syncPending">Chờ</span>
+    {{# } }}
+  </script>
+
+  <!-- Error msg template -->
+  <script type="text/html" id="errorTpl">
+    {{# if(d.error_msg){ }}
+      <span style="color:#ff5722;" title="{{ d.error_msg }}">{{ d.error_msg.length > 40 ? d.error_msg.substring(0, 40) + '...' : d.error_msg }}</span>
+    {{# } else { }}
+      —
+    {{# } }}
+  </script>
+
+  <!-- Toolbar -->
+  <script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-group">
+      <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="syncNow">
+        <i class="layui-icon layui-icon-refresh"></i> <span data-i18n="syncNow">Đồng bộ ngay</span>
+      </button>
+      <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clearCache">
+        <i class="layui-icon layui-icon-delete"></i> <span data-i18n="clearCache">Xoá cache</span>
+      </button>
+    </div>
+    <span id="syncingIndicator"></span>
+  </script>
+
+  <!-- Overview Cards -->
+  <div class="stat-cards" id="statsArea">
+    <div class="stat-card">
+      <div class="label" data-i18n="totalCached">Tổng bản ghi</div>
+      <div class="value blue" id="statEntries">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label" data-i18n="totalRows">Tổng dòng dữ liệu</div>
+      <div class="value green" id="statRows">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label" data-i18n="lockedDays">Ngày đã khoá</div>
+      <div class="value orange" id="statLocked">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label" data-i18n="lastSyncTime">Đồng bộ lần cuối</div>
+      <div class="value" id="statLastSync" style="font-size:14px;">—</div>
+    </div>
+  </div>
+
+  <!-- Sync Logs Table -->
+  <div class="layui-row">
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-header">
+          <fieldset class="layui-elem-field">
+            <legend data-i18n="syncLogs">Lịch sử đồng bộ</legend>
+          </fieldset>
+          <!-- Filters -->
+          <form class="layui-form layui-form-sm" lay-filter="searchForm" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+            <select name="agent_id" lay-filter="filterAgent" style="width:150px;">
+              <option value="" data-i18n="filterAgent">Lọc agent</option>
+            </select>
+            <select name="endpoint" lay-filter="filterEndpoint" style="width:160px;">
+              <option value="" data-i18n="filterEndpoint">Lọc endpoint</option>
+            </select>
+            <select name="status" lay-filter="filterStatus" style="width:130px;">
+              <option value="" data-i18n="filterStatus">Lọc trạng thái</option>
+              <option value="success" data-i18n="syncSuccess">Thành công</option>
+              <option value="error" data-i18n="syncError">Lỗi</option>
+              <option value="syncing" data-i18n="syncing">Đang đồng bộ</option>
+              <option value="pending" data-i18n="syncPending">Chờ</option>
+            </select>
+            <button type="button" class="layui-btn layui-btn-xs" lay-submit lay-filter="doSearch">
+              <i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span>
+            </button>
+            <button type="reset" class="layui-btn layui-btn-xs layui-btn-primary">
+              <span data-i18n="reset">Đặt lại</span>
+            </button>
+          </form>
+        </div>
+        <div class="layui-card-body">
+          <table id="syncTable" lay-filter="syncTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/layui/layui.js"></script>
+  <script src="/js/hub-lang.js"></script>
+  <script src="/js/hub-api.js"></script>
+  <script>
+    layui.use(['table', 'form', 'layer'], function () {
+      HubLang.init();
+      var table = layui.table;
+      var form = layui.form;
+      var layer = layui.layer;
+      var $ = layui.$;
+
+      var currentFilters = {};
+
+      // ── Load Overview Stats ──
+      function loadStats() {
+        HubAPI.adminGet('sync/status').then(function (res) {
+          if (res.code !== 0) return;
+          var d = res.data;
+          document.getElementById('statEntries').textContent = d.totalEntries || 0;
+          document.getElementById('statRows').textContent = (d.totalRows || 0).toLocaleString();
+          document.getElementById('statLocked').textContent = d.lockedDays || 0;
+          document.getElementById('statLastSync').textContent = d.lastSyncTime || '—';
+
+          // Syncing indicator
+          var ind = document.getElementById('syncingIndicator');
+          if (ind) {
+            if (d.syncing) {
+              ind.innerHTML = '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;">' +
+                '<i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i> ' +
+                HubLang.t('syncRunning') + '</span>';
+            } else {
+              ind.innerHTML = '';
+            }
+          }
+
+          // Populate endpoint filter
+          if (d.cacheableEndpoints && d.cacheableEndpoints.length > 0) {
+            var sel = $('select[name="endpoint"]');
+            if (sel.find('option').length <= 1) {
+              d.cacheableEndpoints.forEach(function (ep) {
+                sel.append('<option value="' + ep + '">' + ep + '</option>');
+              });
+              form.render('select');
+            }
+          }
+        }).catch(function () {});
+      }
+
+      // ── Load Agent List for Filter ──
+      function loadAgentFilter() {
+        HubAPI.adminGet('agents').then(function (res) {
+          if (res.code !== 0 || !res.data) return;
+          var sel = $('select[name="agent_id"]');
+          res.data.forEach(function (a) {
+            sel.append('<option value="' + a.id + '">' + a.label + '</option>');
+          });
+          form.render('select');
+        }).catch(function () {});
+      }
+
+      // ── Load Sync Logs Table ──
+      function loadLogs(filters) {
+        filters = filters || {};
+        var params = Object.assign({ page: 1, limit: 20 }, filters);
+
+        // Build query string
+        var qs = Object.entries(params)
+          .filter(function (e) { return e[1] !== undefined && e[1] !== ''; })
+          .map(function (e) { return e[0] + '=' + encodeURIComponent(e[1]); })
+          .join('&');
+
+        table.render({
+          elem: '#syncTable',
+          toolbar: '#toolbarTpl',
+          defaultToolbar: ['filter'],
+          url: '/api/admin/sync/logs?' + qs,
+          method: 'get',
+          headers: { Authorization: 'Bearer ' + HubAPI.getToken() },
+          page: true,
+          limit: 20,
+          text: { none: HubLang.t('noSyncData') },
+          parseData: function (res) {
+            return { code: res.code === 0 ? 0 : 1, msg: '', count: res.count || 0, data: res.data || [] };
+          },
+          cols: [[
+            { field: 'id', title: 'ID', width: 60, sort: true },
+            { field: 'agent_label', title: HubLang.t('agent'), width: 130 },
+            { field: 'endpoint_key', title: HubLang.t('endpoint'), width: 150 },
+            { field: 'date_str', title: HubLang.t('cachedDate'), width: 120 },
+            { field: 'status', title: HubLang.t('status'), width: 110, templet: '#statusTpl' },
+            { field: 'row_count', title: HubLang.t('rowCount'), width: 90 },
+            { field: 'started_at', title: HubLang.t('time'), width: 160 },
+            { field: 'completed_at', title: HubLang.t('updateTime'), width: 160 },
+            { field: 'error_msg', title: HubLang.t('errorCol'), minWidth: 200, templet: '#errorTpl' }
+          ]],
+          done: function () {
+            HubLang.applyDOM();
+          }
+        });
+      }
+
+      // ── Init ──
+      loadStats();
+      loadAgentFilter();
+      loadLogs();
+      HubLang.applyDOM();
+
+      // ── Search ──
+      form.on('submit(doSearch)', function (data) {
+        currentFilters = {};
+        if (data.field.agent_id) currentFilters.agent_id = data.field.agent_id;
+        if (data.field.endpoint) currentFilters.endpoint = data.field.endpoint;
+        if (data.field.status) currentFilters.status = data.field.status;
+        loadLogs(currentFilters);
+        return false;
+      });
+
+      // ── Toolbar Events ──
+      table.on('toolbar(syncTable)', function (obj) {
+        if (obj.event === 'syncNow') {
+          layer.confirm(HubLang.t('confirmSync'), { icon: 3 }, function (idx) {
+            layer.close(idx);
+            var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
+            HubAPI.adminRequest('sync/run', 'POST', {}).then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                layer.msg(HubLang.t('syncStarted'), { icon: 1 });
+                // Poll for updates
+                setTimeout(function () { loadStats(); loadLogs(currentFilters); }, 3000);
+                setTimeout(function () { loadStats(); loadLogs(currentFilters); }, 10000);
+                setTimeout(function () { loadStats(); loadLogs(currentFilters); }, 30000);
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            }).catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
+          });
+        } else if (obj.event === 'clearCache') {
+          layer.confirm(HubLang.t('confirmClearCache'), { icon: 3 }, function (idx) {
+            layer.close(idx);
+            var loadIdx = layer.load();
+            HubAPI.adminRequest('sync/clear', 'POST', {}).then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                layer.msg(HubLang.t('cacheCleared'), { icon: 1 });
+                loadStats();
+                loadLogs(currentFilters);
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            }).catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
+          });
+        }
+      });
+
+      // Auto-refresh stats every 30s
+      setInterval(function () { loadStats(); }, 30000);
+    });
+  </script>
+</body>
+</html>

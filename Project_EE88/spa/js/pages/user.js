@@ -123,7 +123,7 @@
         url: '/api/data/members',
         method: 'get',
         toolbar: '#user_toolbarTpl',
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -170,6 +170,10 @@
 
       // ── Toolbar events ──
       table.on('toolbar(user_memberTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('user_memberTable', 'members');
+          return;
+        }
         switch (obj.event) {
           case 'addMember':
             openAddUserForm('member');

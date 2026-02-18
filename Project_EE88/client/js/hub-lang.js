@@ -402,7 +402,74 @@ var HubLang = (function () {
       'noAgentYet': 'Chưa có agent nào',
       'savePermissions': 'Lưu phân quyền',
       'permTitle': 'Phân quyền — ',
-      'permUpdated': 'Đã cập nhật phân quyền'
+      'permUpdated': 'Đã cập nhật phân quyền',
+
+      // ── Export ──
+      'exportExcel': 'Xuất Excel',
+
+      // ── Dashboard ──
+      'dashboard': 'Tổng quan',
+      'dbActiveAgents': 'Agent hoạt động',
+      'dbExpiredAgents': 'Agent hết hạn',
+      'dbTotalAgents': 'Tổng agents',
+      'dbAgentStatus': 'Trạng thái Agent',
+      'dbLoginStats': 'Thống kê Login (7 ngày)',
+      'dbLoginSuccess': 'Thành công',
+      'dbLoginFail': 'Thất bại',
+      'dbRecentActivity': 'Hoạt động gần đây',
+
+      // ── Activity Log ──
+      'activityLog': 'Nhật ký',
+      'activityLogTitle': 'Nhật ký hoạt động',
+      'actionCol': 'Hành động',
+      'targetCol': 'Đối tượng',
+      'ipCol': 'IP',
+      'detailCol': 'Chi tiết',
+      'filterAction': 'Lọc hành động',
+      'filterUsername': 'Lọc người dùng',
+
+      // ── Login All + History ──
+      'loginAllBtn': 'Login tất cả',
+      'loginAllConfirm': 'Login tự động tất cả agent hết hạn?',
+      'loginAllDone': 'Login xong',
+      'loginHistory': 'Lịch sử',
+      'loginHistoryTitle': 'Lịch sử login',
+      'attemptsCol': 'Lần thử',
+      'durationCol': 'Thời gian (ms)',
+      'sourceCol': 'Nguồn',
+      'triggeredByCol': 'Kích hoạt bởi',
+      'errorCol': 'Lỗi',
+      'successCol': 'Kết quả',
+
+      // ── syncStatus.html (Phase 6: Cache + Sync) ──
+      'syncStatus': 'Đồng bộ Cache',
+      'syncStatusTitle': 'Trạng thái đồng bộ Cache',
+      'syncNow': 'Đồng bộ ngay',
+      'clearCache': 'Xoá cache',
+      'cacheOverview': 'Tổng quan Cache',
+      'totalCached': 'Tổng bản ghi',
+      'totalRows': 'Tổng dòng dữ liệu',
+      'lockedDays': 'Ngày đã khoá',
+      'lastSyncTime': 'Đồng bộ lần cuối',
+      'syncLogs': 'Lịch sử đồng bộ',
+      'syncSuccess': 'Thành công',
+      'syncError': 'Lỗi',
+      'syncPending': 'Chờ',
+      'syncRunning': 'Đang chạy',
+      'endpoint': 'Endpoint',
+      'cachedDate': 'Ngày cache',
+      'rowCount': 'Số dòng',
+      'noSyncData': 'Chưa có dữ liệu đồng bộ',
+      'confirmSync': 'Bắt đầu đồng bộ dữ liệu?',
+      'confirmClearCache': 'Xác nhận xoá toàn bộ cache?',
+      'syncStarted': 'Đã bắt đầu đồng bộ',
+      'cacheCleared': 'Đã xoá cache',
+      'filterEndpoint': 'Lọc endpoint',
+      'filterStatus': 'Lọc trạng thái',
+      'filterAgent': 'Lọc agent',
+      'syncing': 'Đang đồng bộ',
+      'cacheHit': 'Cache HIT',
+      'cacheMiss': 'Cache MISS'
     },
 
     en: {
@@ -786,7 +853,74 @@ var HubLang = (function () {
       'noAgentYet': 'No agents yet',
       'savePermissions': 'Save permissions',
       'permTitle': 'Permissions — ',
-      'permUpdated': 'Permissions updated'
+      'permUpdated': 'Permissions updated',
+
+      // ── Export ──
+      'exportExcel': 'Export Excel',
+
+      // ── Dashboard ──
+      'dashboard': 'Dashboard',
+      'dbActiveAgents': 'Active Agents',
+      'dbExpiredAgents': 'Expired Agents',
+      'dbTotalAgents': 'Total Agents',
+      'dbAgentStatus': 'Agent Status',
+      'dbLoginStats': 'Login Stats (7 days)',
+      'dbLoginSuccess': 'Success',
+      'dbLoginFail': 'Failed',
+      'dbRecentActivity': 'Recent Activity',
+
+      // ── Activity Log ──
+      'activityLog': 'Activity Log',
+      'activityLogTitle': 'Activity Log',
+      'actionCol': 'Action',
+      'targetCol': 'Target',
+      'ipCol': 'IP',
+      'detailCol': 'Detail',
+      'filterAction': 'Filter action',
+      'filterUsername': 'Filter user',
+
+      // ── Login All + History ──
+      'loginAllBtn': 'Login All',
+      'loginAllConfirm': 'Auto-login all expired agents?',
+      'loginAllDone': 'Login complete',
+      'loginHistory': 'History',
+      'loginHistoryTitle': 'Login History',
+      'attemptsCol': 'Attempts',
+      'durationCol': 'Duration (ms)',
+      'sourceCol': 'Source',
+      'triggeredByCol': 'Triggered by',
+      'errorCol': 'Error',
+      'successCol': 'Result',
+
+      // ── syncStatus.html (Phase 6: Cache + Sync) ──
+      'syncStatus': 'Cache Sync',
+      'syncStatusTitle': 'Cache Sync Status',
+      'syncNow': 'Sync Now',
+      'clearCache': 'Clear Cache',
+      'cacheOverview': 'Cache Overview',
+      'totalCached': 'Total Entries',
+      'totalRows': 'Total Rows',
+      'lockedDays': 'Locked Days',
+      'lastSyncTime': 'Last Sync',
+      'syncLogs': 'Sync Logs',
+      'syncSuccess': 'Success',
+      'syncError': 'Error',
+      'syncPending': 'Pending',
+      'syncRunning': 'Running',
+      'endpoint': 'Endpoint',
+      'cachedDate': 'Cached Date',
+      'rowCount': 'Rows',
+      'noSyncData': 'No sync data yet',
+      'confirmSync': 'Start syncing data?',
+      'confirmClearCache': 'Confirm clear all cache?',
+      'syncStarted': 'Sync started',
+      'cacheCleared': 'Cache cleared',
+      'filterEndpoint': 'Filter endpoint',
+      'filterStatus': 'Filter status',
+      'filterAgent': 'Filter agent',
+      'syncing': 'Syncing',
+      'cacheHit': 'Cache HIT',
+      'cacheMiss': 'Cache MISS'
     },
 
     'zh-CN': {
@@ -1170,7 +1304,74 @@ var HubLang = (function () {
       'noAgentYet': '暂无代理',
       'savePermissions': '保存权限',
       'permTitle': '权限 — ',
-      'permUpdated': '已更新权限'
+      'permUpdated': '已更新权限',
+
+      // ── Export ──
+      'exportExcel': '导出Excel',
+
+      // ── Dashboard ──
+      'dashboard': '仪表盘',
+      'dbActiveAgents': '活跃代理',
+      'dbExpiredAgents': '过期代理',
+      'dbTotalAgents': '代理总数',
+      'dbAgentStatus': '代理状态',
+      'dbLoginStats': '登录统计（7天）',
+      'dbLoginSuccess': '成功',
+      'dbLoginFail': '失败',
+      'dbRecentActivity': '近期活动',
+
+      // ── Activity Log ──
+      'activityLog': '活动日志',
+      'activityLogTitle': '活动日志',
+      'actionCol': '操作',
+      'targetCol': '对象',
+      'ipCol': 'IP',
+      'detailCol': '详情',
+      'filterAction': '筛选操作',
+      'filterUsername': '筛选用户',
+
+      // ── Login All + History ──
+      'loginAllBtn': '全部登录',
+      'loginAllConfirm': '自动登录所有过期代理？',
+      'loginAllDone': '登录完成',
+      'loginHistory': '历史',
+      'loginHistoryTitle': '登录历史',
+      'attemptsCol': '尝试次数',
+      'durationCol': '耗时（毫秒）',
+      'sourceCol': '来源',
+      'triggeredByCol': '触发者',
+      'errorCol': '错误',
+      'successCol': '结果',
+
+      // ── syncStatus.html (Phase 6: Cache + Sync) ──
+      'syncStatus': '缓存同步',
+      'syncStatusTitle': '缓存同步状态',
+      'syncNow': '立即同步',
+      'clearCache': '清除缓存',
+      'cacheOverview': '缓存概览',
+      'totalCached': '总记录数',
+      'totalRows': '总数据行',
+      'lockedDays': '已锁定天数',
+      'lastSyncTime': '上次同步',
+      'syncLogs': '同步日志',
+      'syncSuccess': '成功',
+      'syncError': '错误',
+      'syncPending': '等待',
+      'syncRunning': '运行中',
+      'endpoint': '接口',
+      'cachedDate': '缓存日期',
+      'rowCount': '行数',
+      'noSyncData': '暂无同步数据',
+      'confirmSync': '开始同步数据？',
+      'confirmClearCache': '确认清除全部缓存？',
+      'syncStarted': '同步已开始',
+      'cacheCleared': '缓存已清除',
+      'filterEndpoint': '筛选接口',
+      'filterStatus': '筛选状态',
+      'filterAgent': '筛选代理',
+      'syncing': '同步中',
+      'cacheHit': '缓存命中',
+      'cacheMiss': '缓存未命中'
     }
   };
 

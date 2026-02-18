@@ -104,6 +104,12 @@
   <!-- Sidebar -->
   <div class="hub-sidebar">
     <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
+      <!-- 0. Dashboard (admin only) -->
+      <li class="layui-nav-item" id="menuDashboard" style="display:none;">
+        <a href="javascript:;" data-page="dashboard" data-title-i18n="dashboard">
+          <i class="layui-icon layui-icon-home" style="margin-right: 6px;"></i><span data-i18n="dashboard">Tổng quan</span>
+        </a>
+      </li>
       <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
@@ -208,6 +214,12 @@
           <dd>
             <a href="javascript:;" data-page="manageUsers" data-title-i18n="manageUsers" data-i18n="manageUsers">Quản lý Users</a>
           </dd>
+          <dd>
+            <a href="javascript:;" data-page="activityLog" data-title-i18n="activityLog" data-i18n="activityLog">Nhật ký</a>
+          </dd>
+          <dd>
+            <a href="javascript:;" data-page="syncStatus" data-title-i18n="syncStatus" data-i18n="syncStatus">Đồng bộ Cache</a>
+          </dd>
         </dl>
       </li>
     </ul>
@@ -223,6 +235,7 @@
 </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/lib/xlsx/xlsx.mini.min.js"></script>
   <script src="/js/hub-api.js"></script>
   <script src="/js/hub-lang.js"></script>
   <script src="/spa/js/hub-utils.js"></script>
@@ -250,10 +263,13 @@
 
       // ── User info ──
       var user = HubAPI.getUser();
+      var isAdmin = false;
       if (user) {
         document.getElementById('userInfo').textContent = user.username;
         if (user.role === 'admin') {
+          isAdmin = true;
           document.getElementById('menuManage').style.display = '';
+          document.getElementById('menuDashboard').style.display = '';
         }
       }
 
@@ -386,9 +402,13 @@
         });
       });
 
-      // ── Auto-load first page ──
-      var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-page]');
-      if (firstLink) firstLink.click();
+      // ── Auto-load: admin → Dashboard, user → first page ──
+      if (isAdmin) {
+        HubRouter.openPage('dashboard', 'dashboard');
+      } else {
+        var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-page]');
+        if (firstLink) firstLink.click();
+      }
     });
   </script>
 </body>

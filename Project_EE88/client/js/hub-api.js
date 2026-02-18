@@ -134,6 +134,13 @@ var HubAPI = {
    */
   fetch: function (endpoint, params) {
     params = params || {};
+
+    // Phase 6: client-side session cache
+    if (typeof HubCache !== 'undefined') {
+      var cached = HubCache.get(endpoint, params);
+      if (cached) return Promise.resolve(cached);
+    }
+
     var qs = Object.entries(params)
       .filter(function (e) { return e[1] !== undefined && e[1] !== ''; })
       .map(function (e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); })
@@ -144,6 +151,12 @@ var HubAPI = {
     return this._fetch(url).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
+    }).then(function (data) {
+      // Cache response
+      if (typeof HubCache !== 'undefined' && data && data.code === 0) {
+        HubCache.set(endpoint, params, data);
+      }
+      return data;
     });
   },
 

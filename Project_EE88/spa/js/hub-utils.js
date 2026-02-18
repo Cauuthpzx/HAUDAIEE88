@@ -123,6 +123,87 @@ var HubUtils = (function () {
     } catch (e) { return []; }
   }
 
+  /**
+   * Default toolbar config with Excel export button
+   */
+  function getDefaultToolbar() {
+    return [
+      'filter', 'print',
+      {
+        title: HubLang.t('exportExcel'),
+        layEvent: 'LAYTABLE_XLSX',
+        icon: 'layui-icon-export'
+      }
+    ];
+  }
+
+  /**
+   * Export layui table data to XLSX via SheetJS
+   * @param {string} tableId — layui table id
+   * @param {string} filename — base filename (without extension)
+   */
+  function exportExcel(tableId, filename) {
+    if (typeof XLSX === 'undefined') {
+      layui.layer.msg('SheetJS not loaded', { icon: 2 });
+      return;
+    }
+
+    var table = layui.table;
+    var data = table.cache[tableId];
+    if (!data || data.length === 0) {
+      layui.layer.msg(HubLang.t('noData'), { icon: 0 });
+      return;
+    }
+
+    // Get column config from layui table internal state
+    var tableConfig = null;
+    try {
+      var thatTable = table.getOptions(tableId);
+      if (thatTable) tableConfig = thatTable;
+    } catch (e) { /* fallback below */ }
+
+    // Extract visible columns
+    var cols = [];
+    var colSrc = tableConfig && tableConfig.cols ? tableConfig.cols[0] : null;
+    if (colSrc) {
+      colSrc.forEach(function (col) {
+        if (col.type === 'checkbox' || col.type === 'radio') return;
+        if (col.toolbar) return;
+        if (col.hide) return;
+        if (!col.field) return;
+        cols.push({ field: col.field, title: col.title || col.field });
+      });
+    }
+
+    if (cols.length === 0) {
+      // Fallback: use object keys from first data row
+      var keys = Object.keys(data[0]).filter(function (k) {
+        return k !== 'LAY_TABLE_INDEX' && k !== 'LAY_CHECKED';
+      });
+      cols = keys.map(function (k) { return { field: k, title: k }; });
+    }
+
+    // Build worksheet: headers + rows
+    var wsData = [cols.map(function (c) { return c.title; })];
+    data.forEach(function (row) {
+      if (!row || row.LAY_TABLE_INDEX === undefined && !row) return;
+      wsData.push(cols.map(function (c) {
+        var val = row[c.field];
+        return val === null || val === undefined ? '' : val;
+      }));
+    });
+
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = cols.map(function (c) {
+      return { wch: Math.max((c.title || '').length + 4, 14) };
+    });
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+
+    var dateStr = fmt(new Date());
+    XLSX.writeFile(wb, (filename || 'export') + '_' + dateStr + '.xlsx');
+  }
+
   return {
     fmt: fmt,
     getDateRanges: getDateRanges,
@@ -132,6 +213,8 @@ var HubUtils = (function () {
     parseDataWithTotal: parseDataWithTotal,
     SERIES_NAMES: SERIES_NAMES,
     DEFAULT_SERIES: DEFAULT_SERIES,
-    parseRebate: parseRebate
+    parseRebate: parseRebate,
+    getDefaultToolbar: getDefaultToolbar,
+    exportExcel: exportExcel
   };
 })();

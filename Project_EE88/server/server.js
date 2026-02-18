@@ -1,27 +1,66 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-const { createLogger, accessLogStream, LOG_DIR } = require('./utils/logger');
+const { createLogger, accessLogStream, LOG_DIR, cleanOldLogs } = require('./utils/logger');
+const config = require('./config/default');
 const { getDb, closeDb } = require('./database/init');
 const proxyRoutes = require('./routes/proxy');
 const actionRoutes = require('./routes/action');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const syncRoutes = require('./routes/sync');
+const cronSync = require('./services/cronSync');
 const errorHandler = require('./middleware/errorHandler');
 
 const log = createLogger('server');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ── Config validation ──
+if (config.jwt.secret === 'agent-hub-secret-change-me') {
+  const newSecret = crypto.randomBytes(32).toString('hex');
+  config.jwt.secret = newSecret;
+  log.warn('JWT_SECRET chưa thay đổi! Đã sinh secret tạm thời.');
+  log.warn('Hãy đặt JWT_SECRET trong .env để token ổn định qua các lần restart.');
+}
+
+// ── Dọn log cũ ──
+cleanOldLogs(config.logging.retentionDays);
+
 // ── Khởi tạo database ──
 const db = getDb();
 log.ok('Database đã khởi tạo');
 
-// ── Middleware ──
+// ── Security Middleware ──
+app.use(helmet({
+  contentSecurityPolicy: false,       // Tắt CSP — Layui dùng inline scripts/styles
+  crossOriginEmbedderPolicy: false
+}));
+
 app.use(cors());
+
+// ── Rate Limiting ──
+app.use('/api/', rateLimit({
+  windowMs: config.security.rateLimit.windowMs,
+  max: config.security.rateLimit.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: -1, msg: 'Quá nhiều yêu cầu, vui lòng thử lại sau' }
+}));
+
+app.use('/api/auth/login', rateLimit({
+  windowMs: config.security.authRateLimit.windowMs,
+  max: config.security.authRateLimit.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: -1, msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút' }
+}));
 
 // Morgan: console dùng format 'dev', file dùng format 'combined'
 app.use(morgan('dev'));
@@ -29,7 +68,7 @@ app.use(morgan('[:date[iso]] :method :url :status :res[content-length] - :respon
   stream: accessLogStream
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: config.security.bodyLimit }));
 
 // ── Ghi log mọi request đến ──
 app.use((req, res, next) => {
@@ -50,6 +89,9 @@ app.use('/api/action', actionRoutes);
 
 // Admin: cần JWT + admin role
 app.use('/api/admin', adminRoutes);
+
+// Sync: cần JWT + admin role (cache management)
+app.use('/api/admin', syncRoutes);
 
 app.get('/api/health', (req, res) => {
   const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents WHERE status = 1').get().cnt;
@@ -209,8 +251,12 @@ try {
   log.warn(`Không thể khởi động Login Worker: ${err.message}`);
 }
 
+// ── Cron Sync (Phase 6: Cache) ──
+cronSync.startCron();
+
 // ── Graceful shutdown ──
 function shutdown() {
+  cronSync.stopCron();
   if (loginWorker) loginWorker.postMessage({ type: 'shutdown' });
   if (solverProcess) {
     log.info('Tắt Captcha Solver...');
@@ -223,6 +269,15 @@ function shutdown() {
 
 process.on('SIGTERM', () => { log.info('Nhận SIGTERM — đang tắt...'); shutdown(); });
 process.on('SIGINT', () => { log.info('Nhận SIGINT — đang tắt...'); shutdown(); });
+
+// ── Uncaught Exception / Unhandled Rejection ──
+process.on('uncaughtException', (err) => {
+  log.error('UNCAUGHT EXCEPTION! Đang tắt server...', { error: err.message, stack: err.stack });
+  shutdown();
+});
+process.on('unhandledRejection', (reason) => {
+  log.error('UNHANDLED REJECTION', { reason: String(reason) });
+});
 
 // ── Khởi động ──
 app.listen(PORT, () => {

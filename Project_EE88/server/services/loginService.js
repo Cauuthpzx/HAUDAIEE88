@@ -11,6 +11,8 @@
 const axios = require('axios');
 const { getDb } = require('../database/init');
 const { createLogger } = require('../utils/logger');
+const { logLoginHistory } = require('./activityLogger');
+const { decrypt, isEncrypted } = require('../utils/crypto');
 
 const log = createLogger('loginService');
 
@@ -36,9 +38,11 @@ async function isSolverReady() {
 /**
  * Auto-login 1 agent EE88
  * @param {number} agentId — ID agent trong DB
+ * @param {string} [source='manual'] — 'manual' | 'auto' | 'worker'
+ * @param {string} [triggeredBy] — username người kích hoạt
  * @returns {Promise<{success: boolean, cookie?: string, error?: string, attempts?: number}>}
  */
-async function loginAgent(agentId) {
+async function loginAgent(agentId, source, triggeredBy) {
   // Check lock — tránh login đồng thời
   if (loginLocks.get(agentId)) {
     log.warn(`Agent #${agentId} đang login, bỏ qua`);
@@ -67,11 +71,16 @@ async function loginAgent(agentId) {
       return { success: false, error: 'Python solver service chưa chạy (port 5000)' };
     }
 
+    // Giải mã password nếu đã được mã hóa
+    const plainPassword = isEncrypted(agent.ee88_password)
+      ? decrypt(agent.ee88_password)
+      : agent.ee88_password;
+
     // Gọi solver
     const res = await axios.post(`${SOLVER_URL}/login`, {
       base_url: agent.base_url,
       username: agent.ee88_username,
-      password: agent.ee88_password,
+      password: plainPassword,
       max_retries: 10
     }, { timeout: SOLVER_TIMEOUT });
 
@@ -91,6 +100,15 @@ async function loginAgent(agentId) {
       `).run(newCookie, newUA, agentId);
 
       log.ok(`[${agent.label}] Login thành công — ${result.attempts} lần thử — ${duration}ms`);
+      logLoginHistory({ agentId, agentLabel: agent.label, success: true, attempts: result.attempts, source: source || 'manual', triggeredBy, durationMs: duration });
+
+      // Fire-and-forget: sync 65 ngày gần nhất (background, không block response)
+      // Lazy require để tránh circular dependency (cronSync → loginService)
+      const { syncAfterLogin } = require('./cronSync');
+      syncAfterLogin(agentId).catch(err => {
+        log.error(`[${agent.label}] Post-login sync lỗi: ${err.message}`);
+      });
+
       return {
         success: true,
         cookie: newCookie,
@@ -100,6 +118,7 @@ async function loginAgent(agentId) {
     }
 
     log.error(`[${agent.label}] Login thất bại — ${result.error} — ${duration}ms`);
+    logLoginHistory({ agentId, agentLabel: agent.label, success: false, attempts: result.attempts || 0, errorMsg: result.error || 'Login thất bại', source: source || 'manual', triggeredBy, durationMs: duration });
     return {
       success: false,
       error: result.error || 'Login thất bại',
@@ -108,6 +127,7 @@ async function loginAgent(agentId) {
   } catch (err) {
     const duration = Date.now() - startTime;
     log.error(`[${agent.label}] Login exception — ${err.message} — ${duration}ms`);
+    logLoginHistory({ agentId, agentLabel: agent.label, success: false, errorMsg: err.message, source: source || 'manual', triggeredBy, durationMs: duration });
     return { success: false, error: err.message };
   } finally {
     loginLocks.delete(agentId);

@@ -31,18 +31,16 @@
           return false;
         }
         var loading = layer.load(1);
-        $.ajax({
-          url: '/api/action/editFundPassword', method: 'POST', contentType: 'application/json',
-          data: JSON.stringify(field),
-          success: function (res) {
-            layer.close(loading);
-            if (res.code === 0) {
-              layer.msg(HubLang.t('fundPwChangeSuccess'), { icon: 1 });
-            } else {
-              layer.msg(res.msg || HubLang.t('fundPwChangeFailed'), { icon: 2 });
-            }
-          },
-          error: function () { layer.close(loading); layer.msg(HubLang.t('serverError'), { icon: 2 }); }
+        HubAPI.action('editFundPassword', field).then(function (res) {
+          layer.close(loading);
+          if (res.code === 0) {
+            layer.msg(HubLang.t('fundPwChangeSuccess'), { icon: 1 });
+          } else {
+            layer.msg(res.msg || HubLang.t('fundPwChangeFailed'), { icon: 2 });
+          }
+        }).catch(function () {
+          layer.close(loading);
+          layer.msg(HubLang.t('serverError'), { icon: 2 });
         });
         return false;
       });

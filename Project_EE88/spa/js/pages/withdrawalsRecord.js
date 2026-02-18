@@ -12,7 +12,7 @@
         + '<div class="layui-col-md12">'
         + '<div class="layui-card">'
         + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="withdrawHistoryTitle">' + HubLang.t('withdrawHistoryTitle') + '</legend>'
         + '<div class="layui-field-box">'
         + '<form class="layui-form" lay-filter="wr_searchForm">'
@@ -107,7 +107,7 @@
         method: 'get',
         where: { create_time: defaultRange },
         toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
+        defaultToolbar: HubUtils.getDefaultToolbar(),
         page: true,
         limit: 10,
         text: { none: HubLang.t('noData') },
@@ -154,6 +154,12 @@
         ]],
         done: function (res) {
           console.log('[withdrawalsRecord] loaded ' + (res.data ? res.data.length : 0) + '/' + res.count);
+        }
+      });
+
+      table.on('toolbar(wr_dataTable)', function (obj) {
+        if (obj.event === 'LAYTABLE_XLSX') {
+          HubUtils.exportExcel('wr_dataTable', 'withdrawals');
         }
       });
 
