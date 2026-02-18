@@ -25,14 +25,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "gulp",
-    "release": "npm run build && npm run release-zip",
-    "release-zip": "gulp release",
+    "dev": "cd Project_EE88 && npm run dev",
+    "build": "cd Project_EE88 && npm run build",
+    "start": "cd Project_EE88 && npm start",
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache .",
     "lint": "eslint . --cache",
-    "lint:strict": "eslint . --cache --max-warnings 0",
-    "prepare": "node .husky/install.mjs"
+    "lint:strict": "eslint . --cache --max-warnings 0"
   },
   "lint-staged": {
     "*": [

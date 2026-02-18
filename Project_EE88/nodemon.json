@@ -1,7 +1,20 @@
 {
-  "watch": ["server/", "client/", "spa/", "captcha/"],
-  "ext": "js,json,html,css,sql,py",
-  "ignore": ["node_modules/", "dist/", "data/", "*.log"],
-  "exec": "node scripts/build.js && node dist/server/server.js",
-  "delay": "500"
+  "watch": ["server/"],
+  "ext": "js,json,sql",
+  "ignore": [
+    "node_modules/",
+    "dist/",
+    "data/",
+    "logs/",
+    "*.log",
+    "*.db",
+    "*.db-journal",
+    "*.db-shm",
+    "*.db-wal"
+  ],
+  "exec": "node server/server.js",
+  "delay": "500",
+  "env": {
+    "NODE_ENV": "development"
+  }
 }
