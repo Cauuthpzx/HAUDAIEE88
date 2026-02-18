@@ -4,11 +4,11 @@
       // ── Inline toolbar HTML (no <script> tag in SPA) ──
       var toolbarHtml = '<div class="layui-btn-group">'
         + '<button class="layui-btn layui-btn-xs" lay-event="addMember">'
-        + '<i class="layui-icon layui-icon-addition"></i>'
+        + '<i class="hi hi-circle-plus"></i>'
         + '<span data-i18n="addMemberBtn">' + HubLang.t('addMemberBtn') + '</span>'
         + '</button>'
         + '<button class="layui-btn layui-btn-xs" lay-event="addAgent">'
-        + '<i class="layui-icon layui-icon-addition"></i>'
+        + '<i class="hi hi-circle-plus"></i>'
         + '<span data-i18n="addAgentBtn">' + HubLang.t('addAgentBtn') + '</span>'
         + '</button>'
         + '</div>';
@@ -79,13 +79,13 @@
 
         + '<div class="layui-inline">'
         + '<button type="button" class="layui-btn" lay-submit lay-filter="user_doSearch">'
-        + '<i class="layui-icon layui-icon-search"></i>'
+        + '<i class="hi hi-magnifying-glass"></i>'
         + ' <span data-i18n="search">' + HubLang.t('search') + '</span>'
         + '</button></div>'
 
         + '<div class="layui-inline">'
         + '<button type="reset" class="layui-btn layui-btn-primary" id="user_btnReset">'
-        + '<i class="layui-icon layui-icon-refresh"></i>'
+        + '<i class="hi hi-arrows-rotate"></i>'
         + ' <span data-i18n="reset">' + HubLang.t('reset') + '</span>'
         + '</button></div>'
 

@@ -73,7 +73,7 @@ var HubRouter = (function () {
     // Create tab with loading placeholder
     tabs.add(TABS_ID, {
       title: title,
-      content: '<div class="hub-page" id="page_' + pageId + '"><div style="text-align:center;padding:50px;"><i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop" style="font-size:30px;"></i></div></div>',
+      content: '<div class="hub-page" id="page_' + pageId + '"><div style="text-align:center;padding:50px;"><i class="hi hi-spinner" style="font-size:30px;"></i></div></div>',
       id: pageId,
       done: function (data) {
         if (dropdownInst) {

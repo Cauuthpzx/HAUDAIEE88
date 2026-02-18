@@ -79,10 +79,48 @@ var HubUtils = (function () {
     });
   }
 
+  // ── Stale-while-revalidate: poll cho đến khi có data mới từ EE88 ──
+  var _localReloadTimers = {};
+  var _localReloadAttempts = {};
+  var POLL_INTERVAL = 2000;  // 2s mỗi lần poll
+  var MAX_POLL_ATTEMPTS = 15; // tối đa 30s
+
+  function scheduleLocalReload(tableId) {
+    if (!tableId) return;
+    if (!_localReloadAttempts[tableId]) _localReloadAttempts[tableId] = 0;
+    _localReloadAttempts[tableId]++;
+    if (_localReloadAttempts[tableId] > MAX_POLL_ATTEMPTS) {
+      delete _localReloadAttempts[tableId];
+      return;
+    }
+    if (_localReloadTimers[tableId]) clearTimeout(_localReloadTimers[tableId]);
+    _localReloadTimers[tableId] = setTimeout(function () {
+      delete _localReloadTimers[tableId];
+      try { layui.table.reload(tableId); } catch (e) { delete _localReloadAttempts[tableId]; }
+    }, POLL_INTERVAL);
+  }
+
+  function stopLocalReload(tableId) {
+    delete _localReloadAttempts[tableId];
+    if (_localReloadTimers[tableId]) {
+      clearTimeout(_localReloadTimers[tableId]);
+      delete _localReloadTimers[tableId];
+    }
+  }
+
   /**
    * Standard parseData function for layui table
+   * fromLocal=true → poll mỗi 2s; fromLocal=false → data mới, dừng poll
    */
   function parseData(res) {
+    // this = table options (layui gọi parseData.call(options, res))
+    if (this && this.id) {
+      if (res && res.fromLocal) {
+        scheduleLocalReload(this.id);
+      } else if (_localReloadAttempts[this.id]) {
+        stopLocalReload(this.id);
+      }
+    }
     return {
       code: res.code === 0 ? 0 : 1,
       msg: res.msg || '',
@@ -96,7 +134,7 @@ var HubUtils = (function () {
    */
   function parseDataWithTotal(res, storageKey) {
     window[storageKey] = res.total_data || null;
-    return parseData(res);
+    return parseData.call(this, res);
   }
 
   /**
@@ -132,7 +170,7 @@ var HubUtils = (function () {
       {
         title: HubLang.t('exportExcel'),
         layEvent: 'LAYTABLE_XLSX',
-        icon: 'layui-icon-export'
+        icon: 'hi hi-file-export'
       }
     ];
   }

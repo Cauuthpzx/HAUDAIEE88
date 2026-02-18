@@ -30,11 +30,11 @@
         + '</div></div>'
         + '<div class="layui-inline">'
         + '<button type="button" class="layui-btn" lay-submit lay-filter="betOrder_doSearch">'
-        + '<i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span>'
+        + '<i class="hi hi-magnifying-glass"></i> <span data-i18n="search">Tìm kiếm</span>'
         + '</button></div>'
         + '<div class="layui-inline">'
         + '<button type="reset" class="layui-btn layui-btn-primary" id="betOrder_btnReset">'
-        + '<i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span>'
+        + '<i class="hi hi-arrows-rotate"></i> <span data-i18n="reset">Đặt lại</span>'
         + '</button></div>'
         + '</form></div>'
         + '</fieldset></div>'
@@ -76,16 +76,16 @@
         parseData: HubUtils.parseData,
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'serial_no', title: HubLang.t('serialNo'), width: 220 },
-          { field: 'platform_id_name', title: HubLang.t('provider'), width: 120 },
-          { field: 'c_name', title: HubLang.t('gameCategory'), width: 120 },
-          { field: 'game_name', title: HubLang.t('gameName'), width: 180 },
-          { field: 'bet_amount', title: HubLang.t('betAmount'), width: 130 },
-          { field: 'turnover', title: HubLang.t('turnover'), width: 130 },
-          { field: 'prize', title: HubLang.t('prize'), width: 130 },
-          { field: 'win_lose', title: HubLang.t('winLose'), width: 130 },
-          { field: 'bet_time', title: HubLang.t('betTime'), width: 160 },
-          { field: 'platform_username', title: HubLang.t('tkPlatform'), width: 150 },
+          { field: 'serial_no', title: HubLang.t('serialNo'), minWidth: 220 },
+          { field: 'platform_id_name', title: HubLang.t('provider'), minWidth: 120 },
+          { field: 'c_name', title: HubLang.t('gameCategory'), minWidth: 120 },
+          { field: 'game_name', title: HubLang.t('gameName'), minWidth: 180 },
+          { field: 'bet_amount', title: HubLang.t('betAmount'), minWidth: 130 },
+          { field: 'turnover', title: HubLang.t('turnover'), minWidth: 130 },
+          { field: 'prize', title: HubLang.t('prize'), minWidth: 130 },
+          { field: 'win_lose', title: HubLang.t('winLose'), minWidth: 130 },
+          { field: 'bet_time', title: HubLang.t('betTime'), minWidth: 160 },
+          { field: 'platform_username', title: HubLang.t('tkPlatform'), minWidth: 150 },
           { field: 'id', title: 'ID', width: 120 },
           { field: 'uid', title: 'UID', width: 90 },
           { field: 'platform_id', title: HubLang.t('providerId'), width: 80 },

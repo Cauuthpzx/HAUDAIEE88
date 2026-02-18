@@ -1,8 +1,6 @@
 /**
- * Build script — copy source → dist
- * Giữ nguyên: node_modules, logs, .env, database/*.db*
- *
- * Chạy: npm run build (từ root)
+ * Build script — copy source → dist/
+ * Chạy: node scripts/build.js
  */
 const fs = require('fs');
 const path = require('path');
@@ -10,94 +8,67 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 
-// ── Helpers ──────────────────────────────────────────
+const EXCLUDE_EXTS = new Set(['.db', '.db-shm', '.db-wal']);
+const EXCLUDE_DIRS = new Set(['node_modules', 'logs', '.env']);
 
-function rmSync(p) {
-  try {
-    if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true });
-  } catch (e) {
-    console.log(`[build] WARN: Cannot remove ${path.basename(p)} — ${e.code}`);
+function cleanDir(dir, preserveSet) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir);
+  for (const entry of entries) {
+    if (preserveSet && preserveSet.has(entry)) continue;
+    const full = path.join(dir, entry);
+    fs.rmSync(full, { recursive: true, force: true });
   }
 }
 
-function copyDir(src, dest, opts) {
-  const excludeDirs = (opts && opts.excludeDirs) || [];
-  const excludeExts = (opts && opts.excludeExts) || [];
+function copyDir(src, dest, opts = {}) {
+  const { excludeExts, excludeDirs } = opts;
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, { recursive: true });
 
-  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
 
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (excludeDirs.includes(entry.name)) continue;
-
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
+    if (excludeDirs && excludeDirs.has(entry.name)) continue;
 
     if (entry.isDirectory()) {
-      copyDir(s, d, { excludeExts });
+      copyDir(srcPath, destPath, opts);
     } else {
-      if (excludeExts.some(ext => entry.name.endsWith(ext))) continue;
-      try {
-        fs.copyFileSync(s, d);
-      } catch (e) {
-        console.log(`[build] WARN: Cannot copy ${entry.name} — ${e.code}`);
-      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (excludeExts && excludeExts.has(ext)) continue;
+      fs.copyFileSync(srcPath, destPath);
     }
   }
 }
-
-// ── Build Steps ──────────────────────────────────────
 
 const t0 = Date.now();
 
-// 1. Đảm bảo dist/ tồn tại
-if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
-
-// 2. Clean dist/server (giữ node_modules, logs, .env, database/*.db*)
+// Clean dist (preserve node_modules, logs, .env, .db files inside database/)
 console.log('[build] Cleaning dist/server...');
-const distServer = path.join(DIST, 'server');
-if (fs.existsSync(distServer)) {
-  const KEEP = ['node_modules', 'logs', '.env'];
-  for (const entry of fs.readdirSync(distServer, { withFileTypes: true })) {
-    if (KEEP.includes(entry.name)) continue;
-    if (entry.name === 'database') {
-      // Chỉ xóa non-db files trong database/
-      const dbDir = path.join(distServer, 'database');
-      for (const f of fs.readdirSync(dbDir)) {
-        if (!f.endsWith('.db') && !f.endsWith('.db-shm') && !f.endsWith('.db-wal')) {
-          rmSync(path.join(dbDir, f));
-        }
-      }
-      continue;
-    }
-    rmSync(path.join(distServer, entry.name));
-  }
-}
-
-// 3. Clean dist/client + dist/spa
+cleanDir(path.join(DIST, 'server'), new Set(['node_modules', 'logs', '.env']));
 console.log('[build] Cleaning dist/client...');
-rmSync(path.join(DIST, 'client'));
+cleanDir(path.join(DIST, 'client'));
 console.log('[build] Cleaning dist/spa...');
-rmSync(path.join(DIST, 'spa'));
+cleanDir(path.join(DIST, 'spa'));
 
-// 4. Copy server → dist/server
+// Copy source → dist
 console.log('[build] Copying server...');
-copyDir(
-  path.join(ROOT, 'server'),
-  distServer,
-  { excludeDirs: ['node_modules', '.env', 'logs'], excludeExts: ['.db', '.db-shm', '.db-wal'] }
-);
+copyDir(path.join(ROOT, 'server'), path.join(DIST, 'server'), {
+  excludeExts: EXCLUDE_EXTS,
+  excludeDirs: EXCLUDE_DIRS
+});
 
-// 5. Copy client → dist/client
 console.log('[build] Copying client...');
-copyDir(path.join(ROOT, 'client'), path.join(DIST, 'client'));
+copyDir(path.join(ROOT, 'client'), path.join(DIST, 'client'), {
+  excludeDirs: new Set(['node_modules'])
+});
 
-// 6. Copy spa → dist/spa
 console.log('[build] Copying spa...');
 copyDir(path.join(ROOT, 'spa'), path.join(DIST, 'spa'));
 
-// 7. Copy captcha → dist/captcha
 console.log('[build] Copying captcha...');
 copyDir(path.join(ROOT, 'captcha'), path.join(DIST, 'captcha'));
 
-const duration = Date.now() - t0;
-console.log(`[build] Done! ${duration}ms — Nodemon sẽ tự restart.`);
+console.log(`[build] Done! ${Date.now() - t0}ms — Nodemon sẽ tự restart.`);

@@ -54,14 +54,14 @@
         // search button
         + '<div class="layui-inline">'
         + '<button type="button" class="layui-btn" lay-submit lay-filter="wr_doSearch">'
-        + '<i class="layui-icon layui-icon-search"></i> '
+        + '<i class="hi hi-magnifying-glass"></i> '
         + '<span data-i18n="search">' + HubLang.t('search') + '</span>'
         + '</button></div>'
 
         // reset button
         + '<div class="layui-inline">'
         + '<button type="reset" class="layui-btn layui-btn-primary" id="wr_btnReset">'
-        + '<i class="layui-icon layui-icon-refresh"></i> '
+        + '<i class="hi hi-arrows-rotate"></i> '
         + '<span data-i18n="reset">' + HubLang.t('reset') + '</span>'
         + '</button></div>'
 

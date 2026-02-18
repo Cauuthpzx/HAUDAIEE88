@@ -23,6 +23,12 @@ router.get('/sync/status', (req, res) => {
   });
 });
 
+// GET /api/admin/sync/tree — Tree data cho treeTable (Agent → Endpoints)
+router.get('/sync/tree', (req, res) => {
+  const tree = cacheManager.getCacheTree();
+  res.json({ code: 0, data: tree });
+});
+
 // GET /api/admin/sync/logs — Danh sách sync logs (phân trang + filter)
 router.get('/sync/logs', (req, res) => {
   const { page, limit, agent_id, endpoint, status, date } = req.query;
@@ -45,6 +51,21 @@ router.get('/sync/cached-dates', (req, res) => {
     endpoint
   );
   res.json({ code: 0, data: dates, count: dates.length });
+});
+
+// POST /api/admin/sync/run-all — Sync 65 ngày cho tất cả agents (chạy nền)
+router.post('/sync/run-all', async (req, res) => {
+  log.info(`[${req.user.username}] Yêu cầu sync toàn bộ agents`);
+
+  // Trả response ngay, chạy nền
+  res.json({ code: 0, msg: 'Đã bắt đầu sync toàn bộ agents (65 ngày)' });
+
+  try {
+    const result = await cronSync.syncAllAgents();
+    log.ok('Sync toàn bộ hoàn tất', result);
+  } catch (err) {
+    log.error(`Sync toàn bộ thất bại: ${err.message}`);
+  }
 });
 
 // POST /api/admin/sync/run — Chạy sync thủ công

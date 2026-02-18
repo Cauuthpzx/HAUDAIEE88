@@ -1,13 +1,65 @@
 {
-  "name": "ee88-agent-hub",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Agent Hub — Proxy dashboard cho ee88 agent data",
+  "name": "layui",
+  "version": "2.13.3",
+  "description": "Classic modular Front-End UI library",
+  "keywords": [
+    "layui",
+    "components",
+    "front-end",
+    "framework",
+    "library",
+    "ui",
+    "web"
+  ],
+  "homepage": "https://layui.dev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/layui/layui/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/layui/layui.git"
+  },
+  "main": "dist/layui.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "start": "cd Project_EE88/server && node server.js",
-    "dev": "cd Project_EE88/server && npx nodemon server.js",
-    "install:server": "cd Project_EE88/server && npm install",
-    "build": "node scripts/build.js",
-    "serve": "node Project_EE88/dist/server/server.js"
+    "build": "gulp",
+    "release": "npm run build && npm run release-zip",
+    "release-zip": "gulp release",
+    "format": "prettier --write --cache .",
+    "format:check": "prettier --check --cache .",
+    "lint": "eslint . --cache",
+    "lint:strict": "eslint . --cache --max-warnings 0",
+    "prepare": "node .husky/install.mjs"
+  },
+  "lint-staged": {
+    "*": [
+      "prettier --write --cache --ignore-unknown"
+    ],
+    "*.{js,mjs,cjs}": [
+      "eslint --fix --cache"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@types/layui": "^2.11.0",
+    "del": "^6.1.1",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "gulp": "^4.0.2",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-header": "^2.0.9",
+    "gulp-replace": "^1.1.4",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-uglify": "^3.0.2",
+    "gulp-zip": "^5.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "minimist": "^1.2.8",
+    "prettier": "^3.6.2"
   }
 }

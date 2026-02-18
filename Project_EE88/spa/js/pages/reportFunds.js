@@ -19,8 +19,8 @@
         + '<div class="layui-inline"><label data-i18n="accountName">Tên tài khoản</label>：'
         + '<div style="width:200px;" class="layui-input-inline">'
         + '<input type="text" name="username" placeholder="' + HubLang.t('enterAccountName') + '" class="layui-input" autocomplete="off"></div></div>'
-        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rf_doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
-        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rf_btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
+        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rf_doSearch"><i class="hi hi-magnifying-glass"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
+        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rf_btnReset"><i class="hi hi-arrows-rotate"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
         + '</form></div></fieldset></div>'
         + '<div class="layui-card-body"><table id="rf_dataTable" lay-filter="rf_dataTable"></table></div>'
         + '<div class="layui-fluid" style="margin-top:0;padding-top:0;padding-bottom:1px;"><div>'
@@ -100,8 +100,8 @@
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
           { field: 'username', title: HubLang.t('account'), width: 150, fixed: 'left' },
-          { field: 'user_parent_format', title: HubLang.t('agent'), width: 150 },
-          { field: 'deposit_count', title: HubLang.t('depositCountCol'), width: 160 },
+          { field: 'user_parent_format', title: HubLang.t('agent'), minWidth: 150 },
+          { field: 'deposit_count', title: HubLang.t('depositCountCol'), minWidth: 160 },
           { field: 'deposit_amount', title: HubLang.t('depositAmountTotal'), minWidth: 150, sort: true },
           { field: 'withdrawal_count', title: HubLang.t('withdrawCountCol'), minWidth: 150 },
           { field: 'withdrawal_amount', title: HubLang.t('withdrawAmountTotal'), minWidth: 160 },

@@ -10,45 +10,44 @@ const log = createLogger('fanout');
 const limit = pLimit(config.fanout.concurrency);
 
 // ═══════════════════════════════════════
-// ── Background refresh (stale-while-revalidate) ──
+// ── Display Cache (in-memory) ──
+// Cache response đã hiển thị → lần sau mở lại load ngay
+// Tách biệt hoàn toàn với sync cache (cache_data table)
 // ═══════════════════════════════════════
 
-const refreshLocks = new Map(); // "agentId:endpoint:dateKey" → true
+const displayCache = new Map(); // key → { allData, totalData, timestamp }
+const refreshLocks = new Map(); // key → true (tránh refresh đồng thời)
+const MAX_CACHE_SIZE = 100;
+const CACHE_MAX_AGE = 30 * 60 * 1000; // 30 phút tối đa
 
 /**
- * Background refresh — fetch mới từ EE88 API và cập nhật cache + dataStore
- * Chạy fire-and-forget, không block response
+ * Tạo cache key từ agents + endpoint + params (trừ page/limit)
  */
-function backgroundRefresh(agent, endpointKey, params, dateKey) {
-  const key = `${agent.id}:${endpointKey}:${dateKey}`;
-  if (refreshLocks.has(key)) return; // Đang refresh rồi
+function makeCacheKey(agentIds, endpointKey, params) {
+  const ids = agentIds.slice().sort().join(',');
+  const keys = Object.keys(params).filter(k => k !== 'page' && k !== 'limit').sort();
+  const paramStr = keys.map(k => k + '=' + params[k]).join('&');
+  return ids + ':' + endpointKey + ':' + paramStr;
+}
 
-  refreshLocks.set(key, true);
-
-  (async () => {
-    try {
-      log.info(`[${agent.label}] BG refresh: ${endpointKey} ${dateKey}`);
-      const result = await fetchWithRelogin(agent, endpointKey, params);
-
-      if (Array.isArray(result.data)) {
-        cacheManager.setCache(agent.id, endpointKey, dateKey, result.data, result.total_data, result.data.length);
-        try {
-          if (result.data.length > 0) {
-            dataStore.saveData(agent.id, endpointKey, result.data, result.total_data, dateKey);
-          }
-        } catch (e) { /* fail-safe */ }
-      }
-      log.ok(`[${agent.label}] BG refresh OK: ${endpointKey} ${dateKey} (${result.data?.length || 0} rows)`);
-    } catch (err) {
-      log.warn(`[${agent.label}] BG refresh failed: ${endpointKey}: ${err.message}`);
-    } finally {
-      refreshLocks.delete(key);
+/**
+ * Dọn dẹp display cache — xoá entries quá cũ hoặc quá nhiều
+ */
+function evictStaleEntries() {
+  const now = Date.now();
+  for (const [k, v] of displayCache) {
+    if (now - v.timestamp > CACHE_MAX_AGE) {
+      displayCache.delete(k);
     }
-  })();
+  }
+  while (displayCache.size > MAX_CACHE_SIZE) {
+    const firstKey = displayCache.keys().next().value;
+    displayCache.delete(firstKey);
+  }
 }
 
 // ═══════════════════════════════════════
-// ── Fetch with auto-relogin ──
+// ── Fetch helpers ──
 // ═══════════════════════════════════════
 
 /**
@@ -70,147 +69,51 @@ async function fetchWithRelogin(agent, endpointKey, params) {
   }
 }
 
-// ═══════════════════════════════════════
-// ── Cache helpers ──
-// ═══════════════════════════════════════
-
 /**
- * Thử serve từ cache, trả về data hoặc null
- * Nếu cache stale → trigger background refresh
+ * Fetch full dataset cho tất cả agents (dùng sync cache cho ngày cũ, API cho còn lại)
+ * Trả về { allData, totalData, successCount, errors }
  */
-function tryCacheHit(agent, endpointKey, cacheInfo, staleTTL, fetchParams) {
-  if (!cacheInfo.cacheable) return null;
-
-  const cached = cacheManager.getCacheWithFreshness(agent.id, endpointKey, cacheInfo.dateKey, staleTTL);
-  if (!cached) return null;
-
-  if (cached.locked || !cached.isStale) {
-    log.info(`[${agent.label}] Cache HIT (${cached.locked ? 'locked' : 'fresh'}): ${endpointKey} ${cacheInfo.dateKey} (${cached.rowCount} rows)`);
-  } else {
-    log.info(`[${agent.label}] Cache STALE: ${endpointKey} ${cacheInfo.dateKey} (${Math.round(cached.ageMs / 1000)}s) — bg refresh`);
-    backgroundRefresh(agent, endpointKey, fetchParams, cacheInfo.dateKey);
-  }
-
-  return cached;
-}
-
-/**
- * Lưu kết quả vào cache + dataStore
- */
-function saveResults(agentId, endpointKey, cacheInfo, data, totalData) {
-  if (cacheInfo.cacheable && Array.isArray(data)) {
-    cacheManager.setCache(agentId, endpointKey, cacheInfo.dateKey, data, totalData, data.length);
-  }
-  try {
-    if (Array.isArray(data) && data.length > 0) {
-      dataStore.saveData(agentId, endpointKey, data, totalData, cacheInfo.dateKey || null);
-    }
-  } catch (e) { /* fail-safe */ }
-}
-
-// ═══════════════════════════════════════
-// ── Fan-out fetch ──
-// ═══════════════════════════════════════
-
-/**
- * Fan-out: gọi N agents song song, gộp kết quả
- * Stale-while-revalidate: serve cache ngay, refresh nền nếu stale
- *
- * @param {Array} agents — [{id, label, base_url, cookie}, ...]
- * @param {string} endpointKey — tên endpoint (vd: 'members')
- * @param {object} params — query params
- * @returns {object} — { code, msg, count, data[], total_data }
- */
-async function fanoutFetch(agents, endpointKey, params) {
-  if (agents.length === 0) {
-    return { code: 0, msg: '', count: 0, data: [], total_data: null };
-  }
-
-  const cacheInfo = config.cache.enabled
+async function fetchAllData(agents, endpointKey, params) {
+  const syncInfo = config.cache.enabled
     ? cacheManager.extractDateRange(endpointKey, params)
-    : { cacheable: false, volatile: false };
+    : { cacheable: false };
 
-  const staleTTL = config.cache.staleTTL || 300000;
-  const clientPage = parseInt(params.page) || 1;
-  const clientLimit = parseInt(params.limit) || 10;
-
-  // ── Single agent ──
-  if (agents.length === 1) {
-    const agent = agents[0];
-
-    // Volatile requests: luôn fetch full dataset để cache + paginate server-side
-    const fetchParams = cacheInfo.volatile
-      ? { ...params, page: 1, limit: 500 }
-      : params;
-
-    // 1. Thử cache
-    const cached = tryCacheHit(agent, endpointKey, cacheInfo, staleTTL, fetchParams);
-    if (cached) {
-      const data = Array.isArray(cached.data) ? cached.data : [];
-      data.forEach(row => { row._agent_id = agent.id; row._agent_label = agent.label; });
-
-      // Volatile cache: paginate server-side (full dataset cached)
-      if (cacheInfo.volatile && data.length > clientLimit) {
-        const offset = (clientPage - 1) * clientLimit;
-        return { code: 0, msg: '', count: data.length, data: data.slice(offset, offset + clientLimit), total_data: cached.totalData };
-      }
-      return { code: 0, msg: '', count: cached.rowCount, data, total_data: cached.totalData };
-    }
-
-    // 2. Cache miss → fetch từ API
-    const result = await fetchWithRelogin(agent, endpointKey, fetchParams);
-
-    if (Array.isArray(result.data)) {
-      result.data.forEach(row => { row._agent_id = agent.id; row._agent_label = agent.label; });
-    }
-
-    // Lưu cache + dataStore
-    saveResults(agent.id, endpointKey, cacheInfo, result.data, result.total_data);
-
-    // Volatile: paginate server-side
-    if (cacheInfo.volatile && Array.isArray(result.data) && result.data.length > clientLimit) {
-      const offset = (clientPage - 1) * clientLimit;
-      return {
-        code: 0, msg: result.msg || '',
-        count: result.data.length,
-        data: result.data.slice(offset, offset + clientLimit),
-        total_data: result.total_data
-      };
-    }
-
-    return result;
-  }
-
-  // ── Multi-agent: fan-out N agents song song ──
   const fetchParams = { ...params, page: 1, limit: 500 };
-  const startTime = Date.now();
 
-  log.info(`Fan-out [${endpointKey}] → ${agents.length} agents`, {
-    agents: agents.map(a => a.label)
-  });
+  let allData = [];
+  let totalData = null;
+  let successCount = 0;
+  let errors = [];
 
   const results = await Promise.allSettled(
     agents.map(agent =>
       limit(async () => {
-        // Thử cache (stale-while-revalidate)
-        const cached = tryCacheHit(agent, endpointKey, cacheInfo, staleTTL, fetchParams);
-        if (cached) {
-          return { agent, data: { code: 0, data: cached.data, total_data: cached.totalData, count: cached.rowCount } };
+        // Sync cache: chỉ cho ngày cũ (đã lock trong DB)
+        if (syncInfo.cacheable) {
+          const cached = cacheManager.getCache(agent.id, endpointKey, syncInfo.dateKey);
+          if (cached) {
+            log.info(`[${agent.label}] Sync cache HIT: ${endpointKey} ${syncInfo.dateKey} (${cached.rowCount} rows)`);
+            return { agent, data: { code: 0, data: cached.data, total_data: cached.totalData, count: cached.rowCount } };
+          }
         }
 
-        // Cache miss → gọi API
+        // Gọi EE88 API
         const data = await fetchWithRelogin(agent, endpointKey, fetchParams);
-        saveResults(agent.id, endpointKey, cacheInfo, data.data, data.total_data);
+
+        // Lưu vào sync cache (ngày cũ) + dataStore
+        if (syncInfo.cacheable && Array.isArray(data.data)) {
+          cacheManager.setCache(agent.id, endpointKey, syncInfo.dateKey, data.data, data.total_data, data.data.length);
+        }
+        try {
+          if (Array.isArray(data.data) && data.data.length > 0) {
+            dataStore.saveData(agent.id, endpointKey, data.data, data.total_data, syncInfo.dateKey || null);
+          }
+        } catch (e) { /* fail-safe */ }
+
         return { agent, data };
       })
     )
   );
-
-  // Gộp kết quả
-  let mergedData = [];
-  let mergedTotalData = null;
-  let successCount = 0;
-  let errors = [];
 
   for (const r of results) {
     if (r.status === 'fulfilled') {
@@ -222,18 +125,17 @@ async function fanoutFetch(agents, endpointKey, params) {
           row._agent_id = agent.id;
           row._agent_label = agent.label;
         });
-        mergedData = mergedData.concat(data.data);
+        allData = allData.concat(data.data);
       }
 
-      // Gộp total_data (cộng dồn các trường số)
       if (data.total_data) {
-        if (!mergedTotalData) {
-          mergedTotalData = { ...data.total_data };
+        if (!totalData) {
+          totalData = { ...data.total_data };
         } else {
           for (const key in data.total_data) {
             const val = parseFloat(data.total_data[key]);
             if (!isNaN(val)) {
-              mergedTotalData[key] = (parseFloat(mergedTotalData[key]) || 0) + val;
+              totalData[key] = (parseFloat(totalData[key]) || 0) + val;
             }
           }
         }
@@ -243,30 +145,182 @@ async function fanoutFetch(agents, endpointKey, params) {
     }
   }
 
-  // Server-side pagination trên merged data
-  const totalCount = mergedData.length;
-  const offset = (clientPage - 1) * clientLimit;
-  const pagedData = mergedData.slice(offset, offset + clientLimit);
+  return { allData, totalData, successCount, errors };
+}
 
-  const duration = Date.now() - startTime;
-  log.ok(`Fan-out [${endpointKey}] hoàn tất — ${duration}ms`, {
-    thànhCông: successCount,
-    thấtBại: errors.length,
-    tổngDòng: totalCount,
-    trangHiện: clientPage,
-    sốDòngTrang: pagedData.length
-  });
+/**
+ * Background refresh — fetch mới + cập nhật display cache
+ * Fire-and-forget, không block response
+ */
+function scheduleRefresh(agents, endpointKey, params, cacheKey) {
+  if (refreshLocks.has(cacheKey)) return;
+  refreshLocks.set(cacheKey, true);
 
-  if (errors.length > 0) {
-    log.warn(`Fan-out [${endpointKey}] có ${errors.length} lỗi`, { errors });
+  fetchAllData(agents, endpointKey, params)
+    .then(result => {
+      displayCache.set(cacheKey, {
+        allData: result.allData,
+        totalData: result.totalData,
+        timestamp: Date.now(),
+        fromLocal: false // data mới từ EE88
+      });
+      log.ok(`Display refresh OK: ${endpointKey} (${result.allData.length} rows)`);
+    })
+    .catch(err => {
+      log.warn(`Display refresh failed: ${endpointKey}: ${err.message}`);
+    })
+    .finally(() => {
+      refreshLocks.delete(cacheKey);
+    });
+}
+
+// ═══════════════════════════════════════
+// ── Local-first query (stale-while-revalidate) ──
+// ═══════════════════════════════════════
+
+/**
+ * Query dữ liệu từ DB local (dataStore) cho tất cả agents
+ * Trả ngay 0ms — dùng data đã sync/lưu trước đó
+ * @returns {{ allData: Array, totalData: object|null } | null}
+ */
+function queryLocalData(agents, endpointKey, params) {
+  try {
+    const syncInfo = cacheManager.extractDateRange(endpointKey, params);
+    const agentIds = agents.map(a => a.id);
+
+    const result = dataStore.queryForDisplay(
+      agentIds, endpointKey,
+      syncInfo.startDate || null,
+      syncInfo.endDate || null
+    );
+
+    if (!result || result.data.length === 0) return null;
+
+    // Gắn agent label cho mỗi row
+    const agentMap = {};
+    agents.forEach(a => { agentMap[a.id] = a.label; });
+
+    result.data.forEach(row => {
+      row._agent_id = row.agent_id;
+      row._agent_label = agentMap[row.agent_id] || 'Agent#' + row.agent_id;
+    });
+
+    return { allData: result.data, totalData: result.totalData };
+  } catch (err) {
+    log.warn(`queryLocalData [${endpointKey}] lỗi: ${err.message}`);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════
+// ── Fan-out fetch ──
+// ═══════════════════════════════════════
+
+/**
+ * Fan-out: gọi N agents song song, gộp kết quả
+ *
+ * 2 tầng cache tách biệt:
+ *   1. Display cache (in-memory) — lưu response vừa hiển thị, TTL 5 phút
+ *   2. Sync cache (cache_data DB) — dữ liệu ngày cũ đã đồng bộ, lock vĩnh viễn
+ *
+ * @param {Array} agents — [{id, label, base_url, cookie}, ...]
+ * @param {string} endpointKey — tên endpoint (vd: 'members')
+ * @param {object} params — query params
+ * @returns {object} — { code, msg, count, data[], total_data }
+ */
+async function fanoutFetch(agents, endpointKey, params) {
+  if (agents.length === 0) {
+    return { code: 0, msg: '', count: 0, data: [], total_data: null };
   }
 
+  const clientPage = parseInt(params.page) || 1;
+  const clientLimit = parseInt(params.limit) || 10;
+  const staleTTL = config.cache.staleTTL || 300000;
+  const agentIds = agents.map(a => a.id);
+  const key = makeCacheKey(agentIds, endpointKey, params);
+
+  // ── 1. Display cache — dữ liệu vừa hiển thị ──
+  const cached = displayCache.get(key);
+  if (cached) {
+    const age = Date.now() - cached.timestamp;
+    if (age > staleTTL) {
+      // Stale — trả ngay + refresh nền
+      log.info(`Display STALE: ${endpointKey} (${Math.round(age / 1000)}s) — bg refresh`);
+      scheduleRefresh(agents, endpointKey, params, key);
+    } else {
+      log.info(`Display HIT: ${endpointKey} (${cached.allData.length} rows)`);
+    }
+
+    const offset = (clientPage - 1) * clientLimit;
+    const resp = {
+      code: 0, msg: '',
+      count: cached.allData.length,
+      data: cached.allData.slice(offset, offset + clientLimit),
+      total_data: cached.totalData
+    };
+    if (cached.fromLocal) resp.fromLocal = true;
+    return resp;
+  }
+
+  // ── 2. Local DB — dữ liệu đã sync, hiển thị ngay 0ms ──
+  const localResult = queryLocalData(agents, endpointKey, params);
+  if (localResult) {
+    log.ok(`Display LOCAL: ${endpointKey} (${localResult.allData.length} rows từ DB) — bg refresh`);
+
+    // Lưu vào displayCache để pagination dùng ngay
+    displayCache.set(key, {
+      allData: localResult.allData,
+      totalData: localResult.totalData,
+      timestamp: Date.now(),
+      fromLocal: true // đánh dấu chưa refresh từ EE88
+    });
+
+    // Background: fetch dữ liệu mới từ EE88
+    scheduleRefresh(agents, endpointKey, params, key);
+
+    const offset = (clientPage - 1) * clientLimit;
+    return {
+      code: 0, msg: '',
+      count: localResult.allData.length,
+      data: localResult.allData.slice(offset, offset + clientLimit),
+      total_data: localResult.totalData,
+      fromLocal: true
+    };
+  }
+
+  // ── 3. Display cache MISS + no local → blocking fetch từ EE88 ──
+  const startTime = Date.now();
+  log.info(`Display MISS: ${endpointKey} — no local data, fetching ${agents.length} agent(s)...`);
+
+  const result = await fetchAllData(agents, endpointKey, params);
+
+  // Lưu vào display cache
+  displayCache.set(key, {
+    allData: result.allData,
+    totalData: result.totalData,
+    timestamp: Date.now()
+  });
+  evictStaleEntries();
+
+  const duration = Date.now() - startTime;
+  log.ok(`Fetch [${endpointKey}] — ${duration}ms`, {
+    tổngDòng: result.allData.length,
+    thànhCông: result.successCount,
+    thấtBại: result.errors.length
+  });
+
+  if (result.errors.length > 0) {
+    log.warn(`Fetch [${endpointKey}] có ${result.errors.length} lỗi`, { errors: result.errors });
+  }
+
+  // Paginate và trả về
+  const offset = (clientPage - 1) * clientLimit;
   return {
-    code: successCount > 0 ? 0 : 1,
-    msg: errors.length > 0 ? `${errors.length}/${agents.length} agent lỗi` : '',
-    count: totalCount,
-    data: pagedData,
-    total_data: mergedTotalData
+    code: result.successCount > 0 ? 0 : 1,
+    msg: result.errors.length > 0 ? `${result.errors.length}/${agents.length} agent lỗi` : '',
+    count: result.allData.length,
+    data: result.allData.slice(offset, offset + clientLimit),
+    total_data: result.totalData
   };
 }
 
@@ -305,7 +359,6 @@ async function fanoutAction(agent, actionPath, body) {
   let response = await sendAction(agent, actionPath, body);
 
   if (response.data && response.data.url === '/agent/login') {
-    // Thử auto-relogin
     log.warn(`[${agent.label}] Action session expired — thử auto-login...`);
     const newAgent = await autoRelogin(agent);
     if (newAgent) {

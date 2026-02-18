@@ -57,8 +57,8 @@
         + '<div class="layui-inline"><label data-i18n="accountName">Tên tài khoản</label>：'
         + '<div style="width:200px;" class="layui-input-inline">'
         + '<input type="text" name="username" placeholder="' + HubLang.t('enterAccountName') + '" class="layui-input" autocomplete="off"></div></div>'
-        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rl_doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
-        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rl_btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
+        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rl_doSearch"><i class="hi hi-magnifying-glass"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
+        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rl_btnReset"><i class="hi hi-arrows-rotate"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
         + '</form></div></fieldset></div>'
         + '<div class="layui-card-body"><table id="rl_dataTable" lay-filter="rl_dataTable"></table></div>'
         + '<div class="layui-fluid" style="margin-top:0;padding-top:0;padding-bottom:1px;"><div>'
@@ -141,16 +141,16 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'username', title: HubLang.t('account'), width: 130 },
-          { field: 'user_parent_format', title: HubLang.t('agent'), width: 120 },
-          { field: 'lottery_name', title: HubLang.t('lotteryName'), width: 200 },
-          { field: 'bet_count', title: HubLang.t('betTimes'), width: 100 },
-          { field: 'bet_amount', title: HubLang.t('betAmount'), width: 140 },
-          { field: 'valid_amount', title: HubLang.t('validAmount'), width: 140 },
-          { field: 'rebate_amount', title: HubLang.t('rebateAmount'), width: 120 },
-          { field: 'prize', title: HubLang.t('prize'), width: 140 },
-          { field: 'result', title: HubLang.t('result'), width: 140 },
-          { field: 'win_lose', title: HubLang.t('winLose'), width: 140 },
+          { field: 'username', title: HubLang.t('account'), minWidth: 130 },
+          { field: 'user_parent_format', title: HubLang.t('agent'), minWidth: 120 },
+          { field: 'lottery_name', title: HubLang.t('lotteryName'), minWidth: 200 },
+          { field: 'bet_count', title: HubLang.t('betTimes'), minWidth: 100 },
+          { field: 'bet_amount', title: HubLang.t('betAmount'), minWidth: 140 },
+          { field: 'valid_amount', title: HubLang.t('validAmount'), minWidth: 140 },
+          { field: 'rebate_amount', title: HubLang.t('rebateAmount'), minWidth: 120 },
+          { field: 'prize', title: HubLang.t('prize'), minWidth: 140 },
+          { field: 'result', title: HubLang.t('result'), minWidth: 140 },
+          { field: 'win_lose', title: HubLang.t('winLose'), minWidth: 140 },
           { field: 'uid', title: 'UID', width: 90 },
           { field: 'lottery_id', title: HubLang.t('lotteryId'), width: 90 }
         ]],

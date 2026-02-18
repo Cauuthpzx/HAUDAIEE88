@@ -44,7 +44,7 @@
         // search button
         + '<div class="layui-inline">'
         + '<button type="button" class="layui-btn" lay-submit lay-filter="inv_doSearch">'
-        + '<i class="layui-icon layui-icon-search"></i> '
+        + '<i class="hi hi-magnifying-glass"></i> '
         + '<span data-i18n="search">' + HubLang.t('search') + '</span>'
         + '</button>'
         + '</div>'
@@ -52,7 +52,7 @@
         // reset button
         + '<div class="layui-inline">'
         + '<button type="reset" class="layui-btn layui-btn-primary" id="inv_btnReset">'
-        + '<i class="layui-icon layui-icon-refresh"></i> '
+        + '<i class="hi hi-arrows-rotate"></i> '
         + '<span data-i18n="reset">' + HubLang.t('reset') + '</span>'
         + '</button>'
         + '</div>'
@@ -74,7 +74,7 @@
         + '<script type="text/html" id="inv_toolbarTpl">'
         + '<div class="layui-btn-group">'
         + '<button class="layui-btn layui-btn-sm" lay-event="addInvite">'
-        + '<i class="layui-icon layui-icon-addition"><\/i> '
+        + '<i class="hi hi-circle-plus"><\/i> '
         + '<span data-i18n="addInviteBtn">' + HubLang.t('addInviteBtn') + '<\/span>'
         + '<\/button>'
         + '<\/div>'
@@ -146,14 +146,14 @@
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
           { field: 'invite_code',            title: HubLang.t('referralCode'),       minWidth: 140 },
-          { field: 'user_type',              title: HubLang.t('inviteType'),          width: 120 },
-          { field: 'reg_count',              title: HubLang.t('totalRegistered'),     width: 120 },
-          { field: 'scope_reg_count',        title: HubLang.t('registeredUsers'),     width: 150 },
-          { field: 'recharge_count',         title: HubLang.t('rechargeCount'),       width: 130 },
-          { field: 'first_recharge_count',   title: HubLang.t('firstRechargeDay'),    width: 150 },
-          { field: 'register_recharge_count',title: HubLang.t('registerRechargeDay'), width: 170 },
-          { field: 'remark',                 title: HubLang.t('remark'),              width: 150 },
-          { field: 'create_time',            title: HubLang.t('addedTime'),           width: 160 },
+          { field: 'user_type',              title: HubLang.t('inviteType'),          minWidth: 120 },
+          { field: 'reg_count',              title: HubLang.t('totalRegistered'),     minWidth: 120 },
+          { field: 'scope_reg_count',        title: HubLang.t('registeredUsers'),     minWidth: 150 },
+          { field: 'recharge_count',         title: HubLang.t('rechargeCount'),       minWidth: 130 },
+          { field: 'first_recharge_count',   title: HubLang.t('firstRechargeDay'),    minWidth: 150 },
+          { field: 'register_recharge_count',title: HubLang.t('registerRechargeDay'), minWidth: 170 },
+          { field: 'remark',                 title: HubLang.t('remark'),              minWidth: 150 },
+          { field: 'create_time',            title: HubLang.t('addedTime'),           minWidth: 160 },
           { field: 'id',                     title: 'ID',                             width: 90  },
           { field: 'uid',                    title: 'UID',                            width: 90  },
           { field: 'group_id',               title: HubLang.t('groupId'),             width: 80  },
@@ -170,7 +170,7 @@
               } catch (e) { return d.rebate_arr || ''; }
             }
           },
-          { field: 'update_time',            title: HubLang.t('updateTime'),          width: 160 },
+          { field: 'update_time',            title: HubLang.t('updateTime'),          minWidth: 160 },
           { fixed: 'right', title: HubLang.t('actions'), minWidth: 360, toolbar: '#inv_rowActionTpl' }
         ]],
         done: function (res) {

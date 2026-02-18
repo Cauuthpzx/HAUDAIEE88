@@ -19,7 +19,7 @@
 
       var toolbarHtml = '<div class="layui-btn-group">'
         + '<button class="layui-btn layui-btn-xs" lay-event="addUser">'
-        + '<i class="layui-icon layui-icon-addition"></i> ' + HubLang.t('addUserBtn')
+        + '<i class="hi hi-circle-plus"></i> ' + HubLang.t('addUserBtn')
         + '</button></div>';
 
       function loadAgentsList() {
@@ -42,12 +42,12 @@
               text: { none: HubLang.t('noUsers') },
               cols: [[
                 { field: 'id', title: 'ID', width: 60 },
-                { field: 'username', title: HubLang.t('username'), width: 140 },
-                { field: 'display_name', title: HubLang.t('displayName'), width: 150 },
-                { field: 'role', title: HubLang.t('role'), width: 100, templet: function (d) {
+                { field: 'username', title: HubLang.t('username'), minWidth: 140 },
+                { field: 'display_name', title: HubLang.t('displayName'), minWidth: 150 },
+                { field: 'role', title: HubLang.t('role'), minWidth: 100, templet: function (d) {
                   return d.role === 'admin' ? '<b style="color:#ff4d4f;">' + HubLang.t('roleAdmin') + '</b>' : HubLang.t('roleUser');
                 }},
-                { field: 'status', title: HubLang.t('status'), width: 100, templet: function (d) {
+                { field: 'status', title: HubLang.t('status'), minWidth: 100, templet: function (d) {
                   return d.status === 1
                     ? '<span class="status-active">' + HubLang.t('active') + '</span>'
                     : '<span class="status-inactive">' + HubLang.t('locked') + '</span>';
@@ -57,7 +57,7 @@
                   if (!d.agents || d.agents.length === 0) return '<span style="color:#999;">' + HubLang.t('noPermission') + '</span>';
                   return d.agents.map(function (a) { return '<span class="agent-tag">' + a.label + '</span>'; }).join('');
                 }},
-                { field: 'created_at', title: HubLang.t('createdAt'), width: 160 },
+                { field: 'created_at', title: HubLang.t('createdAt'), minWidth: 160 },
                 { fixed: 'right', title: HubLang.t('actions'), width: 240, templet: function (d) {
                   return '<button class="layui-btn layui-btn-xs" lay-event="edit">' + HubLang.t('edit') + '</button>'
                     + '<button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="permissions">' + HubLang.t('permissions') + '</button>'

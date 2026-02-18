@@ -347,11 +347,96 @@ function getEndpointList() {
   return Object.keys(COLUMN_MAP);
 }
 
+// ═══════════════════════════════════════
+// ── Local-first display query ──
+// ═══════════════════════════════════════
+
+/**
+ * Tìm cột date cho endpoint (dùng để filter date range)
+ */
+function getDateColumn(endpointKey) {
+  switch (endpointKey) {
+    case 'deposits':
+    case 'withdrawals':
+    case 'lottery-bets':
+      return 'create_time';
+    case 'bet-orders':
+      return 'bet_time';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Query data từ DB local cho hiển thị (tất cả agents, có filter date)
+ * Dùng cho stale-while-revalidate: hiện data cũ ngay → refresh nền
+ *
+ * @param {number[]} agentIds — danh sách agent ID
+ * @param {string} endpointKey
+ * @param {string|null} startDate — YYYY-MM-DD
+ * @param {string|null} endDate — YYYY-MM-DD
+ * @returns {{ data: Array, count: number, totalData: object|null } | null}
+ */
+function queryForDisplay(agentIds, endpointKey, startDate, endDate) {
+  const mapping = COLUMN_MAP[endpointKey];
+  if (!mapping || !agentIds || agentIds.length === 0) return null;
+
+  const db = getDb();
+  const placeholders = agentIds.map(() => '?').join(',');
+  let where = `WHERE agent_id IN (${placeholders})`;
+  const params = [...agentIds];
+
+  // Date filter cho report endpoints (date_key column)
+  if (mapping.needsDateKey && startDate && endDate) {
+    where += ' AND date_key = ?';
+    params.push(startDate + '|' + endDate);
+  }
+  // Date filter cho transaction endpoints (create_time / bet_time column)
+  else if (mapping.hasDate && startDate) {
+    const dateCol = getDateColumn(endpointKey);
+    if (dateCol) {
+      where += ` AND ${dateCol} >= ? AND ${dateCol} <= ?`;
+      params.push(startDate, endDate + ' 23:59:59');
+    }
+  }
+
+  try {
+    const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table} ${where}`).get(...params);
+    if (!countRow || countRow.cnt === 0) return null;
+
+    const rows = db.prepare(`SELECT * FROM ${mapping.table} ${where} ORDER BY id DESC`).all(...params);
+
+    // Aggregate total_data từ data_totals
+    let totalData = null;
+    if (startDate && endDate) {
+      const dateKey = startDate + '|' + endDate;
+      for (const agentId of agentIds) {
+        const t = queryTotals(endpointKey, agentId, dateKey);
+        if (t) {
+          if (!totalData) { totalData = { ...t }; }
+          else {
+            for (const k in t) {
+              const v = parseFloat(t[k]);
+              if (!isNaN(v)) totalData[k] = (parseFloat(totalData[k]) || 0) + v;
+            }
+          }
+        }
+      }
+    }
+
+    return { data: rows, count: countRow.cnt, totalData };
+  } catch (err) {
+    log.error(`queryForDisplay [${endpointKey}] lỗi: ${err.message}`);
+    return null;
+  }
+}
+
 module.exports = {
   saveData,
   saveTotals,
   queryData,
   queryTotals,
+  queryForDisplay,
   getDataStats,
   clearData,
   getEndpointList,

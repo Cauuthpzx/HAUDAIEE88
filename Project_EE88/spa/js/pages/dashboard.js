@@ -4,39 +4,55 @@
 
   SpaPages.dashboard = {
     getHTML: function () {
-      return '<div class="layui-row layui-col-space15" id="db_cards">'
-        // Row 1: 4 stat cards
-        + '<div class="layui-col-md3"><div class="layui-card" style="text-align:center;padding:20px 0;">'
-        + '<div style="font-size:32px;font-weight:700;color:#16b777;" id="db_activeCount">-</div>'
-        + '<div style="color:#666;margin-top:5px;" data-i18n="dbActiveAgents">Agent hoạt động</div>'
-        + '</div></div>'
-        + '<div class="layui-col-md3"><div class="layui-card" style="text-align:center;padding:20px 0;">'
-        + '<div style="font-size:32px;font-weight:700;color:#ff5722;" id="db_expiredCount">-</div>'
-        + '<div style="color:#666;margin-top:5px;" data-i18n="dbExpiredAgents">Agent hết hạn</div>'
-        + '</div></div>'
-        + '<div class="layui-col-md3"><div class="layui-card" style="text-align:center;padding:20px 0;">'
-        + '<div style="font-size:32px;font-weight:700;color:#1e9fff;" id="db_loginOk">-</div>'
-        + '<div style="color:#666;margin-top:5px;" data-i18n="dbLoginSuccess">Login OK (7d)</div>'
-        + '</div></div>'
-        + '<div class="layui-col-md3"><div class="layui-card" style="text-align:center;padding:20px 0;">'
-        + '<div style="font-size:32px;font-weight:700;color:#ffb800;" id="db_loginFail">-</div>'
-        + '<div style="color:#666;margin-top:5px;" data-i18n="dbLoginFail">Login Fail (7d)</div>'
-        + '</div></div>'
-        // Row 2: 2 charts
-        + '<div class="layui-col-md6"><div class="layui-card">'
-        + '<div class="layui-card-header" data-i18n="dbAgentStatus">Trạng thái Agent</div>'
-        + '<div class="layui-card-body"><div id="db_pieChart" style="height:300px;"></div></div>'
-        + '</div></div>'
-        + '<div class="layui-col-md6"><div class="layui-card">'
-        + '<div class="layui-card-header" data-i18n="dbLoginStats">Thống kê Login (7 ngày)</div>'
-        + '<div class="layui-card-body"><div id="db_barChart" style="height:300px;"></div></div>'
-        + '</div></div>'
-        // Row 3: Recent activity
-        + '<div class="layui-col-md12"><div class="layui-card">'
-        + '<div class="layui-card-header" data-i18n="dbRecentActivity">Hoạt động gần đây</div>'
-        + '<div class="layui-card-body"><table id="db_activityTable"></table></div>'
-        + '</div></div>'
-        + '</div>';
+      return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
+        + '<div class="layui-card-header">'
+        + '<fieldset class="layui-elem-field layui-field-title">'
+        + '<legend data-i18n="dashboard">' + HubLang.t('dashboard') + '</legend>'
+        + '<div class="layui-field-box">'
+
+        // ── Stat Cards (inside card header) ──
+        + '<div style="display:flex;gap:15px;flex-wrap:wrap;">'
+        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;text-align:center;">'
+        + '<div style="font-size:28px;font-weight:700;color:#16b777;" id="db_activeCount">-</div>'
+        + '<div style="font-size:12px;color:#999;margin-top:4px;" data-i18n="dbActiveAgents">' + HubLang.t('dbActiveAgents') + '</div>'
+        + '</div>'
+        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;text-align:center;">'
+        + '<div style="font-size:28px;font-weight:700;color:#ff5722;" id="db_expiredCount">-</div>'
+        + '<div style="font-size:12px;color:#999;margin-top:4px;" data-i18n="dbExpiredAgents">' + HubLang.t('dbExpiredAgents') + '</div>'
+        + '</div>'
+        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;text-align:center;">'
+        + '<div style="font-size:28px;font-weight:700;color:#1e9fff;" id="db_loginOk">-</div>'
+        + '<div style="font-size:12px;color:#999;margin-top:4px;" data-i18n="dbLoginSuccess">' + HubLang.t('dbLoginSuccess') + '</div>'
+        + '</div>'
+        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;text-align:center;">'
+        + '<div style="font-size:28px;font-weight:700;color:#ffb800;" id="db_loginFail">-</div>'
+        + '<div style="font-size:12px;color:#999;margin-top:4px;" data-i18n="dbLoginFail">' + HubLang.t('dbLoginFail') + '</div>'
+        + '</div>'
+        + '</div>'
+
+        + '</div></fieldset></div>'
+
+        // ── Card Body: Charts + Activity ──
+        + '<div class="layui-card-body">'
+        // Charts row
+        + '<div class="layui-row layui-col-space15">'
+        + '<div class="layui-col-md6">'
+        + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbAgentStatus">' + HubLang.t('dbAgentStatus') + '</div>'
+        + '<div id="db_pieChart" style="height:280px;"></div>'
+        + '</div>'
+        + '<div class="layui-col-md6">'
+        + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbLoginStats">' + HubLang.t('dbLoginStats') + '</div>'
+        + '<div id="db_barChart" style="height:280px;"></div>'
+        + '</div>'
+        + '</div>'
+        // Activity table
+        + '<div style="margin-top:15px;">'
+        + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbRecentActivity">' + HubLang.t('dbRecentActivity') + '</div>'
+        + '<table id="db_activityTable"></table>'
+        + '</div>'
+        + '</div>'
+
+        + '</div></div></div>';
     },
 
     init: function (container) {
@@ -48,7 +64,6 @@
           if (res.code !== 0) return;
           var d = res.data;
 
-          // Stat cards
           var el = function (id) { return container.querySelector('#' + id); };
           if (el('db_activeCount')) el('db_activeCount').textContent = d.agentCount.active;
           if (el('db_expiredCount')) el('db_expiredCount').textContent = d.agentCount.expired;
@@ -61,10 +76,8 @@
           if (el('db_loginOk')) el('db_loginOk').textContent = totalOk;
           if (el('db_loginFail')) el('db_loginFail').textContent = totalFail;
 
-          // Render charts
           renderCharts(d, container);
 
-          // Recent activity table
           table.render({
             elem: '#db_activityTable',
             data: d.recentActivity || [],
@@ -84,7 +97,6 @@
 
       function renderCharts(d, container) {
         if (typeof echarts === 'undefined') {
-          // Lazy load ECharts
           if (echartsLoaded) return;
           echartsLoaded = true;
           var script = document.createElement('script');
@@ -97,7 +109,6 @@
       }
 
       function doRenderCharts(d, container) {
-        // Pie chart: Agent Status
         var pieEl = container.querySelector('#db_pieChart');
         if (pieEl) {
           pieChart = echarts.init(pieEl);
@@ -116,7 +127,6 @@
           });
         }
 
-        // Bar chart: Login Stats per Agent
         var barEl = container.querySelector('#db_barChart');
         if (barEl && d.loginStats && d.loginStats.length > 0) {
           barChart = echarts.init(barEl);
@@ -137,10 +147,9 @@
             ]
           });
         } else if (barEl) {
-          barEl.innerHTML = '<div style="text-align:center;padding:130px 0;color:#999;">' + HubLang.t('noData') + '</div>';
+          barEl.innerHTML = '<div style="text-align:center;padding:120px 0;color:#999;">' + HubLang.t('noData') + '</div>';
         }
 
-        // Resize handler
         window.addEventListener('resize', resizeCharts);
       }
 

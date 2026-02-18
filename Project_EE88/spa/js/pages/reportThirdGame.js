@@ -38,8 +38,8 @@
         + '<div class="layui-inline"><label data-i18n="provider">Nhà cung cấp</label>：'
         + '<div style="width:150px;" class="layui-input-inline">'
         + '<select name="platform_id" lay-filter="rt_platform_id" lay-search>' + providerOptions + '</select></div></div>'
-        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rt_doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
-        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rt_btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
+        + '<div class="layui-inline"><button type="button" class="layui-btn" lay-submit lay-filter="rt_doSearch"><i class="hi hi-magnifying-glass"></i> <span data-i18n="search">Tìm kiếm</span></button></div>'
+        + '<div class="layui-inline"><button type="reset" class="layui-btn layui-btn-primary" id="rt_btnReset"><i class="hi hi-arrows-rotate"></i> <span data-i18n="reset">Đặt lại</span></button></div>'
         + '</form></div></fieldset></div>'
         + '<div class="layui-card-body"><table id="rt_dataTable" lay-filter="rt_dataTable"></table></div>'
         + '<div class="layui-fluid" style="margin-top:0;padding-top:0;padding-bottom:1px;"><div>'
@@ -119,13 +119,13 @@
         },
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
-          { field: 'username', title: HubLang.t('account'), width: 130 },
-          { field: 'platform_id_name', title: HubLang.t('provider'), width: 130 },
-          { field: 't_bet_amount', title: HubLang.t('betAmount'), width: 140 },
-          { field: 't_bet_times', title: HubLang.t('betTimes'), width: 100 },
-          { field: 't_turnover', title: HubLang.t('turnover'), width: 140 },
-          { field: 't_prize', title: HubLang.t('prize'), width: 140 },
-          { field: 't_win_lose', title: HubLang.t('winLose'), width: 140 },
+          { field: 'username', title: HubLang.t('account'), minWidth: 130 },
+          { field: 'platform_id_name', title: HubLang.t('provider'), minWidth: 130 },
+          { field: 't_bet_amount', title: HubLang.t('betAmount'), minWidth: 140 },
+          { field: 't_bet_times', title: HubLang.t('betTimes'), minWidth: 100 },
+          { field: 't_turnover', title: HubLang.t('turnover'), minWidth: 140 },
+          { field: 't_prize', title: HubLang.t('prize'), minWidth: 140 },
+          { field: 't_win_lose', title: HubLang.t('winLose'), minWidth: 140 },
           { field: 'uid', title: 'UID', width: 90 },
           { field: 'platform_id', title: HubLang.t('providerId'), width: 80 }
         ]],

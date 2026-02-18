@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Agent Hub — Quản lý</title>
   <link rel="stylesheet" href="/lib/layui/css/layui.css">
+  <link rel="stylesheet" href="/css/hub-icons.css">
   <link rel="stylesheet" href="/spa/css/hub-spa.css">
   <style>
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
     /* ── Logo ── */
-    .layui-logo .layui-icon { font-size: 26px; color: #ff4d4f; margin-right: 6px; vertical-align: middle; }
+    .layui-logo .hi { color: #ff4d4f; }
     .layui-logo span { color: #ff4d4f; vertical-align: middle; font-weight: bold; }
 
     /* ── Sidebar ── */
@@ -29,6 +30,8 @@
     .hub-sidebar .layui-nav .layui-nav-item a { color: #ccc; }
     .hub-sidebar .layui-nav .layui-nav-item a:hover,
     .hub-sidebar .layui-nav .layui-this a { color: #fff; background: rgba(255,255,255,0.08); }
+    /* Submenu text thụt lề ngang với text menu cha (sau icon) */
+    .hub-sidebar .layui-nav-tree .layui-nav-child dd a { padding-left: 46px; }
 
     /* ── Body ── */
     .hub-body {
@@ -58,17 +61,17 @@
   <!-- Header -->
   <div class="layui-header">
     <div class="layui-logo layui-hide-xs">
-      <i class="layui-icon layui-icon-firefox"></i><span>FIRE</span>
+      <i class="hi hi-firefox"></i><span>FIRE</span>
     </div>
     <ul class="layui-nav layui-layout-left">
       <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-header-event="menuLeft">
-        <i class="layui-icon layui-icon-spread-left"></i>
+        <i class="hi hi-bars"></i>
       </li>
       <li class="layui-nav-item layui-hide-xs">
-        <a href="javascript:;" id="btnToggle"><i class="layui-icon layui-icon-shrink-right"></i></a>
+        <a href="javascript:;" id="btnToggle"><i class="hi hi-angles-left"></i></a>
       </li>
       <li class="layui-nav-item layui-hide-xs">
-        <a href="javascript:;" id="btnRefresh"><i class="layui-icon layui-icon-refresh"></i></a>
+        <a href="javascript:;" id="btnRefresh"><i class="hi hi-arrows-rotate"></i></a>
       </li>
     </ul>
     <ul class="layui-nav layui-layout-right" lay-filter="hub-account">
@@ -81,22 +84,22 @@
         </dl>
       </li>
       <li class="layui-nav-item">
-        <a href="javascript:;" id="btnFullscreen"><i class="layui-icon layui-icon-screen-full"></i></a>
+        <a href="javascript:;" id="btnFullscreen"><i class="hi hi-expand"></i></a>
       </li>
       <li class="layui-nav-item layui-hide layui-show-sm-inline-block">
         <a href="javascript:;">
-          <img src="//unpkg.com/outeres@0.0.10/img/layui/icon-v2.png" class="layui-nav-img">
+          <i class="hi hi-circle-user" style="font-size:22px;vertical-align:middle;margin-right:4px;"></i>
           <span id="userInfo"></span>
         </a>
         <dl class="layui-nav-child">
-          <dd><a href="javascript:;" id="navProfile" data-i18n="accountInfo">Thông tin tài khoản</a></dd>
-          <dd><a href="javascript:;" id="navSettings" data-i18n="settings">Cài đặt</a></dd>
+          <dd><a href="javascript:;" id="navProfile"><i class="hi hi-user-group" style="margin-right:8px;"></i><span data-i18n="accountInfo">Thông tin tài khoản</span></a></dd>
+          <dd><a href="javascript:;" id="navSettings"><i class="hi hi-gear" style="margin-right:8px;"></i><span data-i18n="settings">Cài đặt</span></a></dd>
           <hr>
-          <dd style="text-align: center;"><a href="javascript:;" id="navLogout" data-i18n="logout">Đăng xuất</a></dd>
+          <dd style="text-align: center;"><a href="javascript:;" id="navLogout"><i class="hi hi-right-from-bracket" style="margin-right:8px;"></i><span data-i18n="logout">Đăng xuất</span></a></dd>
         </dl>
       </li>
       <li class="layui-nav-item" lay-header-event="menuRight">
-        <a href="javascript:;"><i class="layui-icon layui-icon-more-vertical"></i></a>
+        <a href="javascript:;"><i class="hi hi-ellipsis-vertical"></i></a>
       </li>
     </ul>
   </div>
@@ -107,118 +110,118 @@
       <!-- 0. Dashboard (admin only) -->
       <li class="layui-nav-item" id="menuDashboard" style="display:none;">
         <a href="javascript:;" data-page="dashboard" data-title-i18n="dashboard">
-          <i class="layui-icon layui-icon-home" style="margin-right: 6px;"></i><span data-i18n="dashboard">Tổng quan</span>
+          <i class="hi hi-house"></i><span data-i18n="dashboard">Tổng quan</span>
         </a>
       </li>
       <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-username" style="margin-right: 6px;"></i><span data-i18n="memberMgmt">Quản lí hội viên</span>
+          <i class="hi hi-users"></i><span data-i18n="memberMgmt">Quản lí hội viên</span>
         </a>
         <dl class="layui-nav-child">
           <dd class="layui-this">
-            <a href="javascript:;" data-page="user" data-title-i18n="members" data-i18n="members">Hội viên</a>
+            <a href="javascript:;" data-page="user" data-title-i18n="members"><i class="hi hi-o hi-o-circle-user"></i><span data-i18n="members">Hội viên</span></a>
           </dd>
         </dl>
       </li>
       <!-- 2. Mã giới thiệu -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-vercode" style="margin-right: 6px;"></i><span data-i18n="referralCode">Mã giới thiệu</span>
+          <i class="hi hi-qrcode"></i><span data-i18n="referralCode">Mã giới thiệu</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="inviteList" data-title-i18n="referralCode" data-i18n="referralCode">Mã giới thiệu</a>
+            <a href="javascript:;" data-page="inviteList" data-title-i18n="referralCode"><i class="hi hi-o hi-o-copy"></i><span data-i18n="referralCode">Mã giới thiệu</span></a>
           </dd>
         </dl>
       </li>
       <!-- 3. Báo cáo -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-tabs" style="margin-right: 6px;"></i><span data-i18n="reports">Báo cáo</span>
+          <i class="hi hi-chart-bar"></i><span data-i18n="reports">Báo cáo</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="reportLottery" data-title-i18n="lotteryReport" data-i18n="lotteryReport">BC xổ số</a>
+            <a href="javascript:;" data-page="reportLottery" data-title-i18n="lotteryReport"><i class="hi hi-o hi-o-file-lines"></i><span data-i18n="lotteryReport">BC xổ số</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="reportFunds" data-title-i18n="transStatement" data-i18n="transStatement">Sao kê giao dịch</a>
+            <a href="javascript:;" data-page="reportFunds" data-title-i18n="transStatement"><i class="hi hi-o hi-o-rectangle-list"></i><span data-i18n="transStatement">Sao kê giao dịch</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="reportThirdGame" data-title-i18n="providerReport" data-i18n="providerReport">BC nhà cung cấp</a>
+            <a href="javascript:;" data-page="reportThirdGame" data-title-i18n="providerReport"><i class="hi hi-o hi-o-newspaper"></i><span data-i18n="providerReport">BC nhà cung cấp</span></a>
           </dd>
         </dl>
       </li>
       <!-- 4. Rút hoa hồng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-dollar" style="margin-right: 6px;"></i><span data-i18n="commission">Rút hoa hồng</span>
+          <i class="hi hi-money-bill-transfer"></i><span data-i18n="commission">Rút hoa hồng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="depositAndWithdrawal" data-title-i18n="deposit" data-i18n="deposit">Nạp tiền</a>
+            <a href="javascript:;" data-page="depositAndWithdrawal" data-title-i18n="deposit"><i class="hi hi-o hi-o-credit-card"></i><span data-i18n="deposit">Nạp tiền</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="withdrawalsRecord" data-title-i18n="withdraw" data-i18n="withdraw">Rút tiền</a>
+            <a href="javascript:;" data-page="withdrawalsRecord" data-title-i18n="withdraw"><i class="hi hi-o hi-o-money-bill-1"></i><span data-i18n="withdraw">Rút tiền</span></a>
           </dd>
         </dl>
       </li>
       <!-- 5. Đơn cược -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-chart-screen" style="margin-right: 6px;"></i><span data-i18n="betOrders">Đơn cược</span>
+          <i class="hi hi-chart-line"></i><span data-i18n="betOrders">Đơn cược</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="bet" data-title-i18n="lotteryBet" data-i18n="lotteryBet">Đơn cược xổ số</a>
+            <a href="javascript:;" data-page="bet" data-title-i18n="lotteryBet"><i class="hi hi-o hi-o-file"></i><span data-i18n="lotteryBet">Đơn cược xổ số</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="betOrder" data-title-i18n="thirdPartyBet" data-i18n="thirdPartyBet">Cược bên thứ 3</a>
+            <a href="javascript:;" data-page="betOrder" data-title-i18n="thirdPartyBet"><i class="hi hi-o hi-o-clipboard"></i><span data-i18n="thirdPartyBet">Cược bên thứ 3</span></a>
           </dd>
         </dl>
       </li>
       <!-- 6. Khách hàng -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-survey" style="margin-right: 6px;"></i><span data-i18n="customer">Khách hàng</span>
+          <i class="hi hi-clipboard-list"></i><span data-i18n="customer">Khách hàng</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="editPassword" data-title-i18n="changeLoginPw" data-i18n="changeLoginPw">Đổi MK đăng nhập</a>
+            <a href="javascript:;" data-page="editPassword" data-title-i18n="changeLoginPw"><i class="hi hi-o hi-o-pen-to-square"></i><span data-i18n="changeLoginPw">Đổi MK đăng nhập</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="editFundPassword" data-title-i18n="changeFundPw" data-i18n="changeFundPw">Đổi MK giao dịch</a>
+            <a href="javascript:;" data-page="editFundPassword" data-title-i18n="changeFundPw"><i class="hi hi-o hi-o-keyboard"></i><span data-i18n="changeFundPw">Đổi MK giao dịch</span></a>
           </dd>
         </dl>
       </li>
       <!-- 7. Tỉ lệ hoàn trả -->
       <li class="layui-nav-item">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-list" style="margin-right: 6px;"></i><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span>
+          <i class="hi hi-percent"></i><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="getRebateOddsPanel" data-title-i18n="rebateRate" data-i18n="rebateRate">Tỉ lệ hoàn trả</a>
+            <a href="javascript:;" data-page="getRebateOddsPanel" data-title-i18n="rebateRate"><i class="hi hi-o hi-o-star"></i><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span></a>
           </dd>
         </dl>
       </li>
       <!-- 8. Quản lý (admin only) -->
       <li class="layui-nav-item" id="menuManage" style="display:none;">
         <a href="javascript:;">
-          <i class="layui-icon layui-icon-set" style="margin-right: 6px;"></i><span data-i18n="management">Quản lý</span>
+          <i class="hi hi-sliders"></i><span data-i18n="management">Quản lý</span>
         </a>
         <dl class="layui-nav-child">
           <dd>
-            <a href="javascript:;" data-page="manageAgents" data-title-i18n="manageAgents" data-i18n="manageAgents">Quản lý Agents</a>
+            <a href="javascript:;" data-page="manageAgents" data-title-i18n="manageAgents"><i class="hi hi-o hi-o-address-book"></i><span data-i18n="manageAgents">Quản lý Agents</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="manageUsers" data-title-i18n="manageUsers" data-i18n="manageUsers">Quản lý Users</a>
+            <a href="javascript:;" data-page="manageUsers" data-title-i18n="manageUsers"><i class="hi hi-o hi-o-address-card"></i><span data-i18n="manageUsers">Quản lý Users</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="activityLog" data-title-i18n="activityLog" data-i18n="activityLog">Nhật ký</a>
+            <a href="javascript:;" data-page="activityLog" data-title-i18n="activityLog"><i class="hi hi-o hi-o-clock"></i><span data-i18n="activityLog">Nhật ký</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="syncStatus" data-title-i18n="syncStatus" data-i18n="syncStatus">Đồng bộ Cache</a>
+            <a href="javascript:;" data-page="syncStatus" data-title-i18n="syncStatus"><i class="hi hi-o hi-o-hard-drive"></i><span data-i18n="syncStatus">Đồng bộ Cache</span></a>
           </dd>
         </dl>
       </li>
@@ -348,14 +351,14 @@
 
       // ── Toggle sidebar ──
       var LAYOUT = document.querySelector('.layui-layout-admin');
-      var toggleIcon = document.querySelector('#btnToggle .layui-icon');
+      var toggleIcon = document.querySelector('#btnToggle .hi');
       document.getElementById('btnToggle').addEventListener('click', function () {
         var collapsed = LAYOUT.classList.toggle('layui-layout-collapse');
         if (collapsed) {
-          toggleIcon.className = 'layui-icon layui-icon-spread-left';
+          toggleIcon.className = 'hi hi-angles-right';
           document.querySelectorAll('.hub-sidebar .layui-nav-itemed').forEach(function (el) { el.classList.remove('layui-nav-itemed'); });
         } else {
-          toggleIcon.className = 'layui-icon layui-icon-shrink-right';
+          toggleIcon.className = 'hi hi-angles-left';
         }
       });
 
@@ -365,14 +368,14 @@
       });
 
       // ── Fullscreen ──
-      var fsIcon = document.querySelector('#btnFullscreen .layui-icon');
+      var fsIcon = document.querySelector('#btnFullscreen .hi');
       document.getElementById('btnFullscreen').addEventListener('click', function () {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen();
-          fsIcon.className = 'layui-icon layui-icon-screen-restore';
+          fsIcon.className = 'hi hi-compress';
         } else {
           document.exitFullscreen();
-          fsIcon.className = 'layui-icon layui-icon-screen-full';
+          fsIcon.className = 'hi hi-expand';
         }
       });
 

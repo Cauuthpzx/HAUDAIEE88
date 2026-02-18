@@ -1,0 +1,163 @@
+/* ── Hub Icons — Font Awesome 6 Free (local webfont) ──
+ * Usage: <i class="hi hi-{name}"></i>
+ * Inherits color from parent via CSS color
+ * Size scales with font-size
+ */
+
+/* ── @font-face ── */
+@font-face {
+  font-family: 'FA6Solid';
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url('/lib/fontawesome/webfonts/fa-solid-900.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'FA6Regular';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/lib/fontawesome/webfonts/fa-regular-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'FA6Brands';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/lib/fontawesome/webfonts/fa-brands-400.woff2') format('woff2');
+}
+
+/* ── Base icon class ── */
+.hi {
+  display: inline-block;
+  font-family: 'FA6Solid';
+  font-weight: 900;
+  font-size: 16px;
+  font-style: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  vertical-align: -0.125em;
+}
+
+/* ── Solid icons ── */
+.hi-user::before { content: "\f007"; }
+.hi-circle-user::before { content: "\f2bd"; }
+.hi-users::before { content: "\f0c0"; }
+.hi-user-group::before { content: "\f500"; }
+.hi-gear::before { content: "\f013"; }
+.hi-sliders::before { content: "\f1de"; }
+.hi-magnifying-glass::before { content: "\f002"; }
+.hi-arrows-rotate::before { content: "\f021"; }
+.hi-house::before { content: "\f015"; }
+.hi-expand::before { content: "\f065"; }
+.hi-compress::before { content: "\f066"; }
+.hi-bars::before { content: "\f0c9"; }
+.hi-angles-left::before { content: "\f100"; }
+.hi-angles-right::before { content: "\f101"; }
+.hi-ellipsis-vertical::before { content: "\f142"; }
+.hi-right-from-bracket::before { content: "\f2f5"; }
+.hi-qrcode::before { content: "\f029"; }
+.hi-chart-bar::before { content: "\f080"; }
+.hi-chart-line::before { content: "\f201"; }
+.hi-money-bill-transfer::before { content: "\e528"; }
+.hi-clipboard-list::before { content: "\f46d"; }
+.hi-percent::before { content: "\25"; }
+.hi-circle-plus::before { content: "\f055"; }
+.hi-circle-check::before { content: "\f058"; }
+.hi-fire::before { content: "\f06d"; }
+.hi-trash-can::before { content: "\f2ed"; }
+.hi-lock::before { content: "\f023"; }
+.hi-eye::before { content: "\f06e"; }
+.hi-eye-slash::before { content: "\f070"; }
+.hi-file-export::before { content: "\f56e"; }
+.hi-shield-halved::before { content: "\f3ed"; }
+.hi-key::before { content: "\f084"; }
+.hi-plus::before { content: "\2b"; }
+.hi-caret-down::before { content: "\f0d7"; }
+
+/* ── Outline modifier (FA6 Regular) ── */
+.hi-o { font-family: 'FA6Regular'; font-weight: 400; }
+
+/* ── Outline icons (FA6 Free Regular subset) ── */
+.hi-o-user::before { content: "\f007"; }
+.hi-o-circle-user::before { content: "\f2bd"; }
+.hi-o-file::before { content: "\f15b"; }
+.hi-o-file-lines::before { content: "\f15c"; }
+.hi-o-copy::before { content: "\f0c5"; }
+.hi-o-newspaper::before { content: "\f1ea"; }
+.hi-o-credit-card::before { content: "\f09d"; }
+.hi-o-money-bill-1::before { content: "\f3d1"; }
+.hi-o-clipboard::before { content: "\f328"; }
+.hi-o-pen-to-square::before { content: "\f044"; }
+.hi-o-keyboard::before { content: "\f11c"; }
+.hi-o-star::before { content: "\f005"; }
+.hi-o-address-book::before { content: "\f2b9"; }
+.hi-o-address-card::before { content: "\f2bb"; }
+.hi-o-clock::before { content: "\f017"; }
+.hi-o-hard-drive::before { content: "\f0a0"; }
+.hi-o-square-check::before { content: "\f14a"; }
+.hi-o-rectangle-list::before { content: "\f022"; }
+
+/* ── Brand icons ── */
+.hi-firefox { font-family: 'FA6Brands'; font-weight: 400; }
+.hi-firefox::before { content: "\f269"; }
+
+/* ── Spinner (CSS animation) ── */
+.hi-spinner::before { content: "\f1ce"; }
+.hi-spinner { animation: hi-spin 1s linear infinite; }
+@keyframes hi-spin { to { transform: rotate(360deg); } }
+
+/* ── Override layui-icon font when .hi is present ── */
+.layui-icon.hi {
+  font-family: 'FA6Solid';
+  font-weight: 900;
+}
+.layui-icon.hi.hi-firefox {
+  font-family: 'FA6Brands';
+  font-weight: 400;
+}
+
+/* ── Layui context sizes (mirror original layui-icon rules) ── */
+
+/* Sidebar nav icons — normal */
+.layui-nav-tree .layui-nav-item a > .hi:first-child {
+  width: 20px;
+  font-size: 17px;
+  text-align: center;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+/* Sidebar nav icons — collapsed */
+.layui-layout-collapse .layui-nav-tree .layui-nav-item a > .hi:first-child {
+  width: 100%;
+  margin-right: 0;
+  text-align: center;
+  font-size: 20px;
+}
+
+/* Submenu icons — 30% smaller than parent menu (17px × 0.7 ≈ 12px) */
+.layui-nav-tree .layui-nav-child dd a > .hi:first-child {
+  width: 16px;
+  font-size: 12px;
+  text-align: center;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Logo icon */
+.layui-layout-admin .layui-logo > .hi {
+  width: 24px;
+  font-size: 26px;
+  text-align: center;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+/* Logo icon — collapsed */
+.layui-layout-admin.layui-layout-collapse .layui-logo > .hi {
+  width: 100%;
+  margin-right: 0;
+  font-size: 28px;
+}

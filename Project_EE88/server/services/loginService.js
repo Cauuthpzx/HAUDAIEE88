@@ -42,7 +42,7 @@ async function isSolverReady() {
  * @param {string} [triggeredBy] — username người kích hoạt
  * @returns {Promise<{success: boolean, cookie?: string, error?: string, attempts?: number}>}
  */
-async function loginAgent(agentId, source, triggeredBy) {
+async function loginAgent(agentId, source, triggeredBy, opts) {
   // Check lock — tránh login đồng thời
   if (loginLocks.get(agentId)) {
     log.warn(`Agent #${agentId} đang login, bỏ qua`);
@@ -103,11 +103,13 @@ async function loginAgent(agentId, source, triggeredBy) {
       logLoginHistory({ agentId, agentLabel: agent.label, success: true, attempts: result.attempts, source: source || 'manual', triggeredBy, durationMs: duration });
 
       // Fire-and-forget: sync 65 ngày gần nhất (background, không block response)
-      // Lazy require để tránh circular dependency (cronSync → loginService)
-      const { syncAfterLogin } = require('./cronSync');
-      syncAfterLogin(agentId).catch(err => {
-        log.error(`[${agent.label}] Post-login sync lỗi: ${err.message}`);
-      });
+      // Skip nếu là autoRelogin (đang trong sync rồi, tránh trigger trùng)
+      if (!(opts && opts.skipSync)) {
+        const { syncAfterLogin } = require('./cronSync');
+        syncAfterLogin(agentId).catch(err => {
+          log.error(`[${agent.label}] Post-login sync lỗi: ${err.message}`);
+        });
+      }
 
       return {
         success: true,
@@ -146,7 +148,7 @@ async function autoRelogin(agent) {
     return null;
   }
 
-  const result = await loginAgent(agent.id);
+  const result = await loginAgent(agent.id, 'auto', undefined, { skipSync: true });
   if (result.success) {
     return { ...agent, cookie: result.cookie, user_agent: result.user_agent || agent.user_agent };
   }

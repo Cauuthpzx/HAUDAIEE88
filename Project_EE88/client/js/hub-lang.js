@@ -68,6 +68,11 @@ var HubLang = (function () {
       'username': 'Tên đăng nhập',
       'password': 'Mật khẩu',
       'loginBtn': 'Đăng nhập',
+      'loginSubtitle': 'Hệ thống quản lý đại lý',
+      'fillAllFields': 'Vui lòng nhập đầy đủ thông tin',
+      'captchaPlaceholder': 'Mã xác nhận',
+      'captchaClickRefresh': 'Click hình để đổi mã',
+      'captchaWrong': 'Mã xác nhận không đúng',
       'loginSuccess': 'Đăng nhập thành công!',
       'loginFailed': 'Đăng nhập thất bại',
       'connectionError': 'Lỗi kết nối',
@@ -469,7 +474,10 @@ var HubLang = (function () {
       'filterAgent': 'Lọc agent',
       'syncing': 'Đang đồng bộ',
       'cacheHit': 'Cache HIT',
-      'cacheMiss': 'Cache MISS'
+      'cacheMiss': 'Cache MISS',
+      'syncProgress': 'Tiến độ',
+      'dateCount': 'Số ngày',
+      'noSync': 'Chưa đồng bộ'
     },
 
     en: {
@@ -519,6 +527,11 @@ var HubLang = (function () {
       'username': 'Username',
       'password': 'Password',
       'loginBtn': 'Login',
+      'loginSubtitle': 'Agent Management Hub',
+      'fillAllFields': 'Please fill in all fields',
+      'captchaPlaceholder': 'Captcha code',
+      'captchaClickRefresh': 'Click image to refresh',
+      'captchaWrong': 'Wrong captcha code',
       'loginSuccess': 'Login successful!',
       'loginFailed': 'Login failed',
       'connectionError': 'Connection error',
@@ -920,7 +933,10 @@ var HubLang = (function () {
       'filterAgent': 'Filter agent',
       'syncing': 'Syncing',
       'cacheHit': 'Cache HIT',
-      'cacheMiss': 'Cache MISS'
+      'cacheMiss': 'Cache MISS',
+      'syncProgress': 'Progress',
+      'dateCount': 'Days',
+      'noSync': 'Not synced'
     },
 
     'zh-CN': {
@@ -970,6 +986,11 @@ var HubLang = (function () {
       'username': '用户名',
       'password': '密码',
       'loginBtn': '登录',
+      'loginSubtitle': '代理管理系统',
+      'fillAllFields': '请填写所有字段',
+      'captchaPlaceholder': '验证码',
+      'captchaClickRefresh': '点击图片刷新',
+      'captchaWrong': '验证码错误',
       'loginSuccess': '登录成功！',
       'loginFailed': '登录失败',
       'connectionError': '连接错误',
@@ -1371,7 +1392,10 @@ var HubLang = (function () {
       'filterAgent': '筛选代理',
       'syncing': '同步中',
       'cacheHit': '缓存命中',
-      'cacheMiss': '缓存未命中'
+      'cacheMiss': '缓存未命中',
+      'syncProgress': '进度',
+      'dateCount': '天数',
+      'noSync': '未同步'
     }
   };
 

@@ -17,9 +17,9 @@
 
       // Toolbar HTML (inline, not script tag)
       var toolbarHtml = '<div class="layui-btn-group">'
-        + '<button class="layui-btn layui-btn-xs" lay-event="addAgent"><i class="layui-icon layui-icon-addition"></i> ' + HubLang.t('addAgentMgmt') + '</button>'
-        + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="checkAll"><i class="layui-icon layui-icon-refresh"></i> ' + HubLang.t('checkAll') + '</button>'
-        + '<button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="loginAll"><i class="layui-icon layui-icon-fire"></i> ' + HubLang.t('loginAllBtn') + '</button>'
+        + '<button class="layui-btn layui-btn-xs" lay-event="addAgent"><i class="hi hi-circle-plus"></i> ' + HubLang.t('addAgentMgmt') + '</button>'
+        + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="checkAll"><i class="hi hi-arrows-rotate"></i> ' + HubLang.t('checkAll') + '</button>'
+        + '<button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="loginAll"><i class="hi hi-fire"></i> ' + HubLang.t('loginAllBtn') + '</button>'
         + '</div><span id="ma_solverStatus"></span>';
 
       function checkSolverStatus() {
@@ -47,18 +47,18 @@
               text: { none: HubLang.t('noAgents') },
               cols: [[
                 { field: 'id', title: 'ID', width: 60 },
-                { field: 'label', title: HubLang.t('agentLabel'), width: 130 },
-                { title: HubLang.t('ee88Account'), width: 150, templet: function (d) {
-                  if (d.has_credentials) return '<span style="color:#16b777;"><i class="layui-icon layui-icon-ok-circle"></i> ' + d.ee88_username + '</span>';
+                { field: 'label', title: HubLang.t('agentLabel'), minWidth: 130 },
+                { title: HubLang.t('ee88Account'), minWidth: 150, templet: function (d) {
+                  if (d.has_credentials) return '<span style="color:#16b777;"><i class="hi hi-circle-check"></i> ' + d.ee88_username + '</span>';
                   return '<span style="color:#999;">' + HubLang.t('ee88NotConfigured') + '</span>';
                 }},
-                { field: 'base_url', title: 'URL', width: 220 },
-                { field: 'status', title: HubLang.t('status'), width: 100, templet: function (d) {
+                { field: 'base_url', title: 'URL', minWidth: 220 },
+                { field: 'status', title: HubLang.t('status'), minWidth: 100, templet: function (d) {
                   return d.status === 1 ? '<span class="status-active">' + HubLang.t('active') + '</span>' : '<span class="status-inactive">' + HubLang.t('stopped') + '</span>';
                 }},
-                { field: 'user_count', title: 'Users', width: 70 },
-                { field: 'last_login', title: HubLang.t('lastLoginCol'), width: 150 },
-                { field: 'last_check', title: HubLang.t('lastCheck'), width: 150 },
+                { field: 'user_count', title: 'Users', minWidth: 70 },
+                { field: 'last_login', title: HubLang.t('lastLoginCol'), minWidth: 150 },
+                { field: 'last_check', title: HubLang.t('lastCheck'), minWidth: 150 },
                 { fixed: 'right', title: HubLang.t('actions'), width: 260, templet: function (d) {
                   var btns = '<button class="layui-btn layui-btn-xs" lay-event="edit">' + HubLang.t('edit') + '</button>'
                     + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="check">' + HubLang.t('check') + '</button>';

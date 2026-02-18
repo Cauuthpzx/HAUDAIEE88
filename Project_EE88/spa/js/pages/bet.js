@@ -158,14 +158,14 @@
         // Search button
         + '<div class="layui-inline">'
         + '<button type="button" class="layui-btn" lay-submit lay-filter="bet_doSearch">'
-        + '<i class="layui-icon layui-icon-search"></i>'
+        + '<i class="hi hi-magnifying-glass"></i>'
         + ' <span data-i18n="search">' + t('search') + '</span>'
         + '</button></div>'
 
         // Reset button
         + '<div class="layui-inline">'
         + '<button type="reset" class="layui-btn layui-btn-primary" id="bet_btnReset">'
-        + '<i class="layui-icon layui-icon-refresh"></i>'
+        + '<i class="hi hi-arrows-rotate"></i>'
         + ' <span data-i18n="reset">' + t('reset') + '</span>'
         + '</button></div>'
 
@@ -330,8 +330,8 @@
         request: { pageName: 'page', limitName: 'limit' },
         cols: [[
           { field: 'serial_no', title: HubLang.t('serialNo'), width: 200, fixed: 'left' },
-          { field: 'username', title: HubLang.t('userName'), width: 150 },
-          { field: 'create_time', title: HubLang.t('betTime'), width: 160 },
+          { field: 'username', title: HubLang.t('userName'), minWidth: 150 },
+          { field: 'create_time', title: HubLang.t('betTime'), minWidth: 160 },
           { field: 'lottery_name', title: HubLang.t('game'), minWidth: 150 },
           { field: 'play_type_name', title: HubLang.t('gameType'), minWidth: 150 },
           { field: 'play_name', title: HubLang.t('playStyle'), minWidth: 150 },

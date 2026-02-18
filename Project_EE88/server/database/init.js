@@ -6,8 +6,24 @@ const { createLogger } = require('../utils/logger');
 
 const log = createLogger('database');
 
-// DB nằm ở PROJECT_ROOT/data/ — không bị build script ghi đè
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Tìm project root: đi lên từ __dirname, tìm thư mục có cả package.json + captcha/
+// (captcha/ chỉ tồn tại ở project root, không có ở dist/server/)
+function findProjectRoot(startDir) {
+  let dir = path.resolve(startDir);
+  while (true) {
+    if (fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'captcha'))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return process.cwd(); // fallback
+}
+
+// DB duy nhất tại PROJECT_ROOT/data/ — không phụ thuộc process.cwd()
+const PROJECT_ROOT = findProjectRoot(__dirname);
+const DATA_DIR = path.join(PROJECT_ROOT, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_PATH = path.join(DATA_DIR, 'agent-hub.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
