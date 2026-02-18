@@ -179,6 +179,7 @@
             view: { showIcon: false, expandAllDefault: false }
           },
           cols: [[
+            { type: 'checkbox', width: 50 },
             { field: 'name', title: HubLang.t('agent') + ' / Endpoint', width: 200, templet: function (d) {
               if (d.is_parent) {
                 var dot = d.agent_status === 1
@@ -288,10 +289,21 @@
             });
           });
         } else if (obj.event === 'clearCache') {
+          var checked = treeTable.checkStatus('ss_syncTable');
+          var selectedIds = [];
+          if (checked && checked.data) {
+            checked.data.forEach(function (row) {
+              if (row.is_parent && row.id) selectedIds.push(row.id);
+            });
+          }
+          if (selectedIds.length === 0) {
+            layer.msg(HubLang.t('noSelection') || 'Chưa chọn tài khoản nào', { icon: 0 });
+            return;
+          }
           layer.confirm(HubLang.t('confirmClearCache'), { icon: 3 }, function (idx) {
             layer.close(idx);
             var loadIdx = layer.load();
-            HubAPI.adminRequest('sync/clear', 'POST', {}).then(function (res) {
+            HubAPI.adminRequest('sync/clear', 'POST', { agent_ids: selectedIds }).then(function (res) {
               layer.close(loadIdx);
               if (res.code === 0) {
                 layer.msg(HubLang.t('cacheCleared'), { icon: 1 });

@@ -5,11 +5,9 @@
       return '<div class="layui-row">'
         + '<div class="layui-col-md12">'
         + '<div class="layui-card">'
-        + '<div class="layui-form layui-card-header">'
-        + '<fieldset class="layui-elem-field layui-field-title">'
+        + '<div class="layui-form layui-card-header"><fieldset class="layui-elem-field">'
         + '<legend data-i18n="referralCode">' + HubLang.t('referralCode') + '</legend>'
-        + '<div class="layui-field-box">'
-        + '<form class="layui-form" lay-filter="inv_searchForm">'
+        + '<div class="layui-field-box"><form class="layui-form" lay-filter="inv_searchForm">'
 
         // create_time datetime range
         + '<div class="layui-inline">'
@@ -58,9 +56,7 @@
         + '</div>'
 
         + '</form>'
-        + '</div>'
-        + '</fieldset>'
-        + '</div>'
+        + '</div></fieldset></div>'
 
         + '<div class="layui-card-body">'
         + '<table id="inv_dataTable" lay-filter="inv_dataTable"></table>'

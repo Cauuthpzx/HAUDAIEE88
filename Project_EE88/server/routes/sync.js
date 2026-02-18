@@ -94,19 +94,25 @@ router.post('/sync/run', async (req, res) => {
   }
 });
 
-// POST /api/admin/sync/clear — Xoá cache
+// POST /api/admin/sync/clear — Xoá DB tài khoản đã chọn
 router.post('/sync/clear', (req, res) => {
-  const { agent_id, endpoint, date } = req.body;
+  const { agent_id, agent_ids, endpoint, date } = req.body;
 
-  log.info(`[${req.user.username}] Yêu cầu xoá cache`, { agent_id, endpoint, date });
+  // Support both single agent_id and array agent_ids
+  const ids = agent_ids || (agent_id ? [agent_id] : []);
 
-  const deleted = cacheManager.clearCache(
-    agent_id ? parseInt(agent_id) : undefined,
-    endpoint,
-    date
-  );
+  log.info(`[${req.user.username}] Yêu cầu xoá DB tài khoản`, { agent_ids: ids, endpoint, date });
 
-  res.json({ code: 0, msg: `Đã xoá ${deleted} bản ghi cache` });
+  let totalDeleted = 0;
+  ids.forEach(id => {
+    totalDeleted += cacheManager.clearCache(
+      parseInt(id),
+      endpoint,
+      date
+    );
+  });
+
+  res.json({ code: 0, msg: `Đã xoá ${totalDeleted} bản ghi`, deleted: totalDeleted });
 });
 
 module.exports = router;
