@@ -78,7 +78,7 @@
         + '<div class="layui-inline">'
         + '<div style="width:220px;" class="layui-input-inline">'
         + '<input type="text" name="create_time" id="bet_hsDateTime"'
-        + ' placeholder="' + t('dateStartEndTime') + '"'
+        + ' placeholder="' + t('dateStartEnd') + '"'
         + ' class="layui-input" readonly autocomplete="off">'
         + '</div></div>'
 

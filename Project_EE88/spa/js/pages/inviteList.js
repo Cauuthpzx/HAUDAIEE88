@@ -16,7 +16,7 @@
         + '<label data-i18n="addedTime">' + HubLang.t('addedTime') + '</label>\uff1a'
         + '<div style="width:290px;" class="layui-input-inline">'
         + '<input type="text" name="create_time" id="inv_createTime"'
-        + ' placeholder="' + HubLang.t('dateStartEndTime') + '"'
+        + ' placeholder="' + HubLang.t('dateStartEnd') + '"'
         + ' class="layui-input" readonly autocomplete="off">'
         + '</div>'
         + '</div>'
@@ -26,7 +26,7 @@
         + '<label data-i18n="memberLoginTime">' + HubLang.t('memberLoginTime') + '</label>\uff1a'
         + '<div style="width:290px;" class="layui-input-inline">'
         + '<input type="text" name="user_register_time" id="inv_registerTime"'
-        + ' placeholder="' + HubLang.t('dateStartEndTime') + '"'
+        + ' placeholder="' + HubLang.t('dateStartEnd') + '"'
         + ' class="layui-input" readonly autocomplete="off">'
         + '</div>'
         + '</div>'
@@ -114,17 +114,17 @@
         return window.location.origin + '/register?invite=' + code;
       }
 
-      // ── Laydate datetime range pickers ──
+      // ── Laydate date range pickers ──
       laydate.render({
         elem: '#inv_createTime',
-        type: 'datetime',
+        type: 'date',
         range: '|',
         rangeLinked: true
       });
 
       laydate.render({
         elem: '#inv_registerTime',
-        type: 'datetime',
+        type: 'date',
         range: '|',
         rangeLinked: true
       });

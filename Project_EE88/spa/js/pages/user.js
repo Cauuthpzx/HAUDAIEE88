@@ -39,7 +39,7 @@
         + '<label data-i18n="firstDepositTime">' + HubLang.t('firstDepositTime') + '</label>\uff1a'
         + '<div style="width:290px;" class="layui-input-inline">'
         + '<input type="text" name="first_deposit_time" id="user_firstDepositTime"'
-        + ' placeholder="' + HubLang.t('dateStartEndTime') + '"'
+        + ' placeholder="' + HubLang.t('dateStartEnd') + '"'
         + ' class="layui-input" readonly autocomplete="off">'
         + '</div></div>'
 
@@ -109,7 +109,7 @@
       // ── Date range picker for first_deposit_time ──
       laydate.render({
         elem: '#user_firstDepositTime',
-        type: 'datetime',
+        type: 'date',
         range: '|',
         rangeLinked: true
       });

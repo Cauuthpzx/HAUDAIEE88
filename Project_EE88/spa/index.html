@@ -6,6 +6,7 @@
   <title>Agent Hub — Quản lý</title>
   <link rel="stylesheet" href="/lib/layui/css/layui.css">
   <link rel="stylesheet" href="/css/hub-icons.css">
+  <link rel="stylesheet" href="/css/hub-icons-vs.css">
   <link rel="stylesheet" href="/spa/css/hub-spa.css">
   <style>
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -82,6 +83,9 @@
           <dd><a href="javascript:;" data-lang="en"><img src="/images/uk.gif" class="hub-flag"><span style="vertical-align:middle;">English</span></a></dd>
           <dd><a href="javascript:;" data-lang="zh-CN"><img src="/images/china.gif" class="hub-flag"><span style="vertical-align:middle;">中文</span></a></dd>
         </dl>
+      </li>
+      <li class="layui-nav-item">
+        <a href="javascript:;" id="btnIconTheme"><i class="hi hi-sliders"></i></a>
       </li>
       <li class="layui-nav-item">
         <a href="javascript:;" id="btnFullscreen"><i class="hi hi-expand"></i></a>
@@ -252,6 +256,11 @@
       window.location.href = '/spa/login.html';
     }
 
+    // ── Load saved icon theme ──
+    if (localStorage.getItem('hub-icon-theme') === 'vs') {
+      document.documentElement.classList.add('icon-vs');
+    }
+
     // ── Init i18n ──
     HubLang.init();
     document.title = HubLang.t('adminPageTitle');
@@ -367,6 +376,12 @@
         HubRouter.refreshActive();
       });
 
+      // ── Icon theme toggle ──
+      document.getElementById('btnIconTheme').addEventListener('click', function () {
+        var isVS = document.documentElement.classList.toggle('icon-vs');
+        localStorage.setItem('hub-icon-theme', isVS ? 'vs' : 'fa');
+      });
+
       // ── Fullscreen ──
       var fsIcon = document.querySelector('#btnFullscreen .hi');
       document.getElementById('btnFullscreen').addEventListener('click', function () {
@@ -380,8 +395,8 @@
       });
 
       // ── Layer tips ──
-      var tipKeys = { btnToggle: 'toggleMenu', btnRefresh: 'reload', btnFullscreen: 'fullscreen' };
-      $('#btnToggle, #btnRefresh, #btnFullscreen').each(function () {
+      var tipKeys = { btnToggle: 'toggleMenu', btnRefresh: 'reload', btnIconTheme: 'iconTheme', btnFullscreen: 'fullscreen' };
+      $('#btnToggle, #btnRefresh, #btnIconTheme, #btnFullscreen').each(function () {
         var el = this;
         el.removeAttribute('title');
         $(el).on('mouseenter', function () {

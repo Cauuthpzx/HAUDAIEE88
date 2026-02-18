@@ -29,6 +29,7 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': 'Thu gọn menu',
       'reload': 'Tải lại trang',
+      'iconTheme': 'Đổi bộ icon',
       'fullscreen': 'Toàn màn hình',
       'language': 'Ngôn ngữ',
       'changeLoginPw': 'Đổi MK đăng nhập',
@@ -488,6 +489,7 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': 'Toggle menu',
       'reload': 'Reload page',
+      'iconTheme': 'Change icons',
       'fullscreen': 'Fullscreen',
       'language': 'Language',
       'changeLoginPw': 'Change login password',
@@ -947,6 +949,7 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': '折叠菜单',
       'reload': '刷新页面',
+      'iconTheme': '切换图标',
       'fullscreen': '全屏',
       'language': '语言',
       'changeLoginPw': '修改登录密码',
