@@ -96,7 +96,12 @@ var HubUtils = (function () {
     if (_localReloadTimers[tableId]) clearTimeout(_localReloadTimers[tableId]);
     _localReloadTimers[tableId] = setTimeout(function () {
       delete _localReloadTimers[tableId];
-      try { layui.table.reload(tableId); } catch (e) { delete _localReloadAttempts[tableId]; }
+      try {
+        layui.table.reload(tableId);
+      } catch (e) {
+        // Reload lỗi tạm → thử lại lần sau thay vì dừng hẳn
+        scheduleLocalReload(tableId);
+      }
     }, POLL_INTERVAL);
   }
 
@@ -113,9 +118,10 @@ var HubUtils = (function () {
    * fromLocal=true → poll mỗi 2s; fromLocal=false → data mới, dừng poll
    */
   function parseData(res) {
+    res = res || {};
     // this = table options (layui gọi parseData.call(options, res))
     if (this && this.id) {
-      if (res && res.fromLocal) {
+      if (res.fromLocal) {
         scheduleLocalReload(this.id);
       } else if (_localReloadAttempts[this.id]) {
         stopLocalReload(this.id);

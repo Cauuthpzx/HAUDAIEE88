@@ -392,7 +392,7 @@ function queryForDisplay(agentIds, endpointKey, startDate, endDate) {
     params.push(startDate + '|' + endDate);
   }
   // Date filter cho transaction endpoints (create_time / bet_time column)
-  else if (mapping.hasDate && startDate) {
+  else if (mapping.hasDate && startDate && endDate) {
     const dateCol = getDateColumn(endpointKey);
     if (dateCol) {
       where += ` AND ${dateCol} >= ? AND ${dateCol} <= ?`;

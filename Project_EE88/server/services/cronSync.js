@@ -261,7 +261,7 @@ async function syncAfterLogin(agentId) {
     for (const ep of nonDate) {
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const result = await fetchAllPages(agent, ep, { page: 1 });
+          const result = await fetchAllPages(agent, ep, {});
           if (result.data.length > 0) dataStore.saveData(agent.id, ep, result.data, result.totalData);
           log.ok(`${agent.label} ${ep} — ${result.data.length}r (${result.pages} page)`);
           await sleep(speed.delay);
