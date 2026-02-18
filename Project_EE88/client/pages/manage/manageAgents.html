@@ -132,14 +132,6 @@
 
       loadAgents();
 
-      // ── Real-time: auto-refresh khi agent thay đổi từ session khác ──
-      var adminSSE = HubAPI.subscribeAdmin(function (ev) {
-        if (ev && ev.type === 'agent') loadAgents();
-      });
-      window.addEventListener('beforeunload', function () {
-        if (adminSSE) adminSSE.close();
-      });
-
       // Toolbar events
       table.on('toolbar(dataTable)', function (obj) {
         if (obj.event === 'addAgent') {

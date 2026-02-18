@@ -31,18 +31,29 @@ router.get('/events', (req, res, next) => {
   res.write(': connected\n\n');
 
   function onEvent(data) {
-    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) {}
+    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) { cleanup(); }
   }
   adminEmitter.on('change', onEvent);
 
   const hb = setInterval(() => {
-    try { res.write(': heartbeat\n\n'); } catch (e) {}
+    try { res.write(': heartbeat\n\n'); } catch (e) { cleanup(); }
   }, 30000);
 
-  req.on('close', () => {
+  // Auto-close sau 5 phút để tránh leak (client sẽ tự reconnect)
+  const maxAge = setTimeout(() => cleanup(), 5 * 60 * 1000);
+
+  let cleaned = false;
+  function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
     adminEmitter.off('change', onEvent);
     clearInterval(hb);
-  });
+    clearTimeout(maxAge);
+    try { res.end(); } catch (e) {}
+  }
+
+  req.on('close', cleanup);
+  res.on('error', cleanup);
 });
 
 // Tất cả admin routes cần auth + admin

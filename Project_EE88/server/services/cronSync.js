@@ -27,7 +27,9 @@ const log = createLogger('sync');
 
 const SYNC_DAYS = 65;
 const MAX_RETRIES = 2;
-const PAGE_SIZE = 500;
+const PAGE_SIZE = 2000; // 2000 rows/batch — tránh tích lũy memory
+const BATCH_DELAY = 100; // ms delay giữa các batch — nhường event loop
+const SYNC_TIMEOUT = 30 * 60 * 1000; // 30 phút timeout cho mỗi agent
 
 const NON_DATE_EPS = ['members', 'invites'];
 const DATE_EPS = [
@@ -235,41 +237,65 @@ async function fetchWithRelogin(agent, ep, params) {
   }
 }
 
-async function fetchAllPages(agent, ep, params) {
-  const res1 = await fetchWithRelogin(agent, ep, { ...params, page: 1, limit: PAGE_SIZE });
-  if (!res1 || res1.code !== 0) {
-    throw new Error((res1 && res1.msg) || 'API code ' + (res1 ? res1.code : 'null'));
-  }
-
-  let allData = Array.isArray(res1.data) ? [...res1.data] : [];
-  const totalCount = parseInt(res1.count) || allData.length;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  if (totalPages > 1 && allData.length > 0) {
-    for (let page = 2; page <= totalPages; page++) {
-      const resN = await fetchWithRelogin(agent, ep, { ...params, page, limit: PAGE_SIZE });
-      if (resN && resN.code === 0 && Array.isArray(resN.data)) {
-        allData = allData.concat(resN.data);
-      }
-    }
-  }
-
-  return { data: allData, totalData: res1.total_data || null, totalCount };
-}
-
 // ═══════════════════════════════════════
-// ── Fetch 1 endpoint with retry ──
+// ── Fetch + Save theo batch (không tích lũy memory) ──
 // ═══════════════════════════════════════
 
-async function fetchWithRetry(agent, ep, params, maxRetries) {
+/**
+ * Fetch tất cả trang + save từng batch vào DB ngay lập tức.
+ * Không giữ data trong memory — tránh OOM khi endpoint có nhiều row (50K+).
+ *
+ * @param {object} agent
+ * @param {string} ep — endpoint key
+ * @param {object} params — query params
+ * @param {string|null} dateKey — date key cho date endpoints
+ * @returns {{ totalRows, totalData }}
+ */
+async function fetchAndSaveBatches(agent, ep, params, dateKey) {
   let lastErr;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      return await fetchAllPages(agent, ep, params);
+      let totalRows = 0;
+
+      // Page 1
+      const res1 = await fetchWithRelogin(agent, ep, { ...params, page: 1, limit: PAGE_SIZE });
+      if (!res1 || res1.code !== 0) {
+        throw new Error((res1 && res1.msg) || 'API code ' + (res1 ? res1.code : 'null'));
+      }
+
+      const totalData = res1.total_data || null;
+      const firstBatch = Array.isArray(res1.data) ? res1.data : [];
+      const totalCount = parseInt(res1.count) || firstBatch.length;
+      const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+      // Save batch 1 ngay
+      if (firstBatch.length > 0) {
+        dataStore.saveData(agent.id, ep, firstBatch, null, dateKey);
+        totalRows += firstBatch.length;
+      }
+
+      // Remaining pages — fetch + save + free memory mỗi batch
+      for (let page = 2; page <= totalPages; page++) {
+        await sleep(BATCH_DELAY); // nhường event loop
+        const resN = await fetchWithRelogin(agent, ep, { ...params, page, limit: PAGE_SIZE });
+        if (resN && resN.code === 0 && Array.isArray(resN.data) && resN.data.length > 0) {
+          dataStore.saveData(agent.id, ep, resN.data, null, dateKey);
+          totalRows += resN.data.length;
+        }
+      }
+
+      // Save totals nếu có
+      if (totalData && dateKey) {
+        dataStore.saveTotals(agent.id, ep, dateKey, totalData);
+      }
+
+      return { totalRows, totalData };
+
     } catch (e) {
       lastErr = e;
-      if (attempt < maxRetries) {
-        log.warn(`[${agent.label}] ${ep} thử lại ${attempt + 1}/${maxRetries}`);
+      if (attempt < MAX_RETRIES) {
+        log.warn(`[${agent.label}] ${ep} thử lại ${attempt + 1}/${MAX_RETRIES}`);
         await sleep(2000);
       }
     }
@@ -297,6 +323,13 @@ async function syncAfterLogin(agentId) {
   initProgress(agentId, agent.label);
   const startTime = Date.now();
 
+  // Timeout guard — tự huỷ nếu sync quá lâu
+  let syncAborted = false;
+  const timeoutId = setTimeout(() => {
+    syncAborted = true;
+    log.error(`[${agent.label}] TIMEOUT — sync quá ${SYNC_TIMEOUT / 60000} phút, huỷ bỏ`);
+  }, SYNC_TIMEOUT);
+
   try {
     // ══════════════════════════════════
     // Phase 1: Non-date (members + invites) — song song
@@ -307,11 +340,8 @@ async function syncAfterLogin(agentId) {
         updateEp(agentId, ep, { status: 'syncing' });
         log.info(`[${agent.label}] đang thu thập ${epName(ep)}...`);
         try {
-          const result = await fetchWithRetry(agent, ep, {}, MAX_RETRIES);
-          if (result.data.length > 0) {
-            dataStore.saveData(agent.id, ep, result.data, result.totalData);
-          }
-          updateEp(agentId, ep, { completed: 1, rows: result.data.length, status: 'done' });
+          const result = await fetchAndSaveBatches(agent, ep, {}, null);
+          updateEp(agentId, ep, { completed: 1, rows: result.totalRows, status: 'done' });
         } catch (e) {
           updateEp(agentId, ep, { status: 'error' });
           clearSyncTree();
@@ -336,6 +366,11 @@ async function syncAfterLogin(agentId) {
     DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'syncing' }));
 
     for (let di = 0; di < dates.length; di++) {
+      if (syncAborted) {
+        log.warn(`[${agent.label}] sync bị huỷ do timeout`);
+        break;
+      }
+
       const dateStr = dates[di];
 
       // Ngày đã khoá → skip, cập nhật progress
@@ -349,21 +384,14 @@ async function syncAfterLogin(agentId) {
 
       // Fetch 8 endpoints song song cho ngày này
       const dayRowCounts = {};
+      const dateKeyFull = dateStr + '|' + dateStr;
       const dayResults = await Promise.allSettled(
         DATE_EPS.map(async ep => {
           const params = buildDateParams(ep, dateStr);
           try {
-            const result = await fetchWithRetry(agent, ep, params, MAX_RETRIES);
-            const dateKeyFull = dateStr + '|' + dateStr;
-
-            if (result.data.length > 0) {
-              dataStore.saveData(agent.id, ep, result.data, result.totalData, dateKeyFull);
-            } else if (result.totalData) {
-              dataStore.saveTotals(agent.id, ep, dateKeyFull, result.totalData);
-            }
-
-            dayRowCounts[ep] = result.data.length;
-            return { ep, rows: result.data.length };
+            const result = await fetchAndSaveBatches(agent, ep, params, dateKeyFull);
+            dayRowCounts[ep] = result.totalRows;
+            return { ep, rows: result.totalRows };
           } catch (e) {
             dayRowCounts[ep] = -1;
             throw e;
@@ -402,9 +430,13 @@ async function syncAfterLogin(agentId) {
     const p = syncProgress.get(agentId);
     if (p) { p.status = 'error'; emitProgress(); }
   } finally {
+    clearTimeout(timeoutId);
     agentSyncLocks.delete(agentId);
     const p = syncProgress.get(agentId);
-    if (p && p.status === 'syncing') { p.status = 'done'; emitProgress(); }
+    if (p && p.status === 'syncing') {
+      p.status = syncAborted ? 'error' : 'done';
+      emitProgress();
+    }
     setTimeout(() => { syncProgress.delete(agentId); emitProgress(); }, 10000);
   }
 }

@@ -13,6 +13,7 @@ const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 function createClient(agent) {
   return axios.create({
     baseURL: agent.base_url,
+    timeout: 30000,  // 30s default timeout — tránh treo vô hạn
     headers: {
       'X-Requested-With': 'XMLHttpRequest',
       'User-Agent': agent.user_agent || DEFAULT_UA,

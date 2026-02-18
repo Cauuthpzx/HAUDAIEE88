@@ -71,10 +71,24 @@ function formatFile(level, context, message, meta) {
   return `${ts} [${level.padEnd(5)}] [${context}] ${message}${formatMeta(meta)}`;
 }
 
-// ── Ghi file ──
+// ── Ghi file (async WriteStream, không block event loop) ──
+let _logDate = getLogDate();
+let _logStream = fs.createWriteStream(
+  path.join(LOG_DIR, `${_logDate}.log`),
+  { flags: 'a' }
+);
+
 function writeToFile(line) {
-  const filePath = path.join(LOG_DIR, `${getLogDate()}.log`);
-  fs.appendFileSync(filePath, line + '\n');
+  const today = getLogDate();
+  if (today !== _logDate) {
+    _logStream.end();
+    _logDate = today;
+    _logStream = fs.createWriteStream(
+      path.join(LOG_DIR, `${_logDate}.log`),
+      { flags: 'a' }
+    );
+  }
+  _logStream.write(line + '\n');
 }
 
 // ── Public API ──
@@ -93,11 +107,27 @@ function createLogger(context) {
   };
 }
 
-// ── Morgan stream ──
-const accessLogStream = fs.createWriteStream(
-  path.join(LOG_DIR, `access-${getLogDate()}.log`),
+// ── Morgan stream (auto-rotate khi qua ngày mới) ──
+let _accessDate = getLogDate();
+let _accessStream = fs.createWriteStream(
+  path.join(LOG_DIR, `access-${_accessDate}.log`),
   { flags: 'a' }
 );
+
+const accessLogStream = {
+  write(chunk) {
+    const today = getLogDate();
+    if (today !== _accessDate) {
+      _accessStream.end();
+      _accessDate = today;
+      _accessStream = fs.createWriteStream(
+        path.join(LOG_DIR, `access-${_accessDate}.log`),
+        { flags: 'a' }
+      );
+    }
+    _accessStream.write(chunk);
+  }
+};
 
 // ── Dọn log cũ ──
 function cleanOldLogs(retentionDays) {

@@ -271,7 +271,8 @@ process.on('uncaughtException', (err) => {
   shutdown();
 });
 process.on('unhandledRejection', (reason) => {
-  log.error('UNHANDLED REJECTION', { reason: String(reason) });
+  log.error('UNHANDLED REJECTION — sẽ tắt server sau 3s', { reason: String(reason) });
+  setTimeout(() => shutdown(), 3000);
 });
 
 // ── Khởi động ──

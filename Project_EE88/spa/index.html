@@ -53,31 +53,9 @@
 
     /* ── Flag icon ── */
     .hub-flag { display: inline-block; width: 20px; height: 14px; vertical-align: middle; margin-right: 5px; }
-
-    /* ── Loading Screen (inline — renders before any JS) ── */
-    #hub-loading {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: #20222A;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 99999;
-      transition: opacity .3s;
-    }
-    #hub-loading.hub-loaded { opacity: 0; pointer-events: none; }
-    #hub-loading .hub-logo { font-size: 36px; font-weight: 700; color: #ff4d4f; margin-bottom: 20px; letter-spacing: 2px; }
-    #hub-loading .hub-spinner {
-      width: 36px; height: 36px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #ff4d4f;
-      border-radius: 50%;
-      animation: hub-spin .8s linear infinite;
-    }
-    @keyframes hub-spin { to { transform: rotate(360deg); } }
   </style>
-  <link rel="prefetch" href="/lib/xlsx/xlsx.mini.min.js" as="script">
-  <link rel="prefetch" href="/lib/echarts/echarts.min.js" as="script">
 </head>
 <body>
-<div id="hub-loading"><div class="hub-logo">FIRE</div><div class="hub-spinner"></div></div>
 
 <div class="layui-layout layui-layout-admin">
   <!-- Header -->
@@ -243,7 +221,7 @@
             <a href="javascript:;" data-page="activityLog" data-title-i18n="activityLog"><i class="hi hi-o hi-o-clock"></i><span data-i18n="activityLog">Nhật ký</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-page="syncStatus" data-title-i18n="syncStatus"><i class="hi hi-o hi-o-hard-drive"></i><span data-i18n="syncStatus">Đồng bộ</span></a>
+            <a href="javascript:;" data-page="syncStatus" data-title-i18n="syncStatus"><i class="hi hi-o hi-o-hard-drive"></i><span data-i18n="syncStatus">Đồng bộ Cache</span></a>
           </dd>
         </dl>
       </li>
@@ -260,6 +238,7 @@
 </div>
 
   <script src="/lib/layui/layui.js"></script>
+  <script src="/lib/xlsx/xlsx.mini.min.js"></script>
   <script src="/js/hub-api.js"></script>
   <script src="/js/hub-lang.js"></script>
   <script src="/spa/js/hub-utils.js"></script>
@@ -279,10 +258,6 @@
 
     layui.use(['element', 'tabs', 'dropdown', 'layer', 'util', 'i18n'], function () {
       var $ = layui.$;
-      // Dismiss loading screen
-      var _loading = document.getElementById('hub-loading');
-      if (_loading) { _loading.classList.add('hub-loaded'); setTimeout(function(){ _loading.remove(); }, 400); }
-
       var element = layui.element;
       var tabs = layui.tabs;
       var dropdown = layui.dropdown;

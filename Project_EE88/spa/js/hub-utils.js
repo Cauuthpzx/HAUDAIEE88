@@ -188,14 +188,7 @@ var HubUtils = (function () {
    */
   function exportExcel(tableId, filename) {
     if (typeof XLSX === 'undefined') {
-      // Lazy-load XLSX on first export
-      var script = document.createElement('script');
-      script.src = '/lib/xlsx/xlsx.mini.min.js';
-      var _tid = tableId, _fn = filename;
-      script.onload = function () { exportExcel(_tid, _fn); };
-      script.onerror = function () { layui.layer.msg('Failed to load SheetJS', { icon: 2 }); };
-      layui.layer.msg(HubLang.t('loading') || 'Loading...', { icon: 16, shade: 0.1, time: 5000, id: 'xlsxLoad' });
-      document.body.appendChild(script);
+      layui.layer.msg('SheetJS not loaded', { icon: 2 });
       return;
     }
 

@@ -76,29 +76,9 @@
     }
     /* ── Flag icon ── */
     .hub-flag { display: inline-block; width: 20px; height: 14px; vertical-align: middle; margin-right: 5px; }
-
-    /* ── Loading Screen (inline — renders before any JS) ── */
-    #hub-loading {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: #20222A;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 99999;
-      transition: opacity .3s;
-    }
-    #hub-loading.hub-loaded { opacity: 0; pointer-events: none; }
-    #hub-loading .hub-logo { font-size: 36px; font-weight: 700; color: #ff4d4f; margin-bottom: 20px; letter-spacing: 2px; }
-    #hub-loading .hub-spinner {
-      width: 36px; height: 36px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #ff4d4f;
-      border-radius: 50%;
-      animation: hub-spin .8s linear infinite;
-    }
-    @keyframes hub-spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-<div id="hub-loading"><div class="hub-logo">FIRE</div><div class="hub-spinner"></div></div>
 
 <div class="layui-layout layui-layout-admin">
   <!-- Header -->
@@ -258,7 +238,7 @@
             <a href="javascript:;" data-url="/pages/manage/manageUsers.html" data-title-i18n="manageUsers" data-title="Quản lý Users"><i class="hi hi-o hi-o-address-card"></i><span data-i18n="manageUsers">Quản lý Users</span></a>
           </dd>
           <dd>
-            <a href="javascript:;" data-url="/pages/manage/syncStatus.html" data-title-i18n="syncStatus" data-title="Đồng bộ"><i class="hi hi-o hi-o-hard-drive"></i><span data-i18n="syncStatus">Đồng bộ</span></a>
+            <a href="javascript:;" data-url="/pages/manage/syncStatus.html" data-title-i18n="syncStatus" data-title="Đồng bộ Cache"><i class="hi hi-o hi-o-hard-drive"></i><span data-i18n="syncStatus">Đồng bộ Cache</span></a>
           </dd>
         </dl>
       </li>
@@ -289,10 +269,6 @@
 
     layui.use(['element', 'tabs', 'dropdown', 'layer', 'util', 'i18n'], function () {
       var $ = layui.$;
-      // Dismiss loading screen
-      var _loading = document.getElementById('hub-loading');
-      if (_loading) { _loading.classList.add('hub-loaded'); setTimeout(function(){ _loading.remove(); }, 400); }
-
       var element = layui.element;
       var tabs = layui.tabs;
       var dropdown = layui.dropdown;

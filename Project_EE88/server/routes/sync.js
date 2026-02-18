@@ -23,18 +23,29 @@ router.get('/sync/progress', (req, res, next) => {
   res.write('data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n');
 
   function onProgress(data) {
-    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) {}
+    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) { cleanup(); }
   }
   cronSync.syncEmitter.on('progress', onProgress);
 
   const hb = setInterval(() => {
-    try { res.write(': heartbeat\n\n'); } catch (e) {}
+    try { res.write(': heartbeat\n\n'); } catch (e) { cleanup(); }
   }, 30000);
 
-  req.on('close', () => {
+  // Auto-close sau 5 phút để tránh leak (client sẽ tự reconnect)
+  const maxAge = setTimeout(() => cleanup(), 5 * 60 * 1000);
+
+  let cleaned = false;
+  function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
     cronSync.syncEmitter.off('progress', onProgress);
     clearInterval(hb);
-  });
+    clearTimeout(maxAge);
+    try { res.end(); } catch (e) {}
+  }
+
+  req.on('close', cleanup);
+  res.on('error', cleanup);
 });
 
 // Tất cả routes còn lại cần auth + admin
@@ -48,11 +59,11 @@ router.get('/sync/status', (req, res) => {
 
     const agents = db.prepare('SELECT id, label, status FROM ee88_agents ORDER BY id').all();
     const agentStats = agents.map(agent => {
-      let lockCount = 0;
-      try {
-        lockCount = db.prepare('SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?').get(agent.id).cnt;
-      } catch (e) { /* table may not exist yet */ }
-      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount };
+      let lockCount = 0, memberRows = 0, inviteRows = 0;
+      try { lockCount = db.prepare('SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
+      try { memberRows = db.prepare('SELECT COUNT(*) as cnt FROM data_members WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
+      try { inviteRows = db.prepare('SELECT COUNT(*) as cnt FROM data_invites WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
+      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount, memberRows, inviteRows };
     });
 
     res.json({
