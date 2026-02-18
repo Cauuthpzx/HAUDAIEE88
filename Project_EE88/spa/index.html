@@ -107,8 +107,8 @@
   <!-- Sidebar -->
   <div class="hub-sidebar">
     <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
-      <!-- 0. Dashboard (admin only) -->
-      <li class="layui-nav-item" id="menuDashboard" style="display:none;">
+      <!-- 0. Dashboard (all users) -->
+      <li class="layui-nav-item" id="menuDashboard">
         <a href="javascript:;" data-page="dashboard" data-title-i18n="dashboard">
           <i class="hi hi-house"></i><span data-i18n="dashboard">Tổng quan</span>
         </a>
@@ -272,7 +272,6 @@
         if (user.role === 'admin') {
           isAdmin = true;
           document.getElementById('menuManage').style.display = '';
-          document.getElementById('menuDashboard').style.display = '';
         }
       }
 
@@ -405,13 +404,8 @@
         });
       });
 
-      // ── Auto-load: admin → Dashboard, user → first page ──
-      if (isAdmin) {
-        HubRouter.openPage('dashboard', 'dashboard');
-      } else {
-        var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-page]');
-        if (firstLink) firstLink.click();
-      }
+      // ── Auto-load: Dashboard cho tất cả users ──
+      HubRouter.openPage('dashboard', 'dashboard');
     });
   </script>
 </body>

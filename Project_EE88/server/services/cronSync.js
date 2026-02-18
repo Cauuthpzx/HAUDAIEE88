@@ -1,13 +1,16 @@
 /**
  * Sync Engine — đồng bộ dữ liệu EE88 vào SQLite
  *
- * Flow per agent:
- *   1. members + invites (song song) → chờ cả 2 xong
- *   2. 65 ngày × 8 date endpoints (song song per ngày) → chờ 8 xong mới qua ngày tiếp
- *   3. Ngày đã khoá (hash) → bỏ qua
- *   4. Xong ngày → hash + lock
+ * Flow per agent — 3 phases (EE88 API chỉ hỗ trợ 1 pagination cùng lúc):
+ *   Phase 1 (parallel): invites + 7 date endpoints × 65 ngày (~35s)
+ *     → Tất cả single-page (no pagination) → chạy song song an toàn
+ *   Phase 2 (solo): members (~20s, ~26 pages pagination)
+ *     → Cần chạy riêng — concurrent requests gây lỗi pagination
+ *   Phase 3 (solo): bet-orders (~5 min, ~24 pages × 10s/page)
+ *     → API trả ALL 48K+ rows bất kể date, pagination cần chạy riêng
  *
- * Progress: 10 thanh (2 non-date + 8 date), mỗi thanh riêng
+ * Total ≈ 35s + 20s + 5 min ≈ 5.5 min (first run) / 5 min (subsequent)
+ * Ngày đã khoá (hash) → bỏ qua; xong ngày → hash + lock
  */
 
 const crypto = require('crypto');
@@ -26,14 +29,17 @@ const log = createLogger('sync');
 // ═══════════════════════════════════════
 
 const SYNC_DAYS = 65;
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
 const PAGE_SIZE = 2000; // 2000 rows/batch — tránh tích lũy memory
-const BATCH_DELAY = 100; // ms delay giữa các batch — nhường event loop
-const SYNC_TIMEOUT = 30 * 60 * 1000; // 30 phút timeout cho mỗi agent
+const BATCH_DELAY = 0; // benchmark: 0ms = 0% error, max throughput
+const DAY_CONCURRENCY = 10; // 10 ngày song song trong date endpoint loop
+const SYNC_TIMEOUT = 30 * 60 * 1000; // 30 phút timeout
 
-const NON_DATE_EPS = ['members', 'invites'];
+// bet-orders moved here: API ignores date filter → returns ALL data regardless of date
+// → sync 1 lần = ~21 pages (~2.5 min) thay vì 65 lần = ~1365 pages (~18 min)
+const NON_DATE_EPS = ['members', 'invites', 'bet-orders'];
 const DATE_EPS = [
-  'deposits', 'withdrawals', 'bet-orders', 'lottery-bets',
+  'deposits', 'withdrawals', 'lottery-bets',
   'lottery-bets-summary', 'report-lottery', 'report-funds', 'report-third'
 ];
 const ALL_EPS = [...NON_DATE_EPS, ...DATE_EPS];
@@ -41,7 +47,6 @@ const ALL_EPS = [...NON_DATE_EPS, ...DATE_EPS];
 const DATE_PARAM_MAP = {
   deposits:               { start: 'start_time', end: 'end_time' },
   withdrawals:            { start: 'start_time', end: 'end_time' },
-  'bet-orders':           { start: 'start_time', end: 'end_time' },
   'report-lottery':       { start: 'start_time', end: 'end_time' },
   'report-funds':         { start: 'start_time', end: 'end_time' },
   'report-third':         { start: 'start_time', end: 'end_time' },
@@ -218,7 +223,7 @@ function clearLocks(agentId) {
 }
 
 // ═══════════════════════════════════════
-// ── Fetch with relogin + pagination ──
+// ── Fetch with relogin ──
 // ═══════════════════════════════════════
 
 async function fetchWithRelogin(agent, ep, params) {
@@ -264,8 +269,13 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey) {
         throw new Error((res1 && res1.msg) || 'API code ' + (res1 ? res1.code : 'null'));
       }
 
+      // Rate-limit detection: API trả data="" (string) thay vì array khi bị throttle
+      if (!Array.isArray(res1.data)) {
+        throw Object.assign(new Error('API rate-limited (data is string)'), { isRateLimit: true });
+      }
+
       const totalData = res1.total_data || null;
-      const firstBatch = Array.isArray(res1.data) ? res1.data : [];
+      const firstBatch = res1.data;
       const totalCount = parseInt(res1.count) || firstBatch.length;
       const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -276,12 +286,16 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey) {
       }
 
       // Remaining pages — fetch + save + free memory mỗi batch
+      // Early-stop: break khi page trống hoặc < PAGE_SIZE (tránh fetch thừa khi count sai)
       for (let page = 2; page <= totalPages; page++) {
-        await sleep(BATCH_DELAY); // nhường event loop
+        if (BATCH_DELAY > 0) await sleep(BATCH_DELAY);
         const resN = await fetchWithRelogin(agent, ep, { ...params, page, limit: PAGE_SIZE });
         if (resN && resN.code === 0 && Array.isArray(resN.data) && resN.data.length > 0) {
           dataStore.saveData(agent.id, ep, resN.data, null, dateKey);
           totalRows += resN.data.length;
+          if (resN.data.length < PAGE_SIZE) break; // Last page
+        } else {
+          break; // Empty page — no more data
         }
       }
 
@@ -295,8 +309,10 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey) {
     } catch (e) {
       lastErr = e;
       if (attempt < MAX_RETRIES) {
-        log.warn(`[${agent.label}] ${ep} thử lại ${attempt + 1}/${MAX_RETRIES}`);
-        await sleep(2000);
+        // Rate-limited: đợi lâu hơn (15s) để API cooldown
+        const delay = e.isRateLimit ? 15000 : 2000;
+        log.warn(`[${agent.label}] ${ep} thử lại ${attempt + 1}/${MAX_RETRIES}${e.isRateLimit ? ' (rate-limited, đợi 15s)' : ''}`);
+        await sleep(delay);
       }
     }
   }
@@ -331,94 +347,136 @@ async function syncAfterLogin(agentId) {
   }, SYNC_TIMEOUT);
 
   try {
-    // ══════════════════════════════════
-    // Phase 1: Non-date (members + invites) — song song
-    // ══════════════════════════════════
+    // ══════════════════════════════════════════════════════
+    // 3 phases tuần tự — EE88 API chỉ hỗ trợ 1 pagination/session:
+    //   Phase 1 (parallel): invites + date endpoints (~35s, all single-page)
+    //   Phase 2 (solo): members (~20s, multi-page pagination)
+    //   Phase 3 (solo): bet-orders (~5 min, multi-page pagination)
+    //
+    // Concurrent requests gây lỗi pagination (page 2+ trả empty 71ms).
+    // Endpoints single-page (date) chạy song song an toàn.
+    // Endpoints multi-page (members, bet-orders) PHẢI chạy riêng.
+    // ══════════════════════════════════════════════════════
 
-    await Promise.allSettled(
-      NON_DATE_EPS.map(async ep => {
-        updateEp(agentId, ep, { status: 'syncing' });
-        log.info(`[${agent.label}] đang thu thập ${epName(ep)}...`);
-        try {
-          const result = await fetchAndSaveBatches(agent, ep, {}, null);
-          updateEp(agentId, ep, { completed: 1, rows: result.totalRows, status: 'done' });
-        } catch (e) {
-          updateEp(agentId, ep, { status: 'error' });
-          clearSyncTree();
-          log.error(`[${agent.label}] ${epName(ep)} lỗi: ${e.message}`);
-        }
-      })
-    );
+    const today = fmtDate(new Date());
 
-    // ══════════════════════════════════
-    // Phase 2: Date endpoints — 65 ngày
-    // ══════════════════════════════════
-    const dates = [];
-    for (let i = SYNC_DAYS; i >= 1; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      dates.push(fmtDate(d));
-    }
+    // ── Phase 1: invites + date endpoints (parallel — all single-page) ──
+    log.info(`[${agent.label}] Phase 1: invites + date endpoints...`);
 
-    // Track per endpoint
-    const epDayCount = {};
-    const epRowCount = {};
-    DATE_EPS.forEach(ep => { epDayCount[ep] = 0; epRowCount[ep] = 0; });
-    DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'syncing' }));
-
-    for (let di = 0; di < dates.length; di++) {
-      if (syncAborted) {
-        log.warn(`[${agent.label}] sync bị huỷ do timeout`);
-        break;
-      }
-
-      const dateStr = dates[di];
-
-      // Ngày đã khoá → skip, cập nhật progress
-      if (isDayLocked(agent.id, dateStr)) {
-        DATE_EPS.forEach(ep => {
-          epDayCount[ep]++;
-          updateEp(agentId, ep, { completed: epDayCount[ep] });
-        });
-        continue;
-      }
-
-      // Fetch 8 endpoints song song cho ngày này
-      const dayRowCounts = {};
-      const dateKeyFull = dateStr + '|' + dateStr;
-      const dayResults = await Promise.allSettled(
-        DATE_EPS.map(async ep => {
-          const params = buildDateParams(ep, dateStr);
-          try {
-            const result = await fetchAndSaveBatches(agent, ep, params, dateKeyFull);
-            dayRowCounts[ep] = result.totalRows;
-            return { ep, rows: result.totalRows };
-          } catch (e) {
-            dayRowCounts[ep] = -1;
-            throw e;
-          }
-        })
-      );
-
-      // Cập nhật progress cho từng EP
-      const allOk = dayResults.every(r => r.status === 'fulfilled');
-      DATE_EPS.forEach(ep => {
-        epDayCount[ep]++;
-        if (dayRowCounts[ep] >= 0) epRowCount[ep] += dayRowCounts[ep] || 0;
-        updateEp(agentId, ep, { completed: epDayCount[ep], rows: epRowCount[ep] });
-      });
-
-      // Khoá ngày nếu tất cả OK
-      if (allOk) {
-        lockDay(agent.id, dateStr, dayRowCounts);
-      } else {
-        const errEps = dayResults.filter(r => r.status === 'rejected').map((r, i) => DATE_EPS[i]);
+    // invites (single page)
+    const invitePromise = (async () => {
+      updateEp(agentId, 'invites', { status: 'syncing' });
+      try {
+        const result = await fetchAndSaveBatches(agent, 'invites', {}, null);
+        updateEp(agentId, 'invites', { completed: 1, rows: result.totalRows, status: 'done' });
+      } catch (e) {
+        updateEp(agentId, 'invites', { status: 'error' });
         clearSyncTree();
-        log.error(`[${agent.label}] ngày ${dateStr} lỗi: ${errEps.join(', ')}`);
+        log.error(`[${agent.label}] ${epName('invites')} lỗi: ${e.message}`);
       }
+    })();
+
+    // date endpoints (65 ngày × 7 eps, 10 ngày song song)
+    const datePromise = (async () => {
+      const dates = [];
+      for (let i = SYNC_DAYS; i >= 1; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        dates.push(fmtDate(d));
+      }
+
+      const epDayCount = {};
+      const epRowCount = {};
+      DATE_EPS.forEach(ep => { epDayCount[ep] = 0; epRowCount[ep] = 0; });
+      DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'syncing' }));
+
+      for (let di = 0; di < dates.length; di += DAY_CONCURRENCY) {
+        if (syncAborted) {
+          log.warn(`[${agent.label}] sync bị huỷ do timeout`);
+          break;
+        }
+
+        const dayBatch = dates.slice(di, di + DAY_CONCURRENCY);
+
+        await Promise.allSettled(dayBatch.map(async (dateStr) => {
+          if (syncAborted) return;
+
+          if (isDayLocked(agent.id, dateStr)) {
+            DATE_EPS.forEach(ep => {
+              epDayCount[ep]++;
+              updateEp(agentId, ep, { completed: epDayCount[ep] });
+            });
+            return;
+          }
+
+          const dayRowCounts = {};
+          const dateKeyFull = dateStr + '|' + dateStr;
+          const dayResults = await Promise.allSettled(
+            DATE_EPS.map(async ep => {
+              const params = buildDateParams(ep, dateStr);
+              try {
+                const result = await fetchAndSaveBatches(agent, ep, params, dateKeyFull);
+                dayRowCounts[ep] = result.totalRows;
+                return { ep, rows: result.totalRows };
+              } catch (e) {
+                dayRowCounts[ep] = -1;
+                throw e;
+              }
+            })
+          );
+
+          const allOk = dayResults.every(r => r.status === 'fulfilled');
+          DATE_EPS.forEach(ep => {
+            epDayCount[ep]++;
+            if (dayRowCounts[ep] >= 0) epRowCount[ep] += dayRowCounts[ep] || 0;
+            updateEp(agentId, ep, { completed: epDayCount[ep], rows: epRowCount[ep] });
+          });
+
+          if (allOk) {
+            lockDay(agent.id, dateStr, dayRowCounts);
+          } else {
+            const errEps = dayResults.filter(r => r.status === 'rejected').map((r, i) => DATE_EPS[i]);
+            clearSyncTree();
+            log.error(`[${agent.label}] ngày ${dateStr} lỗi: ${errEps.join(', ')}`);
+          }
+        }));
+      }
+
+      DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'done' }));
+    })();
+
+    await Promise.allSettled([invitePromise, datePromise]);
+    const p1sec = ((Date.now() - startTime) / 1000).toFixed(0);
+    log.info(`[${agent.label}] Phase 1 xong — ${p1sec}s`);
+
+    // ── Phase 2: members (solo — multi-page pagination) ──
+    if (!syncAborted) {
+      updateEp(agentId, 'members', { status: 'syncing' });
+      log.info(`[${agent.label}] Phase 2: members (solo pagination)...`);
+      try {
+        const result = await fetchAndSaveBatches(agent, 'members', {}, null);
+        updateEp(agentId, 'members', { completed: 1, rows: result.totalRows, status: 'done' });
+      } catch (e) {
+        updateEp(agentId, 'members', { status: 'error' });
+        clearSyncTree();
+        log.error(`[${agent.label}] ${epName('members')} lỗi: ${e.message}`);
+      }
+      log.info(`[${agent.label}] Phase 2 xong — ${((Date.now() - startTime) / 1000).toFixed(0)}s`);
     }
 
-    // Mark done
-    DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'done' }));
+    // ── Phase 3: bet-orders (solo — multi-page pagination, ~5 min) ──
+    if (!syncAborted) {
+      updateEp(agentId, 'bet-orders', { status: 'syncing' });
+      log.info(`[${agent.label}] Phase 3: bet-orders (solo pagination)...`);
+      try {
+        const params = { start_time: today, end_time: today };
+        const result = await fetchAndSaveBatches(agent, 'bet-orders', params, null);
+        updateEp(agentId, 'bet-orders', { completed: 1, rows: result.totalRows, status: 'done' });
+      } catch (e) {
+        updateEp(agentId, 'bet-orders', { status: 'error' });
+        clearSyncTree();
+        log.error(`[${agent.label}] ${epName('bet-orders')} lỗi: ${e.message}`);
+      }
+    }
 
     const sec = ((Date.now() - startTime) / 1000).toFixed(0);
     clearSyncTree();
@@ -442,7 +500,7 @@ async function syncAfterLogin(agentId) {
 }
 
 // ═══════════════════════════════════════
-// ── Sync all agents (tuần tự) ──
+// ── Sync all agents (song song — benchmark: 2.6x nhanh hơn, 0% error) ──
 // ═══════════════════════════════════════
 
 async function syncAllAgents() {
@@ -450,12 +508,11 @@ async function syncAllAgents() {
   const agents = db.prepare('SELECT * FROM ee88_agents WHERE status = 1').all();
   if (agents.length === 0) { log.warn('Không có agent active'); return; }
 
-  log.info(`Bắt đầu đồng bộ ${agents.length} đại lý`);
-  for (const agent of agents) {
-    if (!agentSyncLocks.get(agent.id)) {
-      await syncAfterLogin(agent.id);
-    }
-  }
+  log.info(`Bắt đầu đồng bộ ${agents.length} đại lý (song song)`);
+  await Promise.allSettled(
+    agents.filter(a => !agentSyncLocks.get(a.id))
+      .map(a => syncAfterLogin(a.id))
+  );
 }
 
 function isSyncRunning() { return agentSyncLocks.size > 0; }

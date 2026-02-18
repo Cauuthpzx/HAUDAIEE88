@@ -16,6 +16,7 @@ const actionRoutes = require('./routes/action');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const syncRoutes = require('./routes/sync');
+const dashboardRoutes = require('./routes/dashboard');
 const errorHandler = require('./middleware/errorHandler');
 
 const log = createLogger('server');
@@ -77,6 +78,9 @@ app.use('/api/auth', authRoutes);
 // Data + Action: cần JWT + permission
 app.use('/api/data', proxyRoutes);
 app.use('/api/action', actionRoutes);
+
+// Dashboard: cần JWT + permission (hiển thị cho tất cả users)
+app.use('/api/dashboard', dashboardRoutes);
 
 // Admin: cần JWT + admin role
 app.use('/api/admin', adminRoutes);

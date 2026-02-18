@@ -188,6 +188,16 @@ var HubAPI = {
   },
 
   /**
+   * Gọi dashboard endpoint (GET) — không cần admin
+   */
+  dashboardGet: function (path) {
+    return this._fetch('/api/dashboard/' + path).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  },
+
+  /**
    * Gọi admin endpoint (POST/PUT/DELETE)
    */
   adminRequest: function (path, method, body) {

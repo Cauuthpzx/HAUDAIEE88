@@ -133,6 +133,12 @@
   <!-- Sidebar -->
   <div class="hub-sidebar">
     <ul class="layui-nav layui-nav-tree" lay-shrink="all" lay-filter="hub-menu">
+      <!-- 0. Dashboard (all users) -->
+      <li class="layui-nav-item" id="menuDashboard">
+        <a href="javascript:;" data-url="/pages/manage/dashboard.html" data-title-i18n="dashboard" data-title="Tổng quan">
+          <i class="hi hi-house"></i><span data-i18n="dashboard">Tổng quan</span>
+        </a>
+      </li>
       <!-- 1. Quản lí hội viên -->
       <li class="layui-nav-item layui-nav-itemed">
         <a href="javascript:;">
@@ -479,9 +485,9 @@
         });
       });
 
-      // Auto-load trang đầu tiên
-      var firstLink = document.querySelector('.hub-sidebar .layui-this a[data-url]');
-      if (firstLink) firstLink.click();
+      // Auto-load: Dashboard cho tất cả users
+      var dashLink = document.querySelector('#menuDashboard a[data-url]');
+      if (dashLink) dashLink.click();
     });
   </script>
 </body>

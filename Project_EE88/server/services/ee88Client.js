@@ -6,12 +6,24 @@ const log = createLogger('ee88Client');
 
 const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+// ── Client cache: tái sử dụng TCP connection per agent ──
+const clientCache = new Map(); // key: agentId, value: { client, cookie, ua }
+
 /**
- * Tạo axios client cho 1 agent cụ thể
- * Dùng agent.user_agent (từ cloudscraper lúc login) để khớp cf_clearance
+ * Tạo hoặc lấy cached axios client cho 1 agent cụ thể.
+ * Reuse client = reuse TCP connection (keep-alive) → giảm latency.
+ * Chỉ tạo mới khi cookie/UA thay đổi (relogin).
  */
 function createClient(agent) {
-  return axios.create({
+  const key = agent.id || 0;
+  const cached = clientCache.get(key);
+
+  // Reuse nếu cookie + UA khớp
+  if (cached && cached.cookie === agent.cookie && cached.ua === (agent.user_agent || DEFAULT_UA)) {
+    return cached.client;
+  }
+
+  const client = axios.create({
     baseURL: agent.base_url,
     timeout: 30000,  // 30s default timeout — tránh treo vô hạn
     headers: {
@@ -20,6 +32,9 @@ function createClient(agent) {
       Cookie: agent.cookie
     }
   });
+
+  clientCache.set(key, { client, cookie: agent.cookie, ua: agent.user_agent || DEFAULT_UA });
+  return client;
 }
 
 /**
