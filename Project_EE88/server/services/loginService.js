@@ -72,9 +72,17 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
     }
 
     // Giải mã password nếu đã được mã hóa
-    const plainPassword = isEncrypted(agent.ee88_password)
-      ? decrypt(agent.ee88_password)
-      : agent.ee88_password;
+    let plainPassword;
+    if (isEncrypted(agent.ee88_password)) {
+      try {
+        plainPassword = decrypt(agent.ee88_password);
+      } catch (decErr) {
+        log.error(`[${agent.label}] Không giải mã được password — ENCRYPTION_KEY không khớp? Hãy nhập lại password cho agent này.`);
+        return { success: false, error: 'Lỗi giải mã password — ENCRYPTION_KEY không khớp. Hãy cập nhật password.' };
+      }
+    } else {
+      plainPassword = agent.ee88_password;
+    }
 
     // Gọi solver
     const res = await axios.post(`${SOLVER_URL}/login`, {

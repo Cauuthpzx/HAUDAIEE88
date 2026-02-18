@@ -35,35 +35,18 @@ CREATE TABLE IF NOT EXISTS user_agent_permissions (
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
 
--- Phase 6: Cache data — lưu response API theo (agent, endpoint, ngày)
-CREATE TABLE IF NOT EXISTS cache_data (
+-- Sync day locks — khoá ngày đã đồng bộ hoàn tất (hash để verify)
+CREATE TABLE IF NOT EXISTS sync_day_locks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   agent_id INTEGER NOT NULL,
-  endpoint_key TEXT NOT NULL,
   date_key TEXT NOT NULL,
-  response_json TEXT NOT NULL,
-  total_data_json TEXT,
-  row_count INTEGER DEFAULT 0,
-  locked INTEGER DEFAULT 0,
-  synced_at TEXT DEFAULT (datetime('now', 'localtime')),
-  UNIQUE(agent_id, endpoint_key, date_key),
+  data_hash TEXT NOT NULL,
+  row_counts TEXT,
+  locked_at TEXT DEFAULT (datetime('now', 'localtime')),
+  UNIQUE(agent_id, date_key),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-
--- Phase 6: Sync logs — theo dõi trạng thái đồng bộ
-CREATE TABLE IF NOT EXISTS sync_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  agent_id INTEGER NOT NULL,
-  endpoint_key TEXT NOT NULL,
-  date_str TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  row_count INTEGER DEFAULT 0,
-  error_msg TEXT,
-  started_at TEXT,
-  completed_at TEXT,
-  created_at TEXT DEFAULT (datetime('now', 'localtime')),
-  FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
-);
+CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id);
 
 -- ═══════════════════════════════════════════════════════════
 -- Phase 7: Data Storage — lưu data thực sự vào SQLite

@@ -101,6 +101,9 @@ function getDb() {
     )
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_login_hist_agent ON agent_login_history(agent_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_login_hist_created ON agent_login_history(created_at)');
+  // Migrate: bảng sync_day_locks (đã trong schema, đảm bảo index)
+  db.exec('CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id)');
 
   // Migrate: mã hóa ee88_password (Security: encrypt at rest)
   const { encrypt, isEncrypted, ensureEncryptionKey } = require('../utils/crypto');

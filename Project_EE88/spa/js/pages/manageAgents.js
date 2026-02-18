@@ -1,4 +1,6 @@
 (function () {
+  var _adminSSE = null;
+
   SpaPages.manageAgents = {
     getHTML: function () {
       return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
@@ -80,6 +82,12 @@
       }
 
       loadAgents();
+
+      // ── Real-time: auto-refresh khi agent thay đổi từ session khác ──
+      if (_adminSSE) { _adminSSE.close(); _adminSSE = null; }
+      _adminSSE = HubAPI.subscribeAdmin(function (ev) {
+        if (ev && ev.type === 'agent') loadAgents();
+      });
 
       // Toolbar
       table.on('toolbar(ma_dataTable)', function (obj) {
@@ -264,7 +272,9 @@
       }
     },
 
-    destroy: function () {},
+    destroy: function () {
+      if (_adminSSE) { _adminSSE.close(); _adminSSE = null; }
+    },
     onLangChange: function (container) {
       container.innerHTML = this.getHTML();
       HubLang.applyDOM(container);

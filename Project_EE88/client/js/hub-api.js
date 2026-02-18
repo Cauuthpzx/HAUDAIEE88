@@ -202,6 +202,21 @@ var HubAPI = {
   },
 
   /**
+   * Subscribe admin SSE events (real-time agent/user changes)
+   * @param {function} callback — nhận { type, action, id }
+   * @returns {EventSource|null}
+   */
+  subscribeAdmin: function (callback) {
+    var token = this.getToken();
+    if (!token) return null;
+    var es = new EventSource('/api/admin/events?token=' + encodeURIComponent(token));
+    es.onmessage = function (event) {
+      try { callback(JSON.parse(event.data)); } catch (e) {}
+    };
+    return es;
+  },
+
+  /**
    * Single-panel date range picker (1 bảng lịch, chọn khoảng ngày)
    */
   singleRangePicker: function (elem, opts) {

@@ -54,3 +54,35 @@
 
 /* Solver status (manageAgents) */
 .hub-page .solver-status { margin-left: 10px; }
+
+/* ── Skeleton loading shimmer ── */
+.hub-skeleton-num {
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: hub-shimmer 1.5s infinite;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+@keyframes hub-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Sync Status: Stat Cards ── */
+.sync-stats {
+  display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 2px;
+}
+.sync-stats .ss-card {
+  flex: 1; min-width: 120px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px; padding: 12px 18px; text-align: center;
+}
+.sync-stats .ss-num {
+  font-size: 28px; font-weight: 700;
+}
+.sync-stats .ss-label {
+  font-size: 12px; color: #999; margin-top: 4px;
+}

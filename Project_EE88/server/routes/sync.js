@@ -1,118 +1,129 @@
 const express = require('express');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
-const cacheManager = require('../services/cacheManager');
 const cronSync = require('../services/cronSync');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('sync-routes');
 const router = express.Router();
 
-// Tất cả sync routes cần auth + admin
+// ── SSE endpoint (auth via query param vì EventSource không set header được) ──
+router.get('/sync/progress', (req, res, next) => {
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = 'Bearer ' + req.query.token;
+  }
+  next();
+}, authMiddleware, adminOnly, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+
+  res.write('data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n');
+
+  function onProgress(data) {
+    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) {}
+  }
+  cronSync.syncEmitter.on('progress', onProgress);
+
+  const hb = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch (e) {}
+  }, 30000);
+
+  req.on('close', () => {
+    cronSync.syncEmitter.off('progress', onProgress);
+    clearInterval(hb);
+  });
+});
+
+// Tất cả routes còn lại cần auth + admin
 router.use(authMiddleware, adminOnly);
 
-// GET /api/admin/sync/status — Tổng quan cache
+// GET /api/admin/sync/status — Tổng quan
 router.get('/sync/status', (req, res) => {
-  const stats = cacheManager.getCacheStats();
-  res.json({
-    code: 0,
-    data: {
-      ...stats,
-      syncing: cronSync.isSyncRunning(),
-      cacheableEndpoints: cacheManager.getCacheableEndpoints()
-    }
-  });
-});
-
-// GET /api/admin/sync/tree — Tree data cho treeTable (Agent → Endpoints)
-router.get('/sync/tree', (req, res) => {
-  const tree = cacheManager.getCacheTree();
-  res.json({ code: 0, data: tree });
-});
-
-// GET /api/admin/sync/logs — Danh sách sync logs (phân trang + filter)
-router.get('/sync/logs', (req, res) => {
-  const { page, limit, agent_id, endpoint, status, date } = req.query;
-  const result = cacheManager.getSyncLogs({
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 20,
-    agentId: agent_id ? parseInt(agent_id) : undefined,
-    endpointKey: endpoint,
-    status: status,
-    dateStr: date
-  });
-  res.json({ code: 0, ...result });
-});
-
-// GET /api/admin/sync/cached-dates — Danh sách ngày đã cache
-router.get('/sync/cached-dates', (req, res) => {
-  const { agent_id, endpoint } = req.query;
-  const dates = cacheManager.getCachedDates(
-    agent_id ? parseInt(agent_id) : undefined,
-    endpoint
-  );
-  res.json({ code: 0, data: dates, count: dates.length });
-});
-
-// POST /api/admin/sync/run-all — Sync 65 ngày cho tất cả agents (chạy nền)
-router.post('/sync/run-all', async (req, res) => {
-  log.info(`[${req.user.username}] Yêu cầu sync toàn bộ agents`);
-
-  // Trả response ngay, chạy nền
-  res.json({ code: 0, msg: 'Đã bắt đầu sync toàn bộ agents (65 ngày)' });
-
   try {
-    const result = await cronSync.syncAllAgents();
-    log.ok('Sync toàn bộ hoàn tất', result);
+    const { getDb } = require('../database/init');
+    const db = getDb();
+
+    const agents = db.prepare('SELECT id, label, status FROM ee88_agents ORDER BY id').all();
+    const agentStats = agents.map(agent => {
+      let lockCount = 0;
+      try {
+        lockCount = db.prepare('SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?').get(agent.id).cnt;
+      } catch (e) { /* table may not exist yet */ }
+      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount };
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        agents: agentStats,
+        syncing: cronSync.isSyncRunning(),
+        totalDays: 65
+      }
+    });
   } catch (err) {
-    log.error(`Sync toàn bộ thất bại: ${err.message}`);
+    log.error('sync/status error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
   }
 });
 
-// POST /api/admin/sync/run — Chạy sync thủ công
+// GET /api/admin/sync/progress-data — Progress snapshot (polling thay SSE)
+router.get('/sync/progress-data', (req, res) => {
+  res.json({ code: 0, data: cronSync.getSyncProgressSnapshot() });
+});
+
+// GET /api/admin/sync/locks/:agentId — Danh sách ngày đã khoá
+router.get('/sync/locks/:agentId', (req, res) => {
+  const locks = cronSync.getLockedDays(parseInt(req.params.agentId));
+  res.json({ code: 0, data: locks, count: locks.length });
+});
+
+// POST /api/admin/sync/run — Sync 1 agent (thủ công)
 router.post('/sync/run', async (req, res) => {
-  const { date, agent_id, endpoint } = req.body;
+  const { agent_id } = req.body;
+  if (!agent_id) return res.json({ code: -1, msg: 'Thiếu agent_id' });
 
   if (cronSync.isSyncRunning()) {
     return res.json({ code: -1, msg: 'Đang sync, vui lòng đợi...' });
   }
 
-  log.info(`[${req.user.username}] Yêu cầu sync thủ công`, { date, agent_id, endpoint });
-
-  // Chạy async, trả response ngay
-  const syncDate = date || cacheManager.getYesterday();
-  res.json({ code: 0, msg: `Đã bắt đầu sync ngày ${syncDate}` });
+  log.info(`[${req.user.username}] Sync agent #${agent_id}`);
+  res.json({ code: 0, msg: 'Đã bắt đầu sync' });
 
   try {
-    const result = await cronSync.runSync(
-      syncDate,
-      agent_id ? parseInt(agent_id) : undefined,
-      endpoint
-    );
-    log.ok(`Sync thủ công hoàn tất`, result.stats);
+    await cronSync.syncAfterLogin(parseInt(agent_id));
+    log.ok(`Sync agent #${agent_id} hoàn tất`);
   } catch (err) {
-    log.error(`Sync thủ công thất bại: ${err.message}`);
+    log.error(`Sync agent #${agent_id} thất bại: ${err.message}`);
   }
 });
 
-// POST /api/admin/sync/clear — Xoá DB tài khoản đã chọn
+// POST /api/admin/sync/run-all — Sync tất cả agents
+router.post('/sync/run-all', async (req, res) => {
+  if (cronSync.isSyncRunning()) {
+    return res.json({ code: -1, msg: 'Đang sync, vui lòng đợi...' });
+  }
+
+  log.info(`[${req.user.username}] Sync toàn bộ agents`);
+  res.json({ code: 0, msg: 'Đã bắt đầu sync toàn bộ' });
+
+  try {
+    await cronSync.syncAllAgents();
+  } catch (err) {
+    log.error(`Sync toàn bộ thất bại: ${err.message}`);
+  }
+});
+
+// POST /api/admin/sync/clear — Xoá locks (cho phép re-sync)
 router.post('/sync/clear', (req, res) => {
-  const { agent_id, agent_ids, endpoint, date } = req.body;
+  const { agent_id } = req.body;
+  if (!agent_id) return res.json({ code: -1, msg: 'Thiếu agent_id' });
 
-  // Support both single agent_id and array agent_ids
-  const ids = agent_ids || (agent_id ? [agent_id] : []);
-
-  log.info(`[${req.user.username}] Yêu cầu xoá DB tài khoản`, { agent_ids: ids, endpoint, date });
-
-  let totalDeleted = 0;
-  ids.forEach(id => {
-    totalDeleted += cacheManager.clearCache(
-      parseInt(id),
-      endpoint,
-      date
-    );
-  });
-
-  res.json({ code: 0, msg: `Đã xoá ${totalDeleted} bản ghi`, deleted: totalDeleted });
+  log.info(`[${req.user.username}] Xoá locks agent #${agent_id}`);
+  const deleted = cronSync.clearLocks(parseInt(agent_id));
+  res.json({ code: 0, msg: `Đã xoá ${deleted} khoá ngày`, deleted });
 });
 
 module.exports = router;

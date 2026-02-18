@@ -67,6 +67,14 @@ var HubRouter = (function () {
     if (openedTabs[pageId]) {
       tabs.change(TABS_ID, pageId);
       document.title = 'Agent Hub — ' + title;
+      // Auto-reload table data khi chuyển lại tab đã mở
+      var container = document.getElementById('page_' + pageId);
+      if (container) {
+        var tbl = container.querySelector('table[id][lay-filter]');
+        if (tbl) {
+          try { layui.table.reload(tbl.id); } catch (e) {}
+        }
+      }
       return;
     }
 

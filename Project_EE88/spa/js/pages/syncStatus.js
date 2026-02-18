@@ -1,6 +1,6 @@
 (function () {
-  var _interval = null;
-  var _allTreeData = [];
+  var _pollTimer = null;
+  var _statsTimer = null;
 
   SpaPages.syncStatus = {
     getHTML: function () {
@@ -10,325 +10,345 @@
         + '<legend data-i18n="syncStatus">' + HubLang.t('syncStatus') + '</legend>'
         + '<div class="layui-field-box">'
 
-        // ── Stat Cards (inside card header) ──
-        + '<div id="ss_statsArea" style="display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap;">'
-        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;" data-i18n="totalCached">' + HubLang.t('totalCached') + '</div>'
-        + '<div style="font-size:22px;font-weight:600;color:#1e9fff;" id="ss_statEntries">\u2014</div></div>'
-        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;" data-i18n="totalRows">' + HubLang.t('totalRows') + '</div>'
-        + '<div style="font-size:22px;font-weight:600;color:#16b777;" id="ss_statRows">\u2014</div></div>'
-        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;" data-i18n="lockedDays">' + HubLang.t('lockedDays') + '</div>'
-        + '<div style="font-size:22px;font-weight:600;color:#ffb800;" id="ss_statLocked">\u2014</div></div>'
-        + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;" data-i18n="lastSyncTime">' + HubLang.t('lastSyncTime') + '</div>'
-        + '<div style="font-size:14px;font-weight:600;color:#ccc;" id="ss_statLastSync">\u2014</div></div>'
+        // ── Stat cards ──
+        + '<div class="sync-stats">'
+        + '<div class="ss-card"><div class="ss-num" id="ss_totalAgents" style="color:#1e9fff;">—</div><div class="ss-label">Tổng đại lý</div></div>'
+        + '<div class="ss-card"><div class="ss-num" id="ss_activeAgents" style="color:#16b777;">—</div><div class="ss-label">Hoạt động</div></div>'
+        + '<div class="ss-card"><div class="ss-num" id="ss_fullySynced" style="color:#ffb800;">—</div><div class="ss-label">Đã đồng bộ đủ</div></div>'
+        + '<div class="ss-card"><div class="ss-num" id="ss_syncState" style="color:#999;">—</div><div class="ss-label">Trạng thái</div></div>'
         + '</div>'
 
-        // ── Filters ──
-        + '<form class="layui-form" lay-filter="ss_searchForm">'
+        // ── Toolbar ──
+        + '<div style="display:flex;align-items:center;gap:12px;margin-top:15px;flex-wrap:wrap;">'
+        + '<button class="layui-btn layui-btn-sm layui-btn-normal" id="ss_btnSyncAll">'
+        + '<i class="hi hi-arrows-rotate"></i> ' + HubLang.t('syncNow')
+        + '</button>'
+        + '</div>'
 
-        + '<div class="layui-inline">'
-        + '<label data-i18n="filterAgent">' + HubLang.t('filterAgent') + '</label>\uff1a'
-        + '<div class="layui-input-inline" style="width:150px;">'
-        + '<select name="agent_id" id="ss_filterAgent" lay-filter="ss_filterAgent">'
-        + '<option value="" data-i18n="all">' + HubLang.t('all') + '</option>'
-        + '</select>'
-        + '</div></div>'
-
-        + '<div class="layui-inline">'
-        + '<label data-i18n="filterEndpoint">' + HubLang.t('filterEndpoint') + '</label>\uff1a'
-        + '<div class="layui-input-inline" style="width:160px;">'
-        + '<select name="endpoint" id="ss_filterEndpoint" lay-filter="ss_filterEndpoint">'
-        + '<option value="" data-i18n="all">' + HubLang.t('all') + '</option>'
-        + '</select>'
-        + '</div></div>'
-
-        + '<div class="layui-inline">'
-        + '<label data-i18n="filterStatus">' + HubLang.t('filterStatus') + '</label>\uff1a'
-        + '<div class="layui-input-inline" style="width:140px;">'
-        + '<select name="status" lay-filter="ss_filterStatus">'
-        + '<option value="" data-i18n="all">' + HubLang.t('all') + '</option>'
-        + '<option value="success" data-i18n="syncSuccess">' + HubLang.t('syncSuccess') + '</option>'
-        + '<option value="error" data-i18n="syncError">' + HubLang.t('syncError') + '</option>'
-        + '<option value="syncing" data-i18n="syncing">' + HubLang.t('syncing') + '</option>'
-        + '<option value="none" data-i18n="noSync">' + HubLang.t('noSync') + '</option>'
-        + '</select>'
-        + '</div></div>'
-
-        + '<div class="layui-inline">'
-        + '<button type="button" class="layui-btn" lay-submit lay-filter="ss_doSearch">'
-        + '<i class="hi hi-magnifying-glass"></i> '
-        + '<span data-i18n="search">' + HubLang.t('search') + '</span>'
-        + '</button></div>'
-
-        + '<div class="layui-inline">'
-        + '<button type="reset" class="layui-btn layui-btn-primary" id="ss_btnReset">'
-        + '<i class="hi hi-arrows-rotate"></i> '
-        + '<span data-i18n="reset">' + HubLang.t('reset') + '</span>'
-        + '</button></div>'
-
-        + '</form>'
         + '</div></fieldset></div>'
 
-        // ── Table Body ──
-        + '<div class="layui-card-body"><table id="ss_syncTable" lay-filter="ss_syncTable"></table></div>'
+        // ── TreeTable ──
+        + '<div class="layui-card-body">'
+        + '<table class="layui-hide" id="ss_syncTree" lay-filter="ss_syncTree"></table>'
+        + '</div>'
+
         + '</div></div></div>';
     },
 
     init: function (container) {
       var treeTable = layui.treeTable;
-      var form = layui.form;
       var layer = layui.layer;
       var $ = layui.$;
 
-      _allTreeData = [];
+      var _agents = [];
+      var _snap = null;
+      var _rendered = false;
 
-      var toolbarHtml = '<div class="layui-btn-group">'
-        + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="syncNow">'
-        + '<i class="hi hi-arrows-rotate"></i> ' + HubLang.t('syncNow') + '</button>'
-        + '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clearCache">'
-        + '<i class="hi hi-trash-can"></i> ' + HubLang.t('clearCache') + '</button>'
-        + '</div><span id="ss_syncingIndicator"></span>';
+      // Static endpoint list (matching server/config/endpoints.js)
+      var STATIC_EPS = [
+        { key: 'members', name: 'Danh sách hội viên', isDate: false },
+        { key: 'invites', name: 'Mã mời', isDate: false },
+        { key: 'deposits', name: 'Nạp / Rút tiền', isDate: true },
+        { key: 'withdrawals', name: 'Lịch sử rút tiền', isDate: true },
+        { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: true },
+        { key: 'lottery-bets', name: 'Đơn cược xổ số', isDate: true },
+        { key: 'lottery-bets-summary', name: 'Tổng hợp đơn cược xổ số', isDate: true },
+        { key: 'report-lottery', name: 'Báo cáo xổ số', isDate: true },
+        { key: 'report-funds', name: 'Sao kê giao dịch', isDate: true },
+        { key: 'report-third', name: 'Báo cáo nhà cung cấp game', isDate: true }
+      ];
 
-      function loadStats() {
+      // ═══════════════════════════════════════
+      // ── Helpers ──
+      // ═══════════════════════════════════════
+
+      function fmtElapsed(ms) {
+        var s = Math.round(ms / 1000);
+        if (s < 60) return s + 's';
+        return Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's';
+      }
+
+      function setNum(id, val) {
+        var el = container.querySelector('#' + id);
+        if (el) el.textContent = val;
+      }
+
+      // ═══════════════════════════════════════
+      // ── Build tree data ──
+      // ═══════════════════════════════════════
+
+      function buildTreeData() {
+        var snapMap = {};
+        if (_snap && _snap.agents) {
+          _snap.agents.forEach(function (a) { snapMap[a.agentId] = a; });
+        }
+
+        return _agents.map(function (a) {
+          var pa = snapMap[a.id];
+          var isSyncing = pa && pa.status === 'syncing';
+
+          var node = {
+            id: a.id,
+            name: a.label,
+            isAgent: true,
+            agentId: a.id,
+            lockedDays: a.lockedDays || 0,
+            agentStatus: a.status,
+            syncing: isSyncing,
+            elapsed: isSyncing ? (pa.elapsed || 0) : 0
+          };
+
+          if (isSyncing && pa.endpoints && pa.endpoints.length > 0) {
+            // Real-time progress from active sync
+            node.children = pa.endpoints.map(function (ep, idx) {
+              return {
+                id: a.id * 1000 + idx + 1,
+                name: ep.name || ep.key,
+                isAgent: false,
+                total: ep.total,
+                completed: ep.completed,
+                dataRows: ep.rows || 0,
+                epStatus: ep.status
+              };
+            });
+          } else {
+            // Static endpoint list with lockedDays estimate
+            var locked = a.lockedDays || 0;
+            node.children = STATIC_EPS.map(function (ep, idx) {
+              return {
+                id: a.id * 1000 + idx + 1,
+                name: ep.name,
+                isAgent: false,
+                total: ep.isDate ? 65 : 1,
+                completed: ep.isDate ? locked : 0,
+                dataRows: 0,
+                epStatus: ep.isDate ? (locked >= 65 ? 'done' : 'idle') : 'idle'
+              };
+            });
+          }
+
+          return node;
+        });
+      }
+
+      // ═══════════════════════════════════════
+      // ── Render / reload treeTable ──
+      // ═══════════════════════════════════════
+
+      function renderTree() {
+        var data = buildTreeData();
+        if (!_rendered) {
+          treeTable.render({
+            id: 'ss_syncTree',
+            elem: '#ss_syncTree',
+            data: data,
+            tree: {
+              customName: { children: 'children' }
+            },
+            size: 'sm',
+            even: true,
+            cols: [[
+              { field: 'name', title: 'Đại lý / Loại dữ liệu', minWidth: 220, templet: function (d) {
+                if (d.isAgent) {
+                  var c = d.agentStatus === 1 ? '#16b777' : '#ff5722';
+                  return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'
+                    + c + ';margin-right:8px;vertical-align:middle;"></span><b>' + d.name + '</b>';
+                }
+                return d.name;
+              }},
+              { title: 'Tiến trình', minWidth: 220, templet: function (d) {
+                var completed, total, color;
+                if (d.isAgent) {
+                  completed = d.lockedDays; total = 65;
+                } else {
+                  completed = d.completed || 0; total = d.total || 0;
+                }
+                var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                if (pct > 100) pct = 100;
+                if (d.isAgent) {
+                  color = pct >= 100 ? '#16b777' : pct >= 50 ? '#ffb800' : '#ff4d4f';
+                } else {
+                  color = d.epStatus === 'done' ? '#16b777' : d.epStatus === 'error' ? '#ff5722' : d.epStatus === 'idle' ? '#999' : '#1e9fff';
+                }
+                return '<div style="display:flex;align-items:center;gap:10px;">'
+                  + '<div style="flex:1;height:8px;background:rgba(0,0,0,0.06);border-radius:4px;overflow:hidden;">'
+                  + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px;transition:width .4s;"></div></div>'
+                  + '<span style="font-size:12px;color:' + color + ';font-weight:700;white-space:nowrap;">'
+                  + completed + '/' + total + '</span></div>';
+              }},
+              { title: 'Dòng', width: 90, align: 'right', templet: function (d) {
+                if (d.isAgent) return '';
+                return d.dataRows > 0
+                  ? '<span style="font-weight:600;">' + d.dataRows.toLocaleString() + '</span>'
+                  : '<span style="color:#999;">—</span>';
+              }},
+              { title: HubLang.t('status'), width: 110, align: 'center', templet: function (d) {
+                if (d.isAgent) {
+                  if (d.syncing) {
+                    return '<span style="background:#1e9fff;color:#fff;padding:2px 8px;border-radius:3px;font-size:12px;">Đang chạy</span>';
+                  }
+                  return d.agentStatus === 1
+                    ? '<span style="color:#16b777;font-weight:600;">' + HubLang.t('active') + '</span>'
+                    : '<span style="color:#ff5722;font-weight:600;">' + HubLang.t('locked') + '</span>';
+                }
+                if (d.epStatus === 'done') return '<span style="background:#16b777;color:#fff;padding:2px 8px;border-radius:3px;font-size:12px;">Xong</span>';
+                if (d.epStatus === 'error') return '<span style="background:#ff5722;color:#fff;padding:2px 8px;border-radius:3px;font-size:12px;">Lỗi</span>';
+                if (d.epStatus === 'syncing') return '<span style="background:#1e9fff;color:#fff;padding:2px 8px;border-radius:3px;font-size:12px;">Đang chạy</span>';
+                if (d.epStatus === 'idle') return '<span style="color:#999;">—</span>';
+                return '<span style="color:#999;">Chờ</span>';
+              }},
+              { title: 'Thời gian', width: 90, align: 'right', templet: function (d) {
+                if (!d.isAgent || !d.elapsed) return '';
+                return '<span style="font-size:12px;color:#1e9fff;">' + fmtElapsed(d.elapsed) + '</span>';
+              }},
+              { title: HubLang.t('actions'), width: 200, align: 'center', toolbar: '#ss_toolbarTpl' }
+            ]]
+          });
+          _rendered = true;
+        } else {
+          treeTable.reloadData('ss_syncTree', { data: data });
+        }
+      }
+
+      // ═══════════════════════════════════════
+      // ── Toolbar template + events ──
+      // ═══════════════════════════════════════
+
+      if (!document.getElementById('ss_toolbarTpl')) {
+        var tpl = document.createElement('script');
+        tpl.type = 'text/html';
+        tpl.id = 'ss_toolbarTpl';
+        tpl.innerHTML = '{{# if(d.isAgent){ }}'
+          + '<div class="layui-btn-group">'
+          + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="sync"><i class="hi hi-arrows-rotate"></i> ' + HubLang.t('syncNow') + '</button>'
+          + '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clear"><i class="hi hi-trash-can"></i> Xoá khoá</button>'
+          + '</div>'
+          + '{{# } }}';
+        document.body.appendChild(tpl);
+      }
+
+      treeTable.on('tool(ss_syncTree)', function (obj) {
+        var d = obj.data;
+        if (!d.isAgent) return;
+
+        if (obj.event === 'sync') {
+          layer.confirm(HubLang.t('confirmSync') + ' "' + d.name + '"?', { icon: 3 }, function (idx) {
+            layer.close(idx);
+            HubAPI.adminRequest('sync/run', 'POST', { agent_id: d.agentId }).then(function (res) {
+              if (res.code === 0) {
+                layer.msg(HubLang.t('syncStarted'), { icon: 1 });
+                setTimeout(loadAgents, 2000);
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            }).catch(function () { layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
+          });
+        } else if (obj.event === 'clear') {
+          layer.confirm('Xoá tất cả khoá ngày của "' + d.name + '"?', { icon: 3 }, function (idx) {
+            layer.close(idx);
+            HubAPI.adminRequest('sync/clear', 'POST', { agent_id: d.agentId }).then(function (res) {
+              if (res.code === 0) {
+                layer.msg(res.msg || 'Đã xoá', { icon: 1 });
+                loadAgents();
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            }).catch(function () { layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
+          });
+        }
+      });
+
+      // Sync All
+      var btnAll = container.querySelector('#ss_btnSyncAll');
+      if (btnAll) {
+        btnAll.onclick = function () {
+          layer.confirm(HubLang.t('confirmSync'), { icon: 3 }, function (idx) {
+            layer.close(idx);
+            HubAPI.adminRequest('sync/run-all', 'POST', {}).then(function (res) {
+              if (res.code === 0) {
+                layer.msg(HubLang.t('syncStarted'), { icon: 1 });
+                setTimeout(loadAgents, 2000);
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            }).catch(function () { layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
+          });
+        };
+      }
+
+      // ═══════════════════════════════════════
+      // ── Data loading ──
+      // ═══════════════════════════════════════
+
+      function loadAgents() {
         HubAPI.adminGet('sync/status').then(function (res) {
           if (res.code !== 0) return;
           var d = res.data;
-          var el;
-          el = container.querySelector('#ss_statEntries');
-          if (el) el.textContent = d.totalEntries || 0;
-          el = container.querySelector('#ss_statRows');
-          if (el) el.textContent = (d.totalRows || 0).toLocaleString();
-          el = container.querySelector('#ss_statLocked');
-          if (el) el.textContent = d.lockedDays || 0;
-          el = container.querySelector('#ss_statLastSync');
-          if (el) el.textContent = d.lastSyncTime || '\u2014';
+          _agents = d.agents || [];
 
-          var ind = container.querySelector('#ss_syncingIndicator');
-          if (ind) {
-            if (d.syncing) {
-              ind.innerHTML = '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;">'
-                + '<i class="hi hi-spinner"></i> '
-                + HubLang.t('syncRunning') + '</span>';
-            } else {
-              ind.innerHTML = '';
-            }
+          // Stat cards
+          var active = _agents.filter(function (a) { return a.status === 1; }).length;
+          var full = _agents.filter(function (a) { return a.lockedDays >= 65; }).length;
+          setNum('ss_totalAgents', _agents.length);
+          setNum('ss_activeAgents', active);
+          setNum('ss_fullySynced', full + '/' + _agents.length);
+
+          var stateEl = container.querySelector('#ss_syncState');
+          if (stateEl) {
+            stateEl.textContent = d.syncing ? 'Đang chạy' : 'Sẵn sàng';
+            stateEl.style.color = d.syncing ? '#ff4d4f' : '#16b777';
           }
 
-          if (d.cacheableEndpoints && d.cacheableEndpoints.length > 0) {
-            var sel = $(container).find('#ss_filterEndpoint');
-            if (sel.find('option').length <= 1) {
-              d.cacheableEndpoints.forEach(function (ep) {
-                sel.append('<option value="' + ep + '">' + ep + '</option>');
-              });
-              form.render('select');
-            }
+          // Polling
+          if (d.syncing && !_pollTimer) {
+            startProgressPoll();
+          } else if (!d.syncing && _pollTimer) {
+            stopProgressPoll();
+            _snap = null;
           }
+
+          renderTree();
         }).catch(function () {});
       }
 
-      function loadAgentFilter() {
-        HubAPI.adminGet('agents').then(function (res) {
+      function pollProgress() {
+        HubAPI.adminGet('sync/progress-data').then(function (res) {
           if (res.code !== 0 || !res.data) return;
-          var sel = $(container).find('#ss_filterAgent');
-          res.data.forEach(function (a) {
-            sel.append('<option value="' + a.id + '">' + a.label + '</option>');
-          });
-          form.render('select');
-        }).catch(function () {});
-      }
 
-      function filterTree(data, filters) {
-        if (!filters || (!filters.agent_id && !filters.endpoint && !filters.status)) {
-          return JSON.parse(JSON.stringify(data));
-        }
-        var result = [];
-        data.forEach(function (agent) {
-          if (filters.agent_id && String(agent.id) !== String(filters.agent_id)) return;
-          var children = agent.children || [];
-          if (filters.endpoint || filters.status) {
-            children = children.filter(function (c) {
-              if (filters.endpoint && c.name !== filters.endpoint) return false;
-              if (filters.status && c.sync_status !== filters.status) return false;
-              return true;
-            });
-            if (children.length === 0) return;
-          }
-          var cloned = {};
-          for (var k in agent) { if (agent.hasOwnProperty(k)) cloned[k] = agent[k]; }
-          cloned.children = children;
-          cloned.row_count = children.reduce(function (s, c) { return s + c.row_count; }, 0);
-          cloned.synced_count = children.filter(function (c) { return c.sync_status === 'success'; }).length;
-          cloned.total_endpoints = children.length;
-          cloned.progress = children.length > 0 ? Math.round((cloned.synced_count / children.length) * 100) : 0;
-          result.push(cloned);
-        });
-        return result;
-      }
-
-      function renderTree(data) {
-        treeTable.render({
-          elem: '#ss_syncTable',
-          toolbar: toolbarHtml,
-          defaultToolbar: ['filter'],
-          data: data,
-          tree: {
-            customName: { children: 'children', name: 'name', id: 'id' },
-            view: { showIcon: false, expandAllDefault: false }
-          },
-          cols: [[
-            { type: 'checkbox', width: 50 },
-            { field: 'name', title: HubLang.t('agent') + ' / Endpoint', width: 200, templet: function (d) {
-              if (d.is_parent) {
-                var dot = d.agent_status === 1
-                  ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16b777;margin-right:6px;vertical-align:middle;"></span>'
-                  : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff5722;margin-right:6px;vertical-align:middle;"></span>';
-                return dot + '<b>' + d.name + '</b>';
-              }
-              return '<span style="color:#1e9fff;">' + d.name + '</span>';
-            }},
-            { field: 'sync_status', title: HubLang.t('status'), width: 130, templet: function (d) {
-              if (d.is_parent) {
-                return d.agent_status === 1
-                  ? '<span class="status-active">' + HubLang.t('active') + '</span>'
-                  : '<span class="status-inactive">' + HubLang.t('locked') + '</span>';
-              }
-              if (d.sync_status === 'success') return '<span style="color:#16b777;font-weight:600;">' + HubLang.t('syncSuccess') + '</span>';
-              if (d.sync_status === 'error') return '<span style="color:#ff5722;font-weight:600;">' + HubLang.t('syncError') + '</span>';
-              if (d.sync_status === 'syncing') return '<span style="color:#1e9fff;font-weight:600;">' + HubLang.t('syncing') + '</span>';
-              if (d.sync_status === 'none') return '<span style="color:#666;">' + HubLang.t('noSync') + '</span>';
-              return '<span style="color:#999;">' + HubLang.t('syncPending') + '</span>';
-            }},
-            { field: 'progress', title: HubLang.t('syncProgress'), width: 150, templet: function (d) {
-              if (!d.is_parent) return '\u2014';
-              var pct = d.progress || 0;
-              var color = pct >= 100 ? '#16b777' : pct >= 50 ? '#ffb800' : '#ff5722';
-              return '<div style="display:flex;align-items:center;gap:8px;">'
-                + '<div style="flex:1;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">'
-                + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;transition:width .3s;"></div></div>'
-                + '<span style="font-size:12px;color:' + color + ';font-weight:600;white-space:nowrap;">'
-                + d.synced_count + '/' + d.total_endpoints + '</span></div>';
-            }},
-            { field: 'row_count', title: HubLang.t('rowCount'), width: 110, templet: function (d) {
-              if (d.is_parent) return '<b>' + (d.row_count || 0).toLocaleString() + '</b>';
-              return d.row_count > 0 ? d.row_count.toLocaleString() : '<span style="color:#666;">0</span>';
-            }},
-            { field: 'date_count', title: HubLang.t('dateCount'), width: 100, templet: function (d) {
-              if (d.is_parent) return '<b>' + (d.date_count || 0) + '</b>';
-              return d.date_count > 0 ? String(d.date_count) : '<span style="color:#666;">0</span>';
-            }},
-            { field: 'locked_count', title: HubLang.t('lockedDays'), width: 100, templet: function (d) {
-              if (d.is_parent) return '<b>' + (d.locked_count || 0) + '</b>';
-              if (d.locked_count > 0) return '<span style="color:#ffb800;"><i class="hi hi-lock" style="font-size:14px;"></i> ' + d.locked_count + '</span>';
-              return '<span style="color:#666;">0</span>';
-            }},
-            { field: 'last_sync', title: HubLang.t('lastSyncTime'), width: 170 },
-            { field: 'error_msg', title: HubLang.t('errorCol'), minWidth: 200, templet: function (d) {
-              if (!d.error_msg) return '\u2014';
-              var short = d.error_msg.length > 40 ? d.error_msg.substring(0, 40) + '...' : d.error_msg;
-              return '<span style="color:#ff5722;" title="' + d.error_msg.replace(/"/g, '&quot;') + '">' + short + '</span>';
-            }}
-          ]],
-          done: function () {
-            HubLang.applyDOM(container);
-          }
-        });
-      }
-
-      function loadTree() {
-        HubAPI.adminGet('sync/tree').then(function (res) {
-          if (res.code !== 0) return;
-          _allTreeData = res.data || [];
-          renderTree(_allTreeData);
-        }).catch(function () {});
-      }
-
-      loadStats();
-      loadAgentFilter();
-      loadTree();
-
-      form.on('submit(ss_doSearch)', function (data) {
-        var filters = {};
-        if (data.field.agent_id) filters.agent_id = data.field.agent_id;
-        if (data.field.endpoint) filters.endpoint = data.field.endpoint;
-        if (data.field.status) filters.status = data.field.status;
-        renderTree(filterTree(_allTreeData, filters));
-        return false;
-      });
-
-      var btnReset = container.querySelector('#ss_btnReset');
-      if (btnReset) {
-        btnReset.addEventListener('click', function () {
-          setTimeout(function () {
-            form.render('select', 'ss_searchForm');
-            renderTree(_allTreeData);
-          }, 50);
-        });
-      }
-
-      treeTable.on('toolbar(ss_syncTable)', function (obj) {
-        if (obj.event === 'syncNow') {
-          layer.confirm(HubLang.t('confirmSync'), { icon: 3 }, function (idx) {
-            layer.close(idx);
-            var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
-            HubAPI.adminRequest('sync/run', 'POST', {}).then(function (res) {
-              layer.close(loadIdx);
-              if (res.code === 0) {
-                layer.msg(HubLang.t('syncStarted'), { icon: 1 });
-                setTimeout(function () { loadStats(); loadTree(); }, 3000);
-                setTimeout(function () { loadStats(); loadTree(); }, 10000);
-                setTimeout(function () { loadStats(); loadTree(); }, 30000);
-              } else {
-                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
-              }
-            }).catch(function () {
-              layer.close(loadIdx);
-              layer.msg(HubLang.t('connectionError'), { icon: 2 });
-            });
-          });
-        } else if (obj.event === 'clearCache') {
-          var checked = treeTable.checkStatus('ss_syncTable');
-          var selectedIds = [];
-          if (checked && checked.data) {
-            checked.data.forEach(function (row) {
-              if (row.is_parent && row.id) selectedIds.push(row.id);
-            });
-          }
-          if (selectedIds.length === 0) {
-            layer.msg(HubLang.t('noSelection') || 'Chưa chọn tài khoản nào', { icon: 0 });
+          if (!res.data.agents || res.data.agents.length === 0) {
+            _snap = null;
+            stopProgressPoll();
+            loadAgents();
             return;
           }
-          layer.confirm(HubLang.t('confirmClearCache'), { icon: 3 }, function (idx) {
-            layer.close(idx);
-            var loadIdx = layer.load();
-            HubAPI.adminRequest('sync/clear', 'POST', { agent_ids: selectedIds }).then(function (res) {
-              layer.close(loadIdx);
-              if (res.code === 0) {
-                layer.msg(HubLang.t('cacheCleared'), { icon: 1 });
-                loadStats();
-                loadTree();
-              } else {
-                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
-              }
-            }).catch(function () {
-              layer.close(loadIdx);
-              layer.msg(HubLang.t('connectionError'), { icon: 2 });
-            });
-          });
-        }
-      });
 
-      _interval = setInterval(function () { loadStats(); }, 30000);
+          _snap = res.data;
+          renderTree();
+        }).catch(function () {});
+      }
+
+      function startProgressPoll() {
+        if (_pollTimer) return;
+        pollProgress();
+        _pollTimer = setInterval(pollProgress, 3000);
+      }
+
+      function stopProgressPoll() {
+        if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+      }
+
+      // ── Init ──
+      loadAgents();
+      _statsTimer = setInterval(loadAgents, 30000);
     },
 
     destroy: function () {
-      if (_interval) { clearInterval(_interval); _interval = null; }
+      if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+      if (_statsTimer) { clearInterval(_statsTimer); _statsTimer = null; }
     },
 
     onLangChange: function (container) {
-      if (_interval) { clearInterval(_interval); _interval = null; }
+      this.destroy();
       container.innerHTML = this.getHTML();
       HubLang.applyDOM(container);
       this.init(container);

@@ -8,10 +8,8 @@ module.exports = {
     concurrency: parseInt(process.env.FANOUT_CONCURRENCY) || 5,
     timeout: parseInt(process.env.FANOUT_TIMEOUT) || 15000
   },
-  cache: {
-    enabled: process.env.CACHE_ENABLED !== 'false',
-    cronSchedule: process.env.CACHE_CRON || '5 0 * * *',
-    staleTTL: parseInt(process.env.CACHE_STALE_TTL) || 5 * 60 * 1000 // 5 phút
+  sync: {
+    days: parseInt(process.env.SYNC_DAYS) || 65
   },
   security: {
     rateLimit: {

@@ -8,9 +8,42 @@ const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
 const { encrypt } = require('../utils/crypto');
+const { clearPermCache } = require('../middleware/permission');
+
+const adminEmitter = require('../services/adminEvents');
 
 const log = createLogger('admin');
 const router = express.Router();
+
+// ── SSE endpoint (auth via query param vì EventSource không set header được) ──
+router.get('/events', (req, res, next) => {
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = 'Bearer ' + req.query.token;
+  }
+  next();
+}, authMiddleware, adminOnly, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.write(': connected\n\n');
+
+  function onEvent(data) {
+    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) {}
+  }
+  adminEmitter.on('change', onEvent);
+
+  const hb = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch (e) {}
+  }, 30000);
+
+  req.on('close', () => {
+    adminEmitter.off('change', onEvent);
+    clearInterval(hb);
+  });
+});
 
 // Tất cả admin routes cần auth + admin
 router.use(authMiddleware, adminOnly);
@@ -19,36 +52,50 @@ router.use(authMiddleware, adminOnly);
 // ── Dashboard + Activity Log ──
 // ═══════════════════════════════════════
 
+// ── Dashboard stats cache (60s TTL) ──
+let dashCache = null;
+let dashCacheTime = 0;
+const DASH_TTL = 60 * 1000;
+
 // GET /api/admin/dashboard/stats — Aggregated data cho dashboard
 router.get('/dashboard/stats', (req, res) => {
+  const now = Date.now();
+  if (dashCache && (now - dashCacheTime) < DASH_TTL) {
+    return res.json(dashCache);
+  }
+
   const db = getDb();
 
-  const agents = db.prepare(`
-    SELECT id, label, status, base_url, last_login, last_check,
-      (SELECT COUNT(*) FROM user_agent_permissions WHERE agent_id = ee88_agents.id) as user_count
-    FROM ee88_agents ORDER BY id
-  `).all();
+  const getData = db.transaction(() => {
+    const agents = db.prepare(`
+      SELECT id, label, status, base_url, last_login, last_check,
+        (SELECT COUNT(*) FROM user_agent_permissions WHERE agent_id = ee88_agents.id) as user_count
+      FROM ee88_agents ORDER BY id
+    `).all();
 
+    const recentActivity = db.prepare(`
+      SELECT id, username, action, target_type, target_label, detail, ip, created_at
+      FROM hub_activity_log ORDER BY created_at DESC LIMIT 10
+    `).all();
+
+    const loginStats = db.prepare(`
+      SELECT agent_id, agent_label,
+        SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
+        SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as fail_count,
+        MAX(created_at) as last_attempt
+      FROM agent_login_history
+      WHERE created_at >= datetime('now', 'localtime', '-7 days')
+      GROUP BY agent_id
+    `).all();
+
+    return { agents, recentActivity, loginStats };
+  });
+
+  const { agents, recentActivity, loginStats } = getData();
   const active = agents.filter(a => a.status === 1).length;
   const expired = agents.filter(a => a.status === 0).length;
 
-  const recentActivity = db.prepare(`
-    SELECT id, username, action, target_type, target_label, detail, ip, created_at
-    FROM hub_activity_log ORDER BY created_at DESC LIMIT 10
-  `).all();
-
-  // Login stats 7 ngày per agent
-  const loginStats = db.prepare(`
-    SELECT agent_id, agent_label,
-      SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
-      SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as fail_count,
-      MAX(created_at) as last_attempt
-    FROM agent_login_history
-    WHERE created_at >= datetime('now', 'localtime', '-7 days')
-    GROUP BY agent_id
-  `).all();
-
-  res.json({
+  const result = {
     code: 0,
     data: {
       agents,
@@ -56,7 +103,11 @@ router.get('/dashboard/stats', (req, res) => {
       recentActivity,
       loginStats
     }
-  });
+  };
+
+  dashCache = result;
+  dashCacheTime = now;
+  res.json(result);
 });
 
 // GET /api/admin/activity-log — Phân trang + filter
@@ -132,6 +183,7 @@ router.post('/agents/login-all', async (req, res) => {
     }
   }
 
+  adminEmitter.emit('change', { type: 'agent', action: 'login-all' });
   res.json({ code: 0, msg: `Login xong: ${success} OK, ${fail} thất bại`, data: { success, fail, results } });
 });
 
@@ -173,6 +225,7 @@ router.post('/agents', async (req, res) => {
   ).run(label, base_url, '', ee88_username, encryptedPassword);
 
   const agentId = result.lastInsertRowid;
+  clearPermCache();
   log.ok(`Thêm agent: ${label} (id=${agentId}) — đang auto-login...`);
   logActivity({
     userId: req.user.id, username: req.user.username,
@@ -204,6 +257,7 @@ router.post('/agents', async (req, res) => {
   } catch (err) {
     res.json({ code: 0, msg: `Đã thêm agent, login lỗi: ${err.message}`, data: { id: agentId } });
   }
+  adminEmitter.emit('change', { type: 'agent', action: 'add', id: agentId });
 });
 
 // PUT /api/admin/agents/:id — Sửa agent
@@ -235,6 +289,7 @@ router.put('/agents/:id', (req, res) => {
     id
   );
 
+  clearPermCache();
   log.ok(`Sửa agent #${id}: ${label || agent.label}`);
   logActivity({
     userId: req.user.id, username: req.user.username,
@@ -242,6 +297,7 @@ router.put('/agents/:id', (req, res) => {
     ip: req.ip
   });
   res.json({ code: 0, msg: 'Đã cập nhật agent' });
+  adminEmitter.emit('change', { type: 'agent', action: 'edit', id: parseInt(id) });
 });
 
 // DELETE /api/admin/agents/:id — Xoá agent
@@ -255,6 +311,7 @@ router.delete('/agents/:id', (req, res) => {
   }
 
   db.prepare('DELETE FROM ee88_agents WHERE id = ?').run(id);
+  clearPermCache();
   log.ok(`Xoá agent #${id}: ${agent.label}`);
   logActivity({
     userId: req.user.id, username: req.user.username,
@@ -262,6 +319,7 @@ router.delete('/agents/:id', (req, res) => {
     ip: req.ip
   });
   res.json({ code: 0, msg: 'Đã xoá agent' });
+  adminEmitter.emit('change', { type: 'agent', action: 'delete', id: parseInt(id) });
 });
 
 // POST /api/admin/agents/:id/check — Kiểm tra agent còn hoạt động
@@ -291,13 +349,16 @@ router.post('/agents/:id/check', async (req, res) => {
 
     if (response.data && response.data.url === '/agent/login') {
       db.prepare("UPDATE ee88_agents SET last_check = datetime('now', 'localtime'), status = 0, updated_at = datetime('now', 'localtime') WHERE id = ?").run(id);
+      adminEmitter.emit('change', { type: 'agent', action: 'check', id: parseInt(id) });
       return res.json({ code: 1, msg: 'Phiên đã hết hạn', status: 0 });
     }
 
     db.prepare("UPDATE ee88_agents SET last_check = datetime('now', 'localtime'), status = 1, updated_at = datetime('now', 'localtime') WHERE id = ?").run(id);
+    adminEmitter.emit('change', { type: 'agent', action: 'check', id: parseInt(id) });
     res.json({ code: 0, msg: 'Hoạt động bình thường', status: 1 });
   } catch (err) {
     db.prepare("UPDATE ee88_agents SET last_check = datetime('now', 'localtime'), status = 0, updated_at = datetime('now', 'localtime') WHERE id = ?").run(id);
+    adminEmitter.emit('change', { type: 'agent', action: 'check', id: parseInt(id) });
     res.json({ code: 1, msg: `Lỗi: ${err.message}`, status: 0 });
   }
 });
@@ -330,6 +391,7 @@ router.post('/agents/:id/login', async (req, res) => {
       action: 'agent_login_success', targetType: 'agent', targetId: parseInt(id), targetLabel: agent.label,
       detail: `${result.attempts} attempts`, ip: req.ip
     });
+    adminEmitter.emit('change', { type: 'agent', action: 'login', id: parseInt(id) });
     res.json({ code: 0, msg: `Login thành công (${result.attempts} lần thử)`, attempts: result.attempts });
   } else {
     logActivity({
@@ -529,6 +591,7 @@ router.put('/users/:id', (req, res) => {
   });
 
   updateUser();
+  if (Array.isArray(agent_ids)) clearPermCache();
   log.ok(`Sửa user #${id}: ${user.username}`);
   logActivity({
     userId: req.user.id, username: req.user.username,

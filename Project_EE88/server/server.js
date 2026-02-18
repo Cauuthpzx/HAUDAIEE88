@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -15,7 +16,6 @@ const actionRoutes = require('./routes/action');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const syncRoutes = require('./routes/sync');
-const cronSync = require('./services/cronSync');
 const errorHandler = require('./middleware/errorHandler');
 
 const log = createLogger('server');
@@ -70,15 +70,6 @@ app.use(morgan('[:date[iso]] :method :url :status :res[content-length] - :respon
 
 app.use(express.json({ limit: config.security.bodyLimit }));
 
-// ── Ghi log mọi request đến ──
-app.use((req, res, next) => {
-  log.info(`Yêu cầu đến → ${req.method} ${req.originalUrl}`, {
-    ip: req.ip,
-    query: Object.keys(req.query).length ? req.query : undefined
-  });
-  next();
-});
-
 // ── Routes ──
 // Auth: không cần JWT
 app.use('/api/auth', authRoutes);
@@ -90,7 +81,7 @@ app.use('/api/action', actionRoutes);
 // Admin: cần JWT + admin role
 app.use('/api/admin', adminRoutes);
 
-// Sync: cần JWT + admin role (cache management)
+// Sync: cần JWT + admin role
 app.use('/api/admin', syncRoutes);
 
 app.get('/api/health', (req, res) => {
@@ -105,15 +96,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ── Nén response (gzip) ──
+app.use(compression({ threshold: 1024 }));
+
 // ── Phục vụ file tĩnh từ client/ ──
 const clientDir = path.join(__dirname, '..', 'client');
-app.use(express.static(clientDir));
+app.use(express.static(clientDir, { maxAge: '7d', etag: true }));
 log.info(`Thư mục client: ${clientDir}`);
 
 // ── Phục vụ SPA từ spa/ (truy cập qua /spa/) ──
 const spaDir = path.join(__dirname, '..', 'spa');
 if (fs.existsSync(spaDir)) {
-  app.use('/spa', express.static(spaDir));
+  // Page JS: no-cache (luôn revalidate bằng ETag, tự động bust khi file thay đổi)
+  app.use('/spa/js/pages', express.static(path.join(spaDir, 'js', 'pages'), {
+    maxAge: 0, etag: true, lastModified: true
+  }));
+  // Còn lại: cache 7 ngày
+  app.use('/spa', express.static(spaDir, { maxAge: '7d', etag: true }));
   log.info(`Thư mục SPA: ${spaDir}`);
 }
 
@@ -251,12 +250,8 @@ try {
   log.warn(`Không thể khởi động Login Worker: ${err.message}`);
 }
 
-// ── Cron Sync (Phase 6: Cache) ──
-cronSync.startCron();
-
 // ── Graceful shutdown ──
 function shutdown() {
-  cronSync.stopCron();
   if (loginWorker) loginWorker.postMessage({ type: 'shutdown' });
   if (solverProcess) {
     log.info('Tắt Captcha Solver...');
