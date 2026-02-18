@@ -108,6 +108,9 @@
 .hi-spinner { animation: hi-spin 1s linear infinite; }
 @keyframes hi-spin { to { transform: rotate(360deg); } }
 
+/* ── Button / link icon spacing — prevent text overlapping icon ── */
+.layui-btn > .hi { margin-right: 5px; vertical-align: middle; }
+
 /* ── Override layui-icon font when .hi is present ── */
 .layui-icon.hi {
   font-family: 'FA6Solid';

@@ -29,7 +29,6 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': 'Thu gọn menu',
       'reload': 'Tải lại trang',
-      'iconTheme': 'Đổi bộ icon',
       'fullscreen': 'Toàn màn hình',
       'language': 'Ngôn ngữ',
       'changeLoginPw': 'Đổi MK đăng nhập',
@@ -125,7 +124,7 @@ var HubLang = (function () {
       'thisWeek': 'Tuần này',
       'thisMonth': 'Tháng này',
       'lastMonth': 'Tháng trước',
-      'dateStartEnd': 'Bắt đầu - Kết thúc',
+      'dateStartEnd': 'Ngày bắt đầu - Ngày kết thúc',
       'dateStartEndTime': 'Thời gian bắt đầu - Thời gian kết thúc',
       'summaryData': 'Dữ liệu tổng hợp:',
 
@@ -343,7 +342,7 @@ var HubLang = (function () {
       'rebateOddsTitle': 'Tỉ lệ hoàn trả',
 
       // ── admin.html (header dropdown) ──
-      'accountInfo': 'Thông tin tài khoản',
+      'accountInfo': 'Thông tin',
       'settings': 'Cài đặt',
 
       // ── manageAgents.html ──
@@ -489,7 +488,6 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': 'Toggle menu',
       'reload': 'Reload page',
-      'iconTheme': 'Change icons',
       'fullscreen': 'Fullscreen',
       'language': 'Language',
       'changeLoginPw': 'Change login password',
@@ -949,7 +947,6 @@ var HubLang = (function () {
       // ── Header ──
       'toggleMenu': '折叠菜单',
       'reload': '刷新页面',
-      'iconTheme': '切换图标',
       'fullscreen': '全屏',
       'language': '语言',
       'changeLoginPw': '修改登录密码',

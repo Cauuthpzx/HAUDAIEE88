@@ -5,10 +5,14 @@
   height: 100%;
   overflow-y: auto;
 }
-.hub-page .layui-card { margin: 15px; }
-.hub-page .layui-card-header { padding-bottom: 0; border-bottom: none; }
+.hub-page .layui-card {
+  --card-px: 15px;   /* ← single source: đổi 1 chỗ, header + body + filter đều theo */
+  margin: 15px;
+}
+.hub-page .layui-card-header { padding: 0 var(--card-px); border-bottom: none; }
+.hub-page .layui-card-body { padding: var(--card-px); }
 /* ── Filter bar ── */
-.hub-page .layui-field-box { padding: 10px 0 2px; }
+.hub-page .layui-field-box { padding: 10px var(--card-px) 2px; }
 .hub-page .layui-field-box .layui-inline { margin-bottom: 10px; margin-right: 12px; }
 .hub-page .layui-field-box .layui-inline label { font-size: 13px; margin-right: 4px; white-space: nowrap; }
 .hub-page .layui-field-box .layui-input { height: 32px; line-height: 32px; font-size: 13px; }
@@ -29,6 +33,9 @@
   .hub-page .layui-field-box .layui-inline label { font-size: 12px; }
 }
 .hub-page .hs-text { text-align: left; }
+
+/* Table header — không đậm */
+.hub-page .layui-table th { font-weight: normal; color: #333; }
 
 /* Status colors */
 .hub-page .status-active { color: #16b777; font-weight: 600; }
