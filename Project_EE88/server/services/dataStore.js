@@ -147,8 +147,9 @@ function saveData(agentId, endpointKey, rows, totalData, dateKey) {
       saveTotals(agentId, endpointKey, dateKey, totalData);
     }
 
+    const dateDisplay = dateKey ? dateKey.split('|')[0] : '';
     log.info(`[${endpointKey}] Saved ${saved}/${rows.length} rows for agent=${agentId}` +
-      (dateKey ? ` date=${dateKey}` : ''));
+      (dateDisplay ? ` date=${dateDisplay}` : ''));
   } catch (err) {
     log.error(`[${endpointKey}] Save failed for agent=${agentId}: ${err.message}`);
   }
