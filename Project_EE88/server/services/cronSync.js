@@ -69,10 +69,10 @@ function epName(key) {
 function initProgress(agentId, label) {
   const endpoints = {};
   NON_DATE_EPS.forEach(ep => {
-    endpoints[ep] = { name: epName(ep), total: 1, completed: 0, rows: 0, status: 'pending' };
+    endpoints[ep] = { name: epName(ep), total: 1, completed: 0, rows: 0, status: 'pending', currentPage: 0, totalPages: 0, error: null };
   });
   DATE_EPS.forEach(ep => {
-    endpoints[ep] = { name: epName(ep), total: SYNC_DAYS, completed: 0, rows: 0, status: 'pending' };
+    endpoints[ep] = { name: epName(ep), total: SYNC_DAYS, completed: 0, rows: 0, status: 'pending', currentPage: 0, totalPages: 0, error: null };
   });
   syncProgress.set(agentId, { label, status: 'syncing', startedAt: Date.now(), endpoints });
   emitProgress();
@@ -159,7 +159,8 @@ function printSyncTree(force) {
       const cnt = `${ep.completed}/${ep.total}`.padStart(6);
       const ic = statusIcon(ep.status);
       const rows = ep.rows > 0 ? CLR.gray + ` ${ep.rows.toLocaleString()}r` + CLR.reset : '';
-      lines.push(`${pre}${name} ${b} ${cnt} ${ic}${rows}`);
+      const pageInfo = ep.totalPages > 1 ? CLR.yellow + ` p${ep.currentPage || 0}/${ep.totalPages}` + CLR.reset : '';
+      lines.push(`${pre}${name} ${b} ${cnt} ${ic}${rows}${pageInfo}`);
     });
   }
 
@@ -256,7 +257,7 @@ async function fetchWithRelogin(agent, ep, params) {
  * @param {string|null} dateKey — date key cho date endpoints
  * @returns {{ totalRows, totalData }}
  */
-async function fetchAndSaveBatches(agent, ep, params, dateKey) {
+async function fetchAndSaveBatches(agent, ep, params, dateKey, onPage) {
   let lastErr;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -285,6 +286,9 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey) {
         totalRows += firstBatch.length;
       }
 
+      // Page progress callback
+      if (onPage) onPage({ page: 1, totalPages, rows: totalRows });
+
       // Remaining pages — fetch + save + free memory mỗi batch
       // Early-stop: break khi page trống hoặc < PAGE_SIZE (tránh fetch thừa khi count sai)
       for (let page = 2; page <= totalPages; page++) {
@@ -293,6 +297,7 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey) {
         if (resN && resN.code === 0 && Array.isArray(resN.data) && resN.data.length > 0) {
           dataStore.saveData(agent.id, ep, resN.data, null, dateKey);
           totalRows += resN.data.length;
+          if (onPage) onPage({ page, totalPages, rows: totalRows });
           if (resN.data.length < PAGE_SIZE) break; // Last page
         } else {
           break; // Empty page — no more data
@@ -367,10 +372,12 @@ async function syncAfterLogin(agentId) {
     const invitePromise = (async () => {
       updateEp(agentId, 'invites', { status: 'syncing' });
       try {
-        const result = await fetchAndSaveBatches(agent, 'invites', {}, null);
+        const result = await fetchAndSaveBatches(agent, 'invites', {}, null, (info) => {
+          updateEp(agentId, 'invites', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        });
         updateEp(agentId, 'invites', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
-        updateEp(agentId, 'invites', { status: 'error' });
+        updateEp(agentId, 'invites', { status: 'error', error: e.message });
         clearSyncTree();
         log.error(`[${agent.label}] ${epName('invites')} lỗi: ${e.message}`);
       }
@@ -453,10 +460,12 @@ async function syncAfterLogin(agentId) {
       updateEp(agentId, 'members', { status: 'syncing' });
       log.info(`[${agent.label}] Phase 2: members (solo pagination)...`);
       try {
-        const result = await fetchAndSaveBatches(agent, 'members', {}, null);
+        const result = await fetchAndSaveBatches(agent, 'members', {}, null, (info) => {
+          updateEp(agentId, 'members', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        });
         updateEp(agentId, 'members', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
-        updateEp(agentId, 'members', { status: 'error' });
+        updateEp(agentId, 'members', { status: 'error', error: e.message });
         clearSyncTree();
         log.error(`[${agent.label}] ${epName('members')} lỗi: ${e.message}`);
       }
@@ -469,10 +478,12 @@ async function syncAfterLogin(agentId) {
       log.info(`[${agent.label}] Phase 3: bet-orders (solo pagination)...`);
       try {
         const params = { start_time: today, end_time: today };
-        const result = await fetchAndSaveBatches(agent, 'bet-orders', params, null);
+        const result = await fetchAndSaveBatches(agent, 'bet-orders', params, null, (info) => {
+          updateEp(agentId, 'bet-orders', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        });
         updateEp(agentId, 'bet-orders', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
-        updateEp(agentId, 'bet-orders', { status: 'error' });
+        updateEp(agentId, 'bet-orders', { status: 'error', error: e.message });
         clearSyncTree();
         log.error(`[${agent.label}] ${epName('bet-orders')} lỗi: ${e.message}`);
       }
@@ -495,7 +506,8 @@ async function syncAfterLogin(agentId) {
       p.status = syncAborted ? 'error' : 'done';
       emitProgress();
     }
-    setTimeout(() => { syncProgress.delete(agentId); emitProgress(); }, 10000);
+    // Giữ progress data 60s để client kịp thấy kết quả/lỗi
+    setTimeout(() => { syncProgress.delete(agentId); emitProgress(); }, 60000);
   }
 }
 
@@ -516,11 +528,13 @@ async function syncAllAgents() {
 }
 
 function isSyncRunning() { return agentSyncLocks.size > 0; }
+function isAgentSyncing(agentId) { return !!agentSyncLocks.get(agentId); }
 
 module.exports = {
   syncAfterLogin,
   syncAllAgents,
   isSyncRunning,
+  isAgentSyncing,
   syncEmitter,
   getSyncProgressSnapshot,
   getLockedDays,

@@ -1,16 +1,18 @@
 (function () {
   var _pollTimer = null;
   var _statsTimer = null;
+  var _sse = null;
+  var _sseRetryCount = 0;
+  var MAX_SSE_RETRIES = 3;
 
-  // Static endpoint list (matching server/config/endpoints.js)
+  // Static endpoint list — phải KHỚP thứ tự server ALL_EPS
   var STATIC_EPS = [
     { key: 'members', name: 'Danh sách hội viên', isDate: false },
     { key: 'invites', name: 'Mã mời', isDate: false },
+    { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: false },
     { key: 'deposits', name: 'Nạp / Rút tiền', isDate: true },
     { key: 'withdrawals', name: 'Lịch sử rút tiền', isDate: true },
-    { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: true },
     { key: 'lottery-bets', name: 'Đơn cược xổ số', isDate: true },
-    { key: 'lottery-bets-summary', name: 'Tổng hợp đơn cược xổ số', isDate: true },
     { key: 'report-lottery', name: 'Báo cáo xổ số', isDate: true },
     { key: 'report-funds', name: 'Sao kê giao dịch', isDate: true },
     { key: 'report-third', name: 'Báo cáo nhà cung cấp game', isDate: true }
@@ -23,7 +25,13 @@
         epOptions += '<option value="' + ep.key + '">' + ep.name + '</option>';
       });
 
-      return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
+      return '<style>'
+        + '.page-info { font-size: 11px; color: #1e9fff; margin-left: 4px; }'
+        + '.error-text { font-size: 11px; color: #ff5722; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }'
+        + '@keyframes spin { to { transform: rotate(360deg); } }'
+        + '.syncing-spin { display: inline-block; animation: spin 1s linear infinite; }'
+        + '</style>'
+        + '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
         + '<div class="layui-card-header">'
         + '<fieldset class="layui-elem-field layui-field-title">'
         + '<legend data-i18n="syncStatus">' + HubLang.t('syncStatus') + '</legend>'
@@ -32,13 +40,13 @@
         // ── Stat Cards ──
         + '<div id="ss_statsArea" style="display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap;">'
         + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;">Tổng đại lý</div>'
+        + '<div style="font-size:12px;color:#999;margin-bottom:4px;">' + HubLang.t('totalAgents') + '</div>'
         + '<div style="font-size:22px;font-weight:600;color:#1e9fff;" id="ss_totalAgents">\u2014</div></div>'
         + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
         + '<div style="font-size:12px;color:#999;margin-bottom:4px;">' + HubLang.t('active') + '</div>'
         + '<div style="font-size:22px;font-weight:600;color:#16b777;" id="ss_activeAgents">\u2014</div></div>'
         + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
-        + '<div style="font-size:12px;color:#999;margin-bottom:4px;">Đã đồng bộ đủ</div>'
+        + '<div style="font-size:12px;color:#999;margin-bottom:4px;">' + HubLang.t('fullySynced') + '</div>'
         + '<div style="font-size:22px;font-weight:600;color:#ffb800;" id="ss_fullySynced">\u2014</div></div>'
         + '<div style="flex:1;min-width:140px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 18px;">'
         + '<div style="font-size:12px;color:#999;margin-bottom:4px;">' + HubLang.t('status') + '</div>'
@@ -50,7 +58,7 @@
 
         + '<div class="layui-inline"><div class="layui-input-inline" style="width:150px;">'
         + '<select name="agent_id" id="ss_filterAgent" lay-filter="ss_filterAgent">'
-        + '<option value="">' + HubLang.t('all') + ' \u2014 Đại lý</option>'
+        + '<option value="">' + HubLang.t('all') + ' \u2014 ' + HubLang.t('agent') + '</option>'
         + '</select></div></div>'
 
         + '<div class="layui-inline"><div class="layui-input-inline" style="width:180px;">'
@@ -62,10 +70,10 @@
         + '<div class="layui-inline"><div class="layui-input-inline" style="width:140px;">'
         + '<select name="status" lay-filter="ss_filterStatus">'
         + '<option value="">' + HubLang.t('all') + ' \u2014 ' + HubLang.t('status') + '</option>'
-        + '<option value="done">Hoàn tất</option>'
-        + '<option value="syncing">Đang chạy</option>'
-        + '<option value="idle">Chưa đồng bộ</option>'
-        + '<option value="error">Lỗi</option>'
+        + '<option value="done">' + HubLang.t('completed') + '</option>'
+        + '<option value="syncing">' + HubLang.t('syncing') + '</option>'
+        + '<option value="idle">' + HubLang.t('notSynced') + '</option>'
+        + '<option value="error">' + HubLang.t('error') + '</option>'
         + '</select></div></div>'
 
         + '<div class="layui-inline">'
@@ -98,6 +106,7 @@
       var _snap = null;
       var _rendered = false;
       var _currentFilter = {};
+      var _totalDays = 65;
 
       // ═══════════════════════════════════════
       // ── Helpers ──
@@ -126,6 +135,8 @@
 
         return _agents.map(function (a) {
           var pa = snapMap[a.id];
+          // Dùng progress data khi CÓ (syncing/done/error) — không chỉ khi syncing
+          var hasProgress = pa && pa.endpoints && pa.endpoints.length > 0;
           var isSyncing = pa && pa.status === 'syncing';
 
           var node = {
@@ -136,10 +147,12 @@
             lockedDays: a.lockedDays || 0,
             agentStatus: a.status,
             syncing: isSyncing,
-            elapsed: isSyncing ? (pa.elapsed || 0) : 0
+            syncStatus: pa ? pa.status : null,
+            elapsed: (isSyncing || (pa && pa.status === 'done')) ? (pa.elapsed || 0) : 0
           };
 
-          if (isSyncing && pa.endpoints && pa.endpoints.length > 0) {
+          if (hasProgress) {
+            // Real-time data từ progress snapshot
             node.children = pa.endpoints.map(function (ep, idx) {
               return {
                 id: a.id * 1000 + idx + 1,
@@ -149,19 +162,25 @@
                 total: ep.total,
                 completed: ep.completed,
                 dataRows: ep.rows || 0,
-                epStatus: ep.status
+                epStatus: ep.status,
+                currentPage: ep.currentPage || 0,
+                totalPages: ep.totalPages || 0,
+                error: ep.error || null
               };
             });
           } else {
-            var locked = a.lockedDays || 0;
+            // Static data từ /status (hiện rows từ DB cho TẤT CẢ endpoints)
+            var agentRows = a.rows || {};
             node.children = STATIC_EPS.map(function (ep, idx) {
               var total, completed, rows, status;
+              rows = agentRows[ep.key] || 0;
+
               if (ep.isDate) {
-                total = 65; completed = locked; rows = 0;
-                status = locked >= 65 ? 'done' : 'idle';
+                total = _totalDays;
+                completed = a.lockedDays || 0;
+                status = (a.lockedDays || 0) >= _totalDays ? 'done' : 'idle';
               } else {
                 total = 1;
-                rows = ep.key === 'members' ? (a.memberRows || 0) : (ep.key === 'invites' ? (a.inviteRows || 0) : 0);
                 completed = rows > 0 ? 1 : 0;
                 status = rows > 0 ? 'done' : 'idle';
               }
@@ -173,7 +192,10 @@
                 total: total,
                 completed: completed,
                 dataRows: rows,
-                epStatus: status
+                epStatus: status,
+                currentPage: 0,
+                totalPages: 0,
+                error: null
               };
             });
           }
@@ -230,7 +252,7 @@
         tpl.innerHTML = '{{# if(d.isAgent){ }}'
           + '<div class="layui-btn-group">'
           + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="sync"><i class="hi hi-arrows-rotate"></i> ' + HubLang.t('syncNow') + '</button>'
-          + '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clear"><i class="hi hi-trash-can"></i> Xoá khoá</button>'
+          + '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clear"><i class="hi hi-trash-can"></i> ' + HubLang.t('clearCache') + '</button>'
           + '</div>'
           + '{{# } }}';
         document.body.appendChild(tpl);
@@ -260,28 +282,39 @@
               { field: 'name', title: HubLang.t('agent') + ' / Endpoint', minWidth: 200, templet: function (d) {
                 if (d.isAgent) {
                   var c = d.agentStatus === 1 ? '#16b777' : '#ff5722';
+                  var syncIcon = d.syncing ? ' <i class="hi hi-arrows-rotate syncing-spin" style="font-size:12px;color:#1e9fff;"></i>' : '';
                   return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'
-                    + c + ';margin-right:6px;vertical-align:middle;"></span><b>' + d.name + '</b>';
+                    + c + ';margin-right:6px;vertical-align:middle;"></span><b>' + d.name + '</b>' + syncIcon;
                 }
                 return '<span style="color:#1e9fff;">' + d.name + '</span>';
               }},
               { title: HubLang.t('status'), width: 130, align: 'center', templet: function (d) {
                 if (d.isAgent) {
                   if (d.syncing) return '<span style="color:#1e9fff;font-weight:600;">' + HubLang.t('syncing') + '</span>';
+                  if (d.syncStatus === 'done') return '<span style="color:#16b777;font-weight:600;">' + HubLang.t('completed') + '</span>';
+                  if (d.syncStatus === 'error') return '<span style="color:#ff5722;font-weight:600;">' + HubLang.t('error') + '</span>';
                   return d.agentStatus === 1
                     ? '<span style="color:#16b777;font-weight:600;">' + HubLang.t('active') + '</span>'
                     : '<span style="color:#ff5722;font-weight:600;">' + HubLang.t('locked') + '</span>';
                 }
-                if (d.epStatus === 'done') return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
-                if (d.epStatus === 'error') return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
-                if (d.epStatus === 'syncing') return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
-                if (d.epStatus === 'pending') return '<span style="color:#999;">Chờ</span>';
+                if (d.epStatus === 'done') return '<span style="color:#16b777;font-weight:600;">' + HubLang.t('completed') + '</span>';
+                if (d.epStatus === 'error') return '<span style="color:#ff5722;font-weight:600;">' + HubLang.t('error') + '</span>';
+                if (d.epStatus === 'syncing') return '<span style="color:#1e9fff;font-weight:600;">' + HubLang.t('syncing') + '</span>';
+                if (d.epStatus === 'pending') return '<span style="color:#999;">' + HubLang.t('pending') + '</span>';
                 return '<span style="color:#666;">\u2014</span>';
               }},
-              { title: HubLang.t('syncProgress'), minWidth: 180, templet: function (d) {
+              { title: HubLang.t('syncProgress'), minWidth: 200, templet: function (d) {
                 var completed, total, color;
                 if (d.isAgent) {
-                  completed = d.lockedDays; total = 65;
+                  if (d.syncing && d.children) {
+                    completed = 0; total = 0;
+                    for (var ci = 0; ci < d.children.length; ci++) {
+                      completed += d.children[ci].completed || 0;
+                      total += d.children[ci].total || 0;
+                    }
+                  } else {
+                    completed = d.lockedDays; total = _totalDays;
+                  }
                 } else {
                   completed = d.completed || 0; total = d.total || 0;
                 }
@@ -292,14 +325,39 @@
                 } else {
                   color = d.epStatus === 'done' ? '#16b777' : d.epStatus === 'error' ? '#ff5722' : d.epStatus === 'idle' ? '#999' : '#1e9fff';
                 }
-                return '<div style="display:flex;align-items:center;gap:8px;">'
+
+                var html = '<div style="display:flex;align-items:center;gap:8px;">'
                   + '<div style="flex:1;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">'
                   + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;transition:width .3s;"></div></div>'
                   + '<span style="font-size:12px;color:' + color + ';font-weight:600;white-space:nowrap;">'
-                  + completed + '/' + total + '</span></div>';
+                  + completed + '/' + total + '</span>';
+
+                // Page progress cho multi-page endpoints
+                if (!d.isAgent && d.totalPages > 1 && d.epStatus === 'syncing') {
+                  html += '<span class="page-info">p' + d.currentPage + '/' + d.totalPages + '</span>';
+                }
+
+                html += '</div>';
+
+                // Error message
+                if (!d.isAgent && d.error) {
+                  html += '<div class="error-text" title="' + d.error.replace(/"/g, '&quot;') + '">' + d.error + '</div>';
+                }
+
+                return html;
               }},
-              { title: HubLang.t('rowCount'), width: 100, align: 'right', templet: function (d) {
-                if (d.isAgent) return '';
+              { title: HubLang.t('rowCount'), width: 110, align: 'right', templet: function (d) {
+                if (d.isAgent) {
+                  var totalRows = 0;
+                  if (d.children) {
+                    for (var i = 0; i < d.children.length; i++) {
+                      totalRows += d.children[i].dataRows || 0;
+                    }
+                  }
+                  return totalRows > 0
+                    ? '<span style="font-weight:600;color:#1e9fff;">' + totalRows.toLocaleString() + '</span>'
+                    : '<span style="color:#666;">\u2014</span>';
+                }
                 return d.dataRows > 0
                   ? '<span style="font-weight:600;">' + d.dataRows.toLocaleString() + '</span>'
                   : '<span style="color:#666;">\u2014</span>';
@@ -312,7 +370,7 @@
                 }
                 return '';
               }},
-              { title: 'Thời gian', width: 90, align: 'right', templet: function (d) {
+              { title: HubLang.t('elapsed'), width: 90, align: 'right', templet: function (d) {
                 if (!d.isAgent || !d.elapsed) return '';
                 return '<span style="font-size:12px;color:#1e9fff;">' + fmtElapsed(d.elapsed) + '</span>';
               }},
@@ -329,6 +387,96 @@
       }
 
       // ═══════════════════════════════════════
+      // ── SSE Real-time Progress ──
+      // ═══════════════════════════════════════
+
+      function connectSSE() {
+        if (_sse) return;
+        var token = HubAPI.getToken();
+        if (!token) return;
+
+        stopPolling();
+
+        _sse = new EventSource('/api/admin/sync/progress?token=' + encodeURIComponent(token));
+
+        _sse.onmessage = function (event) {
+          try {
+            // Reset retry count khi nhận được message thành công
+            _sseRetryCount = 0;
+            var data = JSON.parse(event.data);
+            handleProgressData(data);
+          } catch (e) {}
+        };
+
+        _sse.onerror = function () {
+          disconnectSSE();
+          _sseRetryCount++;
+          if (_sseRetryCount <= MAX_SSE_RETRIES) {
+            setTimeout(connectSSE, 3000);
+          } else {
+            startPolling();
+          }
+        };
+      }
+
+      function disconnectSSE() {
+        if (_sse) { _sse.close(); _sse = null; }
+      }
+
+      // ═══════════════════════════════════════
+      // ── Polling Fallback ──
+      // ═══════════════════════════════════════
+
+      function startPolling() {
+        if (_pollTimer || _sse) return;
+        _pollTimer = setInterval(function () {
+          HubAPI.adminGet('sync/progress-data').then(function (res) {
+            if (res.code === 0 && res.data) handleProgressData(res.data);
+          }).catch(function () {});
+        }, 2000);
+      }
+
+      function stopPolling() {
+        if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+      }
+
+      // ═══════════════════════════════════════
+      // ── Handle progress data ──
+      // ═══════════════════════════════════════
+
+      function handleProgressData(data) {
+        if (data.agents && data.agents.length > 0) {
+          _snap = data;
+          var stillSyncing = data.agents.some(function (a) { return a.status === 'syncing'; });
+          updateSyncState(stillSyncing);
+          renderTree();
+        } else {
+          if (_snap) {
+            _snap = null;
+            loadAgents();
+          }
+          updateSyncState(false);
+          disconnectSSE();
+          stopPolling();
+        }
+      }
+
+      function updateSyncState(isSyncing) {
+        var stateEl = container.querySelector('#ss_syncState');
+        if (stateEl) {
+          stateEl.textContent = isSyncing ? HubLang.t('syncing') : HubLang.t('ready');
+          stateEl.style.color = isSyncing ? '#ff4d4f' : '#16b777';
+        }
+        var ind = container.querySelector('#ss_syncingIndicator');
+        if (ind) {
+          ind.innerHTML = isSyncing
+            ? '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;margin-left:10px;">'
+              + '<i class="hi hi-arrows-rotate syncing-spin"></i> ' + HubLang.t('syncRunning') + '</span>'
+            : '';
+        }
+      }
+
+      // ═══════════════════════════════════════
       // ── Data loading ──
       // ═══════════════════════════════════════
 
@@ -337,63 +485,25 @@
           if (res.code !== 0) return;
           var d = res.data;
           _agents = d.agents || [];
+          _totalDays = d.totalDays || 65;
 
           // Stat cards
           var active = _agents.filter(function (a) { return a.status === 1; }).length;
-          var full = _agents.filter(function (a) { return (a.lockedDays || 0) >= 65; }).length;
+          var full = _agents.filter(function (a) { return (a.lockedDays || 0) >= _totalDays; }).length;
           setNum('ss_totalAgents', _agents.length);
           setNum('ss_activeAgents', active);
           setNum('ss_fullySynced', full + '/' + _agents.length);
 
-          var stateEl = container.querySelector('#ss_syncState');
-          if (stateEl) {
-            stateEl.textContent = d.syncing ? 'Đang chạy' : 'Sẵn sàng';
-            stateEl.style.color = d.syncing ? '#ff4d4f' : '#16b777';
+          // Nếu đang sync → kết nối SSE
+          if (d.syncing) {
+            connectSSE();
           }
 
-          // Syncing indicator in toolbar
-          var ind = container.querySelector('#ss_syncingIndicator');
-          if (ind) {
-            ind.innerHTML = d.syncing
-              ? '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;margin-left:10px;">'
-                + '<i class="hi hi-spinner"></i> ' + HubLang.t('syncRunning') + '</span>'
-              : '';
-          }
-
-          // Progress polling
-          if (d.syncing && !_pollTimer) {
-            startProgressPoll();
-          } else if (!d.syncing && _pollTimer) {
-            stopProgressPoll();
-            _snap = null;
-          }
-
+          updateSyncState(d.syncing);
           renderTree();
-        }).catch(function () {});
-      }
-
-      function pollProgress() {
-        HubAPI.adminGet('sync/progress-data').then(function (res) {
-          if (res.code !== 0 || !res.data) return;
-          if (!res.data.agents || res.data.agents.length === 0) {
-            _snap = null;
-            stopProgressPoll();
-            loadAgents();
-            return;
-          }
-          _snap = res.data;
-          renderTree();
-        }).catch(function () {});
-      }
-
-      function startProgressPoll() {
-        if (_pollTimer) return;
-        pollProgress();
-        _pollTimer = setInterval(pollProgress, 3000);
-      }
-
-      function stopProgressPoll() {
-        if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+        }).catch(function (err) {
+          console.warn('loadAgents lỗi:', err.message);
+        });
       }
 
       function loadAgentFilter() {
@@ -444,7 +554,7 @@
               layer.close(loadIdx);
               if (res.code === 0) {
                 layer.msg(HubLang.t('syncStarted'), { icon: 1 });
-                setTimeout(loadAgents, 2000);
+                setTimeout(connectSSE, 500);
               } else {
                 layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
               }
@@ -465,7 +575,7 @@
             layer.msg(HubLang.t('noSelection') || 'Chưa chọn tài khoản nào', { icon: 0 });
             return;
           }
-          layer.confirm('Xoá khoá ngày của ' + selectedIds.length + ' đại lý đã chọn?', { icon: 3 }, function (idx) {
+          layer.confirm(HubLang.t('confirmClearLocks') || 'Xoá khoá ngày của ' + selectedIds.length + ' đại lý đã chọn?', { icon: 3 }, function (idx) {
             layer.close(idx);
             var loadIdx = layer.load();
             var promises = selectedIds.map(function (aid) {
@@ -497,18 +607,18 @@
             HubAPI.adminRequest('sync/run', 'POST', { agent_id: d.agentId }).then(function (res) {
               if (res.code === 0) {
                 layer.msg(HubLang.t('syncStarted'), { icon: 1 });
-                setTimeout(loadAgents, 2000);
+                setTimeout(connectSSE, 500);
               } else {
                 layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
               }
             }).catch(function () { layer.msg(HubLang.t('connectionError'), { icon: 2 }); });
           });
         } else if (obj.event === 'clear') {
-          layer.confirm('Xoá tất cả khoá ngày của "' + d.name + '"?', { icon: 3 }, function (idx) {
+          layer.confirm(HubLang.t('confirmClearLocks') || 'Xoá tất cả khoá ngày của "' + d.name + '"?', { icon: 3 }, function (idx) {
             layer.close(idx);
             HubAPI.adminRequest('sync/clear', 'POST', { agent_id: d.agentId }).then(function (res) {
               if (res.code === 0) {
-                layer.msg(res.msg || 'Đã xoá', { icon: 1 });
+                layer.msg(res.msg || HubLang.t('cacheCleared'), { icon: 1 });
                 loadAgents();
               } else {
                 layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
@@ -525,8 +635,12 @@
     },
 
     destroy: function () {
+      if (_sse) { _sse.close(); _sse = null; }
       if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
       if (_statsTimer) { clearInterval(_statsTimer); _statsTimer = null; }
+      _sseRetryCount = 0;
+      var tpl = document.getElementById('ss_toolbarTpl');
+      if (tpl) tpl.remove();
     },
 
     onLangChange: function (container) {

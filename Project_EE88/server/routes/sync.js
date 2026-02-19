@@ -1,6 +1,7 @@
 const express = require('express');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const cronSync = require('../services/cronSync');
+const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('sync-routes');
@@ -20,6 +21,7 @@ router.get('/sync/progress', (req, res, next) => {
     'X-Accel-Buffering': 'no'
   });
 
+  // Gửi snapshot ngay lập tức
   res.write('data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n');
 
   function onProgress(data) {
@@ -31,8 +33,8 @@ router.get('/sync/progress', (req, res, next) => {
     try { res.write(': heartbeat\n\n'); } catch (e) { cleanup(); }
   }, 30000);
 
-  // Auto-close sau 5 phút để tránh leak (client sẽ tự reconnect)
-  const maxAge = setTimeout(() => cleanup(), 5 * 60 * 1000);
+  // Auto-close sau 15 phút (sync có thể mất 11 phút, client sẽ tự reconnect)
+  const maxAge = setTimeout(() => cleanup(), 15 * 60 * 1000);
 
   let cleaned = false;
   function cleanup() {
@@ -51,19 +53,31 @@ router.get('/sync/progress', (req, res, next) => {
 // Tất cả routes còn lại cần auth + admin
 router.use(authMiddleware, adminOnly);
 
-// GET /api/admin/sync/status — Tổng quan
+// GET /api/admin/sync/status — Tổng quan (bao gồm row counts tất cả endpoints)
 router.get('/sync/status', (req, res) => {
   try {
     const { getDb } = require('../database/init');
     const db = getDb();
 
     const agents = db.prepare('SELECT id, label, status FROM ee88_agents ORDER BY id').all();
+
+    // Bảng → endpoint mapping cho row count
+    const EP_TABLES = {};
+    for (const [ep, mapping] of Object.entries(dataStore.COLUMN_MAP)) {
+      EP_TABLES[ep] = mapping.table;
+    }
+
     const agentStats = agents.map(agent => {
-      let lockCount = 0, memberRows = 0, inviteRows = 0;
+      let lockCount = 0;
       try { lockCount = db.prepare('SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
-      try { memberRows = db.prepare('SELECT COUNT(*) as cnt FROM data_members WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
-      try { inviteRows = db.prepare('SELECT COUNT(*) as cnt FROM data_invites WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
-      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount, memberRows, inviteRows };
+
+      // Row counts cho TẤT CẢ endpoints
+      const rows = {};
+      for (const [ep, table] of Object.entries(EP_TABLES)) {
+        try { rows[ep] = db.prepare(`SELECT COUNT(*) as cnt FROM ${table} WHERE agent_id = ?`).get(agent.id).cnt; } catch (e) { rows[ep] = 0; }
+      }
+
+      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount, rows };
     });
 
     res.json({
@@ -80,7 +94,7 @@ router.get('/sync/status', (req, res) => {
   }
 });
 
-// GET /api/admin/sync/progress-data — Progress snapshot (polling thay SSE)
+// GET /api/admin/sync/progress-data — Progress snapshot (polling fallback)
 router.get('/sync/progress-data', (req, res) => {
   res.json({ code: 0, data: cronSync.getSyncProgressSnapshot() });
 });
@@ -91,13 +105,14 @@ router.get('/sync/locks/:agentId', (req, res) => {
   res.json({ code: 0, data: locks, count: locks.length });
 });
 
-// POST /api/admin/sync/run — Sync 1 agent (thủ công)
+// POST /api/admin/sync/run — Sync 1 agent (cho phép sync agent khác song song)
 router.post('/sync/run', async (req, res) => {
   const { agent_id } = req.body;
   if (!agent_id) return res.json({ code: -1, msg: 'Thiếu agent_id' });
 
-  if (cronSync.isSyncRunning()) {
-    return res.json({ code: -1, msg: 'Đang sync, vui lòng đợi...' });
+  // Check per-agent lock thay vì global — cho phép sync nhiều agent song song
+  if (cronSync.isAgentSyncing(parseInt(agent_id))) {
+    return res.json({ code: -1, msg: 'Agent này đang sync, vui lòng đợi...' });
   }
 
   log.info(`[${req.user.username}] Sync agent #${agent_id}`);
@@ -111,7 +126,7 @@ router.post('/sync/run', async (req, res) => {
   }
 });
 
-// POST /api/admin/sync/run-all — Sync tất cả agents
+// POST /api/admin/sync/run-all — Sync tất cả agents (song song)
 router.post('/sync/run-all', async (req, res) => {
   if (cronSync.isSyncRunning()) {
     return res.json({ code: -1, msg: 'Đang sync, vui lòng đợi...' });

@@ -82,11 +82,11 @@ app.use('/api/action', actionRoutes);
 // Dashboard: cần JWT + permission (hiển thị cho tất cả users)
 app.use('/api/dashboard', dashboardRoutes);
 
+// Sync: mount TRƯỚC admin vì SSE endpoint cần pre-middleware cho query token
+app.use('/api/admin', syncRoutes);
+
 // Admin: cần JWT + admin role
 app.use('/api/admin', adminRoutes);
-
-// Sync: cần JWT + admin role
-app.use('/api/admin', syncRoutes);
 
 app.get('/api/health', (req, res) => {
   const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents WHERE status = 1').get().cnt;

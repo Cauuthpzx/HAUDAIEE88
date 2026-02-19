@@ -492,7 +492,15 @@ var HubLang = (function () {
       'cacheMiss': 'Cache MISS',
       'syncProgress': 'Tiến độ',
       'dateCount': 'Số ngày',
-      'noSync': 'Chưa đồng bộ'
+      'noSync': 'Chưa đồng bộ',
+      'totalAgents': 'Tổng đại lý',
+      'fullySynced': 'Đã đồng bộ đủ',
+      'notSynced': 'Chưa đồng bộ',
+      'completed': 'Hoàn tất',
+      'pending': 'Chờ',
+      'elapsed': 'Thời gian',
+      'ready': 'Sẵn sàng',
+      'confirmClearLocks': 'Xoá tất cả khoá ngày?'
     },
 
     en: {
@@ -966,7 +974,15 @@ var HubLang = (function () {
       'cacheMiss': 'Cache MISS',
       'syncProgress': 'Progress',
       'dateCount': 'Days',
-      'noSync': 'Not synced'
+      'noSync': 'Not synced',
+      'totalAgents': 'Total Agents',
+      'fullySynced': 'Fully Synced',
+      'notSynced': 'Not synced',
+      'completed': 'Completed',
+      'pending': 'Pending',
+      'elapsed': 'Elapsed',
+      'ready': 'Ready',
+      'confirmClearLocks': 'Clear all day locks?'
     },
 
     'zh-CN': {
@@ -1440,7 +1456,15 @@ var HubLang = (function () {
       'cacheMiss': '缓存未命中',
       'syncProgress': '进度',
       'dateCount': '天数',
-      'noSync': '未同步'
+      'noSync': '未同步',
+      'totalAgents': '总代理',
+      'fullySynced': '完全同步',
+      'notSynced': '未同步',
+      'completed': '完成',
+      'pending': '等待',
+      'elapsed': '耗时',
+      'ready': '就绪',
+      'confirmClearLocks': '清除所有日锁定？'
     }
   };
 
