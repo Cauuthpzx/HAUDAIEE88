@@ -1,221 +1,379 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sao kê giao dịch</title>
-  <link rel="stylesheet" href="/lib/layui/css/layui.css">
-  <style>
-    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
-    .layui-card { margin: 15px; }
-    .layui-card-header { padding-bottom: 0; border-bottom: none; }
-    .layui-field-box .layui-inline { margin-bottom: 8px; }
-    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
-    .hs-text { text-align: left; }
-  </style>
-</head>
-<body>
-
-  <div class="layui-row">
-    <div class="layui-col-md12">
-      <div class="layui-card">
-        <div class="layui-form layui-card-header">
-          <fieldset class="layui-elem-field">
-            <legend data-i18n="transStatementTitle">Sao kê giao dịch</legend>
-            <div class="layui-field-box">
-              <form class="layui-form" lay-filter="searchForm">
-                <div class="layui-inline">
-                  <label data-i18n="time">Thời gian</label>：
-                  <div style="width:220px;" class="layui-input-inline">
-                    <input type="text" name="date" id="dateRange" placeholder="Ngày bắt đầu - Ngày kết thúc" data-i18n="dateStartEnd" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sao kê giao dịch</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .layui-field-box .layui-inline label {
+        font-size: 13px;
+        margin-right: 5px;
+      }
+      .hs-text {
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-form layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="transStatementTitle">Sao kê giao dịch</legend>
+              <div class="layui-field-box">
+                <form class="layui-form" lay-filter="searchForm">
+                  <div class="layui-inline">
+                    <label data-i18n="time">Thời gian</label>：
+                    <div style="width: 220px" class="layui-input-inline">
+                      <input
+                        type="text"
+                        name="date"
+                        id="dateRange"
+                        placeholder="Ngày bắt đầu - Ngày kết thúc"
+                        data-i18n="dateStartEnd"
+                        data-i18n-attr="placeholder"
+                        class="layui-input"
+                        readonly
+                        autocomplete="off"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <div style="width:100px;" class="layui-input-inline">
-                    <select lay-filter="quickDateFilter" lay-search="">
-                      <option value="" id="optToday" data-i18n="today">Hôm nay</option>
-                      <option value="" id="optYesterday" data-i18n="yesterday">Hôm qua</option>
-                      <option value="" id="optWeek" data-i18n="thisWeek">Tuần này</option>
-                      <option value="" id="optMonth" data-i18n="thisMonth">Tháng này</option>
-                      <option value="" id="optLastMonth" data-i18n="lastMonth">Tháng trước</option>
-                    </select>
+                  <div class="layui-inline">
+                    <div style="width: 100px" class="layui-input-inline">
+                      <select lay-filter="quickDateFilter" lay-search="">
+                        <option value="" id="optToday" data-i18n="today">
+                          Hôm nay
+                        </option>
+                        <option
+                          value=""
+                          id="optYesterday"
+                          data-i18n="yesterday"
+                        >
+                          Hôm qua
+                        </option>
+                        <option value="" id="optWeek" data-i18n="thisWeek">
+                          Tuần này
+                        </option>
+                        <option value="" id="optMonth" data-i18n="thisMonth">
+                          Tháng này
+                        </option>
+                        <option
+                          value=""
+                          id="optLastMonth"
+                          data-i18n="lastMonth"
+                        >
+                          Tháng trước
+                        </option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <label data-i18n="accountName">Tên tài khoản</label>：
-                  <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" data-i18n="enterAccountName" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
+                  <div class="layui-inline">
+                    <label data-i18n="accountName">Tên tài khoản</label>：
+                    <div style="width: 200px" class="layui-input-inline">
+                      <input
+                        type="text"
+                        name="username"
+                        placeholder="Nhập tên tài khoản"
+                        data-i18n="enterAccountName"
+                        data-i18n-attr="placeholder"
+                        class="layui-input"
+                        autocomplete="off"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
-                </div>
-                <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
-                </div>
-              </form>
+                  <div class="layui-inline">
+                    <button
+                      type="button"
+                      class="layui-btn"
+                      lay-submit
+                      lay-filter="doSearch"
+                    >
+                      <i class="layui-icon layui-icon-search"></i>
+                      <span data-i18n="search">Tìm kiếm</span>
+                    </button>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="reset"
+                      class="layui-btn layui-btn-primary"
+                      id="btnReset"
+                    >
+                      <i class="layui-icon layui-icon-refresh"></i>
+                      <span data-i18n="reset">Đặt lại</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <table id="dataTable" lay-filter="dataTable"></table>
+          </div>
+          <div
+            class="layui-fluid"
+            style="margin-top: 0; padding-top: 0; padding-bottom: 1px"
+          >
+            <div>
+              <span style="font-weight: bold" data-i18n="summaryData"
+                >Dữ liệu tổng hợp:</span
+              >
+              <table class="layui-table" lay-even lay-skin="nob">
+                <thead>
+                  <tr>
+                    <th data-i18n="depositAmountTotal">Số tiền nạp</th>
+                    <th data-i18n="withdrawAmountTotal">Số tiền rút</th>
+                    <th data-i18n="chargeFee">Phí dịch vụ</th>
+                    <th data-i18n="agentCommission">Hoa hồng đại lý</th>
+                    <th data-i18n="promotion">Ưu đãi</th>
+                    <th data-i18n="thirdRebate">Hoàn trả bên thứ 3</th>
+                    <th data-i18n="thirdActivityAmount">
+                      Tiền thưởng từ bên thứ 3
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td id="total_deposit_amount" class="hs-text">0.0000</td>
+                    <td id="total_withdrawal_amount" class="hs-text">0.0000</td>
+                    <td id="total_charge_fee" class="hs-text">0.0000</td>
+                    <td id="total_agent_commission" class="hs-text">0.0000</td>
+                    <td id="total_promotion" class="hs-text">0.0000</td>
+                    <td id="total_third_rebate" class="hs-text">0.0000</td>
+                    <td id="total_third_activity_amount" class="hs-text">
+                      0.0000
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </fieldset>
-        </div>
-        <div class="layui-card-body">
-          <table id="dataTable" lay-filter="dataTable"></table>
-        </div>
-        <div class="layui-fluid" style="margin-top: 0; padding-top: 0; padding-bottom: 1px;">
-          <div>
-            <span style="font-weight: bold;" data-i18n="summaryData">Dữ liệu tổng hợp:</span>
-            <table class="layui-table" lay-even lay-skin="nob">
-              <thead>
-              <tr>
-                <th data-i18n="depositAmountTotal">Số tiền nạp</th>
-                <th data-i18n="withdrawAmountTotal">Số tiền rút</th>
-                <th data-i18n="chargeFee">Phí dịch vụ</th>
-                <th data-i18n="agentCommission">Hoa hồng đại lý</th>
-                <th data-i18n="promotion">Ưu đãi</th>
-                <th data-i18n="thirdRebate">Hoàn trả bên thứ 3</th>
-                <th data-i18n="thirdActivityAmount">Tiền thưởng từ bên thứ 3</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td id="total_deposit_amount" class="hs-text">0.0000</td>
-                <td id="total_withdrawal_amount" class="hs-text">0.0000</td>
-                <td id="total_charge_fee" class="hs-text">0.0000</td>
-                <td id="total_agent_commission" class="hs-text">0.0000</td>
-                <td id="total_promotion" class="hs-text">0.0000</td>
-                <td id="total_third_rebate" class="hs-text">0.0000</td>
-                <td id="total_third_activity_amount" class="hs-text">0.0000</td>
-              </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="/lib/layui/layui.js"></script>
-  <script src="/js/hub-lang.js"></script>
-  <script src="/js/hub-api.js"></script>
-  <script>
-    layui.use(['table', 'form', 'laydate'], function () {
-      HubLang.init();
-      HubLang.applyDOM();
-      var $ = layui.$;
-      var table = layui.table;
-      var form = layui.form;
-      var laydate = layui.laydate;
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script>
+      layui.use(['table', 'form', 'laydate'], function () {
+        HubLang.init();
+        HubLang.applyDOM();
+        var $ = layui.$;
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
 
-      function fmt(d) {
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      }
-      var now = new Date();
-      var todayStr = fmt(now);
-
-      var yd = new Date(now); yd.setDate(yd.getDate() - 1);
-      var yesterdayStr = fmt(yd);
-
-      var ws = new Date(now);
-      var dow = ws.getDay(); dow = dow === 0 ? 6 : dow - 1;
-      ws.setDate(ws.getDate() - dow);
-      var weekStartStr = fmt(ws);
-
-      var ms = new Date(now.getFullYear(), now.getMonth(), 1);
-      var monthStartStr = fmt(ms);
-
-      var lms = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      var lme = new Date(now.getFullYear(), now.getMonth(), 0);
-      var lastMonthStart = fmt(lms);
-      var lastMonthEnd = fmt(lme);
-
-      document.getElementById('optToday').value = todayStr + ' | ' + todayStr;
-      document.getElementById('optYesterday').value = yesterdayStr + ' | ' + yesterdayStr;
-      document.getElementById('optWeek').value = weekStartStr + ' | ' + todayStr;
-      document.getElementById('optMonth').value = monthStartStr + ' | ' + todayStr;
-      document.getElementById('optLastMonth').value = lastMonthStart + ' | ' + lastMonthEnd;
-      form.render('select');
-
-      var defaultRange = todayStr + ' | ' + todayStr;
-
-      laydate.render({ elem: '#dateRange', type: 'date', range: '|', rangeLinked: true, max: 0, value: defaultRange });
-
-      form.on('select(quickDateFilter)', function (data) {
-        if (data.value) {
-          $('#dateRange').val(data.value);
+        function fmt(d) {
+          return (
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          );
         }
-      });
+        var now = new Date();
+        var todayStr = fmt(now);
 
-      function renderTotalData(totalData) {
-        if (!totalData) return;
-        var fields = ['total_deposit_amount', 'total_withdrawal_amount', 'total_charge_fee', 'total_agent_commission', 'total_promotion', 'total_third_rebate', 'total_third_activity_amount'];
-        fields.forEach(function (key) {
-          var val = totalData[key];
-          if (val === undefined || val === null) {
-            val = '0.0000';
-          }
-          var el = document.getElementById(key);
-          if (el) el.textContent = val;
+        var yd = new Date(now);
+        yd.setDate(yd.getDate() - 1);
+        var yesterdayStr = fmt(yd);
+
+        var ws = new Date(now);
+        var dow = ws.getDay();
+        dow = dow === 0 ? 6 : dow - 1;
+        ws.setDate(ws.getDate() - dow);
+        var weekStartStr = fmt(ws);
+
+        var ms = new Date(now.getFullYear(), now.getMonth(), 1);
+        var monthStartStr = fmt(ms);
+
+        var lms = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        var lme = new Date(now.getFullYear(), now.getMonth(), 0);
+        var lastMonthStart = fmt(lms);
+        var lastMonthEnd = fmt(lme);
+
+        document.getElementById('optToday').value = todayStr + ' | ' + todayStr;
+        document.getElementById('optYesterday').value =
+          yesterdayStr + ' | ' + yesterdayStr;
+        document.getElementById('optWeek').value =
+          weekStartStr + ' | ' + todayStr;
+        document.getElementById('optMonth').value =
+          monthStartStr + ' | ' + todayStr;
+        document.getElementById('optLastMonth').value =
+          lastMonthStart + ' | ' + lastMonthEnd;
+        form.render('select');
+
+        laydate.render({
+          elem: '#dateRange',
+          type: 'date',
+          range: '|',
+          rangeLinked: true,
+          max: 0
         });
-      }
 
-      table.render({
-        elem: '#dataTable',
-        url: '/api/data/report-funds',
-        method: 'get',
-        where: { date: defaultRange },
-        toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
-        page: true,
-        limit: 10,
-        text: { none: HubLang.t('noData') },
-        parseData: function (res) {
-          window._lastTotalData = res.total_data || null;
-          return {
-            code: res.code === 0 ? 0 : 1,
-            msg: res.msg || '',
-            count: res.count || 0,
-            data: res.data || []
-          };
-        },
-        request: { pageName: 'page', limitName: 'limit' },
-        cols: [[
-          { field: 'username', title: HubLang.t('account'), width: 150, fixed: 'left' },
-          { field: 'user_parent_format', title: HubLang.t('agent'), width: 150 },
-          { field: 'deposit_count', title: HubLang.t('depositCountCol'), width: 160 },
-          { field: 'deposit_amount', title: HubLang.t('depositAmountTotal'), minWidth: 150, sort: true },
-          { field: 'withdrawal_count', title: HubLang.t('withdrawCountCol'), minWidth: 150 },
-          { field: 'withdrawal_amount', title: HubLang.t('withdrawAmountTotal'), minWidth: 160 },
-          { field: 'charge_fee', title: HubLang.t('chargeFee'), minWidth: 150 },
-          { field: 'agent_commission', title: HubLang.t('agentCommission'), minWidth: 150 },
-          { field: 'promotion', title: HubLang.t('promotion'), minWidth: 150 },
-          { field: 'third_rebate', title: HubLang.t('thirdRebate'), minWidth: 150 },
-          { field: 'third_activity_amount', title: HubLang.t('thirdActivityAmount'), minWidth: 150 },
-          { field: 'date', title: HubLang.t('dateCol'), minWidth: 160, fixed: 'right' },
-          { field: 'id', title: 'ID', width: 100 },
-          { field: 'uid', title: 'UID', width: 90 },
-          { field: 'user_parent', title: HubLang.t('agentId'), width: 100 }
-        ]],
-        done: function (res) {
-          console.log('[reportFunds] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count);
-          renderTotalData(window._lastTotalData);
-        }
-      });
+        form.on('select(quickDateFilter)', function (data) {
+          if (data.value) {
+            $('#dateRange').val(data.value);
+          }
+        });
 
-      form.on('submit(doSearch)', function (data) {
-        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
-        return false;
-      });
-
-      $('#btnReset').on('click', function () {
-        setTimeout(function () {
-          $('#dateRange').val(defaultRange);
-          form.render('select');
-          table.reload('dataTable', {
-            where: { date: defaultRange, username: '' },
-            page: { curr: 1 }
+        function renderTotalData(totalData) {
+          if (!totalData) return;
+          var fields = [
+            'total_deposit_amount',
+            'total_withdrawal_amount',
+            'total_charge_fee',
+            'total_agent_commission',
+            'total_promotion',
+            'total_third_rebate',
+            'total_third_activity_amount'
+          ];
+          fields.forEach(function (key) {
+            var val = totalData[key];
+            if (val === undefined || val === null) {
+              val = '0.0000';
+            }
+            var el = document.getElementById(key);
+            if (el) el.textContent = val;
           });
-        }, 50);
+        }
+
+        table.render({
+          elem: '#dataTable',
+          url: '/api/data/report-funds',
+          method: 'get',
+          where: {},
+          toolbar: true,
+          defaultToolbar: ['filter', 'print', 'exports'],
+          page: true,
+          limit: 10,
+          text: { none: HubLang.t('noData') },
+          parseData: function (res) {
+            window._lastTotalData = res.total_data || null;
+            return {
+              code: res.code === 0 ? 0 : 1,
+              msg: res.msg || '',
+              count: res.count || 0,
+              data: res.data || []
+            };
+          },
+          request: { pageName: 'page', limitName: 'limit' },
+          cols: [
+            [
+              {
+                field: 'username',
+                title: HubLang.t('account'),
+                width: 150,
+                fixed: 'left'
+              },
+              {
+                field: 'user_parent_format',
+                title: HubLang.t('agent'),
+                width: 150
+              },
+              {
+                field: 'deposit_count',
+                title: HubLang.t('depositCountCol'),
+                width: 160
+              },
+              {
+                field: 'deposit_amount',
+                title: HubLang.t('depositAmountTotal'),
+                minWidth: 150,
+                sort: true
+              },
+              {
+                field: 'withdrawal_count',
+                title: HubLang.t('withdrawCountCol'),
+                minWidth: 150
+              },
+              {
+                field: 'withdrawal_amount',
+                title: HubLang.t('withdrawAmountTotal'),
+                minWidth: 160
+              },
+              {
+                field: 'charge_fee',
+                title: HubLang.t('chargeFee'),
+                minWidth: 150
+              },
+              {
+                field: 'agent_commission',
+                title: HubLang.t('agentCommission'),
+                minWidth: 150
+              },
+              {
+                field: 'promotion',
+                title: HubLang.t('promotion'),
+                minWidth: 150
+              },
+              {
+                field: 'third_rebate',
+                title: HubLang.t('thirdRebate'),
+                minWidth: 150
+              },
+              {
+                field: 'third_activity_amount',
+                title: HubLang.t('thirdActivityAmount'),
+                minWidth: 150
+              },
+              {
+                field: 'date',
+                title: HubLang.t('dateCol'),
+                minWidth: 160,
+                fixed: 'right'
+              },
+              { field: 'id', title: 'ID', width: 100 },
+              { field: 'uid', title: 'UID', width: 90 },
+              { field: 'user_parent', title: HubLang.t('agentId'), width: 100 }
+            ]
+          ],
+          done: function (res) {
+            console.log(
+              '[reportFunds] Đã tải ' +
+                (res.data ? res.data.length : 0) +
+                '/' +
+                res.count
+            );
+            renderTotalData(window._lastTotalData);
+          }
+        });
+
+        form.on('submit(doSearch)', function (data) {
+          table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+          return false;
+        });
+
+        $('#btnReset').on('click', function () {
+          setTimeout(function () {
+            $('#dateRange').val('');
+            form.render('select');
+            table.reload('dataTable', {
+              where: { date: '', username: '' },
+              page: { curr: 1 }
+            });
+          }, 50);
+        });
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

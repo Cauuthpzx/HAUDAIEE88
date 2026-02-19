@@ -1,10 +1,18 @@
-*.min.js
-*.bundle.js
-*.map
+# Build output
+dist/
+Project_EE88/dist/
 
-dist
-node_modules
-package-lock.json
+# Vendor / minified libraries
+Project_EE88/client/lib/
+Project_EE88/spa/lib/
 
-/docs/
-/release/
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+Project_EE88/server/logs/
+
+# Node modules
+node_modules/

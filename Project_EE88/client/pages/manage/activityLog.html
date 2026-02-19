@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Activity Log</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+      }
+      .layui-card-header {
+        padding: 0 15px;
+        border-bottom: none;
+      }
+      .layui-card-body {
+        padding: 15px;
+      }
+      .layui-field-box {
+        padding: 10px 15px 2px;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 10px;
+        margin-right: 12px;
+      }
+      .layui-field-box .layui-inline label {
+        font-size: 13px;
+        margin-right: 4px;
+        white-space: nowrap;
+      }
+      .layui-field-box .layui-input {
+        height: 32px;
+        line-height: 32px;
+        font-size: 13px;
+      }
+      .layui-field-box .layui-btn {
+        height: 32px;
+        line-height: 32px;
+        padding: 0 15px;
+        font-size: 13px;
+      }
+      .layui-table th {
+        font-weight: normal;
+        color: #333;
+      }
+      .hs-text {
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field layui-field-title">
+              <legend data-i18n="activityLogTitle">Nhật ký hoạt động</legend>
+              <div class="layui-field-box">
+                <form class="layui-form" lay-filter="al_searchForm">
+                  <!-- Action filter -->
+                  <div class="layui-inline">
+                    <label data-i18n="actionCol">Hành động</label>：
+                    <div class="layui-input-inline" style="width: 180px">
+                      <select name="action" lay-filter="al_actionFilter">
+                        <option value="" data-i18n="all">Tất cả</option>
+                        <option value="hub_login">hub_login</option>
+                        <option value="agent_add">agent_add</option>
+                        <option value="agent_edit">agent_edit</option>
+                        <option value="agent_delete">agent_delete</option>
+                        <option value="agent_login_success">
+                          agent_login_success
+                        </option>
+                        <option value="agent_login_fail">
+                          agent_login_fail
+                        </option>
+                        <option value="agent_login_all">agent_login_all</option>
+                        <option value="user_add">user_add</option>
+                        <option value="user_edit">user_edit</option>
+                        <option value="user_delete">user_delete</option>
+                        <option value="data_clear">data_clear</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Username filter -->
+                  <div class="layui-inline">
+                    <label data-i18n="username">Username</label>：
+                    <div class="layui-input-inline" style="width: 160px">
+                      <input
+                        type="text"
+                        name="username"
+                        placeholder=""
+                        class="layui-input"
+                        autocomplete="off"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Search button -->
+                  <div class="layui-inline">
+                    <button
+                      type="button"
+                      class="layui-btn"
+                      lay-submit
+                      lay-filter="al_doSearch"
+                    >
+                      <i class="hi hi-magnifying-glass"></i>
+                      <span data-i18n="search">Tìm</span>
+                    </button>
+                  </div>
+
+                  <!-- Reset button -->
+                  <div class="layui-inline">
+                    <button
+                      type="reset"
+                      class="layui-btn layui-btn-primary"
+                      id="al_btnReset"
+                    >
+                      <i class="hi hi-arrows-rotate"></i>
+                      <span data-i18n="reset">Đặt lại</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <table id="al_dataTable" lay-filter="al_dataTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+
+      layui.use(['table', 'form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var $ = layui.$;
+
+        form.render(null, 'al_searchForm');
+
+        var _currentFilters = {};
+
+        function loadData(page, filters) {
+          filters = filters || {};
+          var params = 'page=' + (page || 1) + '&limit=20';
+          if (filters.action)
+            params += '&action=' + encodeURIComponent(filters.action);
+          if (filters.username)
+            params += '&username=' + encodeURIComponent(filters.username);
+
+          HubAPI.adminGet('activity-log?' + params)
+            .then(function (res) {
+              if (res.code !== 0) return;
+              table.render({
+                elem: '#al_dataTable',
+                data: res.data,
+                text: { none: HubLang.t('noData') },
+                page: {
+                  layout: ['count', 'prev', 'page', 'next'],
+                  curr: res.page,
+                  count: res.count,
+                  limit: res.limit
+                },
+                cols: [
+                  [
+                    { field: 'id', title: 'ID', width: 70 },
+                    {
+                      field: 'created_at',
+                      title: HubLang.t('time'),
+                      width: 160
+                    },
+                    {
+                      field: 'username',
+                      title: HubLang.t('username'),
+                      width: 120
+                    },
+                    {
+                      field: 'action',
+                      title: HubLang.t('actionCol'),
+                      width: 170
+                    },
+                    {
+                      field: 'target_label',
+                      title: HubLang.t('targetCol'),
+                      width: 140
+                    },
+                    { field: 'ip', title: 'IP', width: 130 },
+                    {
+                      field: 'detail',
+                      title: HubLang.t('detailCol'),
+                      minWidth: 160
+                    }
+                  ]
+                ]
+              });
+            })
+            .catch(function () {});
+        }
+
+        // Page change
+        table.on('page(al_dataTable)', function (obj) {
+          loadData(obj.curr, _currentFilters);
+        });
+
+        // Search
+        form.on('submit(al_doSearch)', function (data) {
+          _currentFilters = {};
+          if (data.field.action) _currentFilters.action = data.field.action;
+          if (data.field.username)
+            _currentFilters.username = data.field.username;
+          loadData(1, _currentFilters);
+          return false;
+        });
+
+        // Reset
+        $('#al_btnReset').on('click', function () {
+          setTimeout(function () {
+            _currentFilters = {};
+            form.render('select', 'al_searchForm');
+            loadData(1);
+          }, 50);
+        });
+
+        loadData(1);
+      });
+    </script>
+  </body>
+</html>

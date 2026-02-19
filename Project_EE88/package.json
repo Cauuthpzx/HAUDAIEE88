@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "node scripts/build.js",
+    "build:fast": "node scripts/build.js --no-minify",
     "start": "cross-env NODE_ENV=production node dist/server/server.js"
   },
   "devDependencies": {

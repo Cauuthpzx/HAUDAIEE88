@@ -15,60 +15,224 @@ const log = createLogger('dataStore');
 const COLUMN_MAP = {
   members: {
     table: 'data_members',
-    columns: ['uid', 'username', 'user_parent', 'user_parent_format', 'user_tree', 'group_id', 'balance', 'status', 'is_tester', 'register_time', 'last_login_time'],
+    columns: [
+      'uid',
+      'username',
+      'user_parent',
+      'user_parent_format',
+      'user_tree',
+      'group_id',
+      'balance',
+      'status',
+      'is_tester',
+      'register_time',
+      'last_login_time'
+    ],
     // EE88 field → DB column mapping (khi tên khác nhau)
-    fieldMap: { id: 'uid', money: 'balance', login_time: 'last_login_time', parent_user: 'user_parent_format' },
+    fieldMap: {
+      id: 'uid',
+      money: 'balance',
+      login_time: 'last_login_time',
+      parent_user: 'user_parent_format'
+    },
     uniqueKey: ['agent_id', 'uid']
   },
   invites: {
     table: 'data_invites',
-    columns: ['uid', 'invite_code', 'user_type', 'group_id', 'reg_count', 'scope_reg_count', 'recharge_count', 'first_recharge_count', 'register_recharge_count', 'remark', 'rebate_arr', 'create_time', 'update_time'],
+    columns: [
+      'uid',
+      'invite_code',
+      'user_type',
+      'group_id',
+      'reg_count',
+      'scope_reg_count',
+      'recharge_count',
+      'first_recharge_count',
+      'register_recharge_count',
+      'remark',
+      'rebate_arr',
+      'create_time',
+      'update_time'
+    ],
     fieldMap: { id: 'ee88_id' },
     idField: 'ee88_id',
     uniqueKey: ['agent_id', 'ee88_id']
   },
   deposits: {
     table: 'data_deposits',
-    columns: ['serial_no', 'uid', 'username', 'user_parent', 'user_parent_format', 'user_tree', 'group_id', 'type', 'amount', 'true_amount', 'status', 'operator', 'name', 'bank_id', 'account', 'branch', 'category_id', 'merchant_id', 'pay_type', 'trade_id', 'firm_fee', 'user_fee', 'rebate', 'prize_amount', 'activity_id', 'currency', 'remark', 'user_remark', 'is_tester', 'create_time', 'success_time', 'review_time', 'transfer_time'],
+    columns: [
+      'serial_no',
+      'uid',
+      'username',
+      'user_parent',
+      'user_parent_format',
+      'user_tree',
+      'group_id',
+      'type',
+      'amount',
+      'true_amount',
+      'status',
+      'operator',
+      'name',
+      'bank_id',
+      'account',
+      'branch',
+      'category_id',
+      'merchant_id',
+      'pay_type',
+      'trade_id',
+      'firm_fee',
+      'user_fee',
+      'rebate',
+      'prize_amount',
+      'activity_id',
+      'currency',
+      'remark',
+      'user_remark',
+      'is_tester',
+      'create_time',
+      'success_time',
+      'review_time',
+      'transfer_time'
+    ],
     uniqueKey: ['agent_id', 'serial_no'],
     hasDate: true
   },
   withdrawals: {
     table: 'data_withdrawals',
-    columns: ['serial_no', 'uid', 'username', 'user_parent', 'user_parent_format', 'user_tree', 'group_id', 'amount', 'true_amount', 'name', 'bank_id', 'account', 'branch', 'status', 'status_format', 'operator', 'firm_fee', 'user_fee', 'rebate', 'category_id', 'merchant_id', 'pay_type', 'trade_id', 'currency', 'remark', 'user_remark', 'is_tester', 'create_time', 'success_time', 'review_time', 'transfer_time'],
+    columns: [
+      'serial_no',
+      'uid',
+      'username',
+      'user_parent',
+      'user_parent_format',
+      'user_tree',
+      'group_id',
+      'amount',
+      'true_amount',
+      'name',
+      'bank_id',
+      'account',
+      'branch',
+      'status',
+      'status_format',
+      'operator',
+      'firm_fee',
+      'user_fee',
+      'rebate',
+      'category_id',
+      'merchant_id',
+      'pay_type',
+      'trade_id',
+      'currency',
+      'remark',
+      'user_remark',
+      'is_tester',
+      'create_time',
+      'success_time',
+      'review_time',
+      'transfer_time'
+    ],
     uniqueKey: ['agent_id', 'serial_no'],
     hasDate: true
   },
   'bet-orders': {
     table: 'data_bet_orders',
-    columns: ['serial_no', 'uid', 'username', 'platform_id', 'platform_id_name', 'cid', 'c_name', 'game_name', 'bet_amount', 'turnover', 'prize', 'win_lose', 'bet_time', 'platform_username'],
+    columns: [
+      'serial_no',
+      'uid',
+      'username',
+      'platform_id',
+      'platform_id_name',
+      'cid',
+      'c_name',
+      'game_name',
+      'bet_amount',
+      'turnover',
+      'prize',
+      'win_lose',
+      'bet_time',
+      'platform_username'
+    ],
     uniqueKey: ['agent_id', 'serial_no'],
     hasDate: true
   },
   'report-lottery': {
     table: 'data_report_lottery',
-    columns: ['uid', 'username', 'user_parent_format', 'lottery_id', 'lottery_name', 'bet_count', 'bet_amount', 'valid_amount', 'rebate_amount', 'prize', 'result', 'win_lose'],
+    columns: [
+      'uid',
+      'username',
+      'user_parent_format',
+      'lottery_id',
+      'lottery_name',
+      'bet_count',
+      'bet_amount',
+      'valid_amount',
+      'rebate_amount',
+      'prize',
+      'result',
+      'win_lose'
+    ],
     uniqueKey: ['agent_id', 'date_key', 'uid', 'lottery_id'],
     hasDate: true,
     needsDateKey: true
   },
   'report-funds': {
     table: 'data_report_funds',
-    columns: ['uid', 'username', 'user_parent', 'user_parent_format', 'date', 'deposit_count', 'deposit_amount', 'withdrawal_count', 'withdrawal_amount', 'charge_fee', 'agent_commission', 'promotion', 'third_rebate', 'third_activity_amount'],
+    columns: [
+      'uid',
+      'username',
+      'user_parent',
+      'user_parent_format',
+      'date',
+      'deposit_count',
+      'deposit_amount',
+      'withdrawal_count',
+      'withdrawal_amount',
+      'charge_fee',
+      'agent_commission',
+      'promotion',
+      'third_rebate',
+      'third_activity_amount'
+    ],
     uniqueKey: ['agent_id', 'date_key', 'uid'],
     hasDate: true,
     needsDateKey: true
   },
   'report-third': {
     table: 'data_report_third',
-    columns: ['uid', 'username', 'platform_id', 'platform_id_name', 't_bet_amount', 't_bet_times', 't_turnover', 't_prize', 't_win_lose'],
+    columns: [
+      'uid',
+      'username',
+      'platform_id',
+      'platform_id_name',
+      't_bet_amount',
+      't_bet_times',
+      't_turnover',
+      't_prize',
+      't_win_lose'
+    ],
     uniqueKey: ['agent_id', 'date_key', 'uid', 'platform_id'],
     hasDate: true,
     needsDateKey: true
   },
   'lottery-bets': {
     table: 'data_lottery_bets',
-    columns: ['serial_no', 'uid', 'username', 'lottery_name', 'play_type_name', 'play_name', 'issue', 'content', 'money', 'rebate_amount', 'result', 'status_text', 'create_time'],
+    columns: [
+      'serial_no',
+      'uid',
+      'username',
+      'lottery_name',
+      'play_type_name',
+      'play_name',
+      'issue',
+      'content',
+      'money',
+      'rebate_amount',
+      'result',
+      'status_text',
+      'create_time'
+    ],
     uniqueKey: ['agent_id', 'serial_no'],
     hasDate: true
   }
@@ -148,10 +312,14 @@ function saveData(agentId, endpointKey, rows, totalData, dateKey) {
     }
 
     const dateDisplay = dateKey ? dateKey.split('|')[0] : '';
-    log.info(`[${endpointKey}] Saved ${saved}/${rows.length} rows for agent=${agentId}` +
-      (dateDisplay ? ` date=${dateDisplay}` : ''));
+    log.info(
+      `[${endpointKey}] Saved ${saved}/${rows.length} rows for agent=${agentId}` +
+        (dateDisplay ? ` date=${dateDisplay}` : '')
+    );
   } catch (err) {
-    log.error(`[${endpointKey}] Save failed for agent=${agentId}: ${err.message}`);
+    log.error(
+      `[${endpointKey}] Save failed for agent=${agentId}: ${err.message}`
+    );
   }
 
   return saved;
@@ -212,7 +380,9 @@ function buildValues(mapping, agentId, row, dateKey, now) {
       extraObj[key] = row[key];
     }
   }
-  values.push(Object.keys(extraObj).length > 0 ? JSON.stringify(extraObj) : null);
+  values.push(
+    Object.keys(extraObj).length > 0 ? JSON.stringify(extraObj) : null
+  );
 
   // synced_at
   values.push(now);
@@ -227,12 +397,16 @@ function saveTotals(agentId, endpointKey, dateKey, totalData) {
   if (!totalData) return;
   const db = getDb();
   try {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT OR REPLACE INTO data_totals (agent_id, endpoint_key, date_key, total_json, synced_at)
       VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
-    `).run(agentId, endpointKey, dateKey, JSON.stringify(totalData));
+    `
+    ).run(agentId, endpointKey, dateKey, JSON.stringify(totalData));
   } catch (err) {
-    log.error(`Save totals failed: agent=${agentId} ep=${endpointKey}: ${err.message}`);
+    log.error(
+      `Save totals failed: agent=${agentId} ep=${endpointKey}: ${err.message}`
+    );
   }
 }
 
@@ -250,7 +424,15 @@ function queryData(endpointKey, options = {}) {
   if (!mapping) return { data: [], count: 0 };
 
   const db = getDb();
-  const { agentId, dateKey, page = 1, limit = 50, search, orderBy, order = 'DESC' } = options;
+  const {
+    agentId,
+    dateKey,
+    page = 1,
+    limit = 50,
+    search,
+    orderBy,
+    order = 'DESC'
+  } = options;
 
   let where = 'WHERE 1=1';
   const params = [];
@@ -269,18 +451,24 @@ function queryData(endpointKey, options = {}) {
   }
 
   // Count
-  const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table} ${where}`).get(...params);
+  const countRow = db
+    .prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table} ${where}`)
+    .get(...params);
 
   // Data
   const validOrder = order === 'ASC' ? 'ASC' : 'DESC';
   const orderCol = mapping.columns.includes(orderBy) ? orderBy : 'id';
   const offset = (page - 1) * limit;
 
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT * FROM ${mapping.table} ${where}
     ORDER BY ${orderCol} ${validOrder}
     LIMIT ? OFFSET ?
-  `).all(...params, limit, offset);
+  `
+    )
+    .all(...params, limit, offset);
 
   return { data: rows, count: countRow.cnt };
 }
@@ -290,9 +478,11 @@ function queryData(endpointKey, options = {}) {
  */
 function queryTotals(endpointKey, agentId, dateKey) {
   const db = getDb();
-  const row = db.prepare(
-    'SELECT total_json FROM data_totals WHERE agent_id = ? AND endpoint_key = ? AND date_key = ?'
-  ).get(agentId, endpointKey, dateKey);
+  const row = db
+    .prepare(
+      'SELECT total_json FROM data_totals WHERE agent_id = ? AND endpoint_key = ? AND date_key = ?'
+    )
+    .get(agentId, endpointKey, dateKey);
 
   if (!row) return null;
   try {
@@ -310,7 +500,9 @@ function getDataStats() {
   const stats = {};
 
   for (const [key, mapping] of Object.entries(COLUMN_MAP)) {
-    const row = db.prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table}`).get();
+    const row = db
+      .prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table}`)
+      .get();
     stats[key] = row.cnt;
   }
 
@@ -337,7 +529,10 @@ function clearData(endpointKey, agentId) {
   }
 
   const result = db.prepare(sql).run(...params);
-  log.info(`Cleared ${result.changes} rows from ${mapping.table}` + (agentId ? ` agent=${agentId}` : ''));
+  log.info(
+    `Cleared ${result.changes} rows from ${mapping.table}` +
+      (agentId ? ` agent=${agentId}` : '')
+  );
   return result.changes;
 }
 
@@ -369,56 +564,102 @@ function getDateColumn(endpointKey) {
 }
 
 /**
- * Query data từ DB local cho hiển thị (tất cả agents, có filter date)
- * Dùng cho stale-while-revalidate: hiện data cũ ngay → refresh nền
+ * Query data từ DB local — SQLite-first display query
+ * Hỗ trợ đầy đủ client params: pagination, date range, filter columns
  *
  * @param {number[]} agentIds — danh sách agent ID
  * @param {string} endpointKey
- * @param {string|null} startDate — YYYY-MM-DD
- * @param {string|null} endDate — YYYY-MM-DD
+ * @param {object} params — client query params (page, limit, create_time, username, status, ...)
  * @returns {{ data: Array, count: number, totalData: object|null } | null}
  */
-function queryForDisplay(agentIds, endpointKey, startDate, endDate) {
+function queryLocal(agentIds, endpointKey, params) {
   const mapping = COLUMN_MAP[endpointKey];
   if (!mapping || !agentIds || agentIds.length === 0) return null;
 
   const db = getDb();
+  const page = parseInt(params.page) || 1;
+  const limit = parseInt(params.limit) || 10;
   const placeholders = agentIds.map(() => '?').join(',');
   let where = `WHERE agent_id IN (${placeholders})`;
-  const params = [...agentIds];
+  const queryParams = [...agentIds];
 
-  // Date filter cho report endpoints (date_key column)
-  if (mapping.needsDateKey && startDate && endDate) {
-    where += ' AND date_key = ?';
-    params.push(startDate + '|' + endDate);
+  // ── Date range filter ──
+  const dateParam = params.create_time || params.bet_time || params.date;
+  if (dateParam) {
+    const parts = dateParam.split('|').map((s) => s.trim());
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      const startDate = parts[0];
+      const endDate = parts[1];
+
+      if (mapping.needsDateKey) {
+        // report endpoints: date_key = "YYYY-MM-DD|YYYY-MM-DD"
+        where += ' AND date_key = ?';
+        queryParams.push(startDate + '|' + endDate);
+      } else if (mapping.hasDate) {
+        const dateCol = getDateColumn(endpointKey);
+        if (dateCol) {
+          where += ` AND ${dateCol} >= ? AND ${dateCol} <= ?`;
+          queryParams.push(startDate, endDate + ' 23:59:59');
+        }
+      }
+    }
   }
-  // Date filter cho transaction endpoints (create_time / bet_time column)
-  else if (mapping.hasDate && startDate && endDate) {
-    const dateCol = getDateColumn(endpointKey);
-    if (dateCol) {
-      where += ` AND ${dateCol} >= ? AND ${dateCol} <= ?`;
-      params.push(startDate, endDate + ' 23:59:59');
+
+  // ── Column filters (chỉ apply nếu cột tồn tại trong bảng) ──
+  const filterCols = [
+    'username',
+    'status',
+    'type',
+    'serial_no',
+    'platform_username',
+    'lottery_id',
+    'platform_id'
+  ];
+  for (const col of filterCols) {
+    if (
+      params[col] !== undefined &&
+      params[col] !== '' &&
+      mapping.columns.includes(col)
+    ) {
+      where += ` AND ${col} = ?`;
+      queryParams.push(params[col]);
     }
   }
 
   try {
-    const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table} ${where}`).get(...params);
+    const countRow = db
+      .prepare(`SELECT COUNT(*) as cnt FROM ${mapping.table} ${where}`)
+      .get(...queryParams);
     if (!countRow || countRow.cnt === 0) return null;
 
-    const rows = db.prepare(`SELECT * FROM ${mapping.table} ${where} ORDER BY id DESC`).all(...params);
+    const offset = (page - 1) * limit;
+    const rows = db
+      .prepare(
+        `
+      SELECT * FROM ${mapping.table} ${where}
+      ORDER BY id DESC
+      LIMIT ? OFFSET ?
+    `
+      )
+      .all(...queryParams, limit, offset);
 
-    // Aggregate total_data từ data_totals
+    // Aggregate total_data từ data_totals (chỉ cho report endpoints có date)
     let totalData = null;
-    if (startDate && endDate) {
-      const dateKey = startDate + '|' + endDate;
-      for (const agentId of agentIds) {
-        const t = queryTotals(endpointKey, agentId, dateKey);
-        if (t) {
-          if (!totalData) { totalData = { ...t }; }
-          else {
-            for (const k in t) {
-              const v = parseFloat(t[k]);
-              if (!isNaN(v)) totalData[k] = (parseFloat(totalData[k]) || 0) + v;
+    if (dateParam && mapping.needsDateKey) {
+      const parts = dateParam.split('|').map((s) => s.trim());
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        const dateKey = parts[0] + '|' + parts[1];
+        for (const agentId of agentIds) {
+          const t = queryTotals(endpointKey, agentId, dateKey);
+          if (t) {
+            if (!totalData) {
+              totalData = { ...t };
+            } else {
+              for (const k in t) {
+                const v = parseFloat(t[k]);
+                if (!isNaN(v))
+                  totalData[k] = (parseFloat(totalData[k]) || 0) + v;
+              }
             }
           }
         }
@@ -427,7 +668,7 @@ function queryForDisplay(agentIds, endpointKey, startDate, endDate) {
 
     return { data: rows, count: countRow.cnt, totalData };
   } catch (err) {
-    log.error(`queryForDisplay [${endpointKey}] lỗi: ${err.message}`);
+    log.error(`queryLocal [${endpointKey}] error: ${err.message}`);
     return null;
   }
 }
@@ -437,7 +678,7 @@ module.exports = {
   saveTotals,
   queryData,
   queryTotals,
-  queryForDisplay,
+  queryLocal,
   getDataStats,
   clearData,
   getEndpointList,

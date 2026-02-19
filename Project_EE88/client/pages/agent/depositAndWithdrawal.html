@@ -1,182 +1,321 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nạp tiền</title>
-  <link rel="stylesheet" href="/lib/layui/css/layui.css">
-  <style>
-    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
-    .layui-card { margin: 15px; }
-    .layui-card-header { padding-bottom: 0; border-bottom: none; }
-    .layui-field-box .layui-inline { margin-bottom: 8px; }
-    .layui-field-box .layui-inline label { font-size: 13px; margin-right: 5px; }
-  </style>
-</head>
-<body>
-
-  <div class="layui-row">
-    <div class="layui-col-md12">
-      <div class="layui-card">
-        <div class="layui-form layui-card-header">
-          <fieldset class="layui-elem-field">
-            <legend data-i18n="depositWithdrawTitle">Quản lí nạp / rút tiền</legend>
-            <div class="layui-field-box">
-              <form class="layui-form" lay-filter="searchForm">
-                <div class="layui-inline">
-                  <label data-i18n="accountName">Tên tài khoản</label>：
-                  <div style="width:200px;" class="layui-input-inline">
-                    <input type="text" name="username" placeholder="Nhập tên tài khoản" data-i18n="enterAccountName" data-i18n-attr="placeholder" class="layui-input" autocomplete="off">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nạp tiền</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .layui-field-box .layui-inline label {
+        font-size: 13px;
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-form layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="depositWithdrawTitle">
+                Quản lí nạp / rút tiền
+              </legend>
+              <div class="layui-field-box">
+                <form class="layui-form" lay-filter="searchForm">
+                  <div class="layui-inline">
+                    <label data-i18n="accountName">Tên tài khoản</label>：
+                    <div style="width: 200px" class="layui-input-inline">
+                      <input
+                        type="text"
+                        name="username"
+                        placeholder="Nhập tên tài khoản"
+                        data-i18n="enterAccountName"
+                        data-i18n-attr="placeholder"
+                        class="layui-input"
+                        autocomplete="off"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <label data-i18n="time">Thời gian</label>：
-                  <div style="width:220px;" class="layui-input-inline">
-                    <input type="text" name="create_time" id="createTime" placeholder="Ngày bắt đầu - Ngày kết thúc" data-i18n="dateStartEnd" data-i18n-attr="placeholder" class="layui-input" readonly autocomplete="off">
+                  <div class="layui-inline">
+                    <label data-i18n="time">Thời gian</label>：
+                    <div style="width: 220px" class="layui-input-inline">
+                      <input
+                        type="text"
+                        name="create_time"
+                        id="createTime"
+                        placeholder="Ngày bắt đầu - Ngày kết thúc"
+                        data-i18n="dateStartEnd"
+                        data-i18n-attr="placeholder"
+                        class="layui-input"
+                        readonly
+                        autocomplete="off"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <label data-i18n="typeCol">Loại</label>：
-                  <div class="layui-input-inline">
-                    <select name="type" lay-filter="type" lay-search>
-                      <option value="" data-i18n="all">Tất cả</option>
-                      <option value="1" data-i18n="deposit">Nạp tiền</option>
-                      <option value="2" data-i18n="withdraw">Rút tiền</option>
-                    </select>
+                  <div class="layui-inline">
+                    <label data-i18n="typeCol">Loại</label>：
+                    <div class="layui-input-inline">
+                      <select name="type" lay-filter="type" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                        <option value="1" data-i18n="deposit">Nạp tiền</option>
+                        <option value="2" data-i18n="withdraw">Rút tiền</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <label data-i18n="status">Trạng thái</label>：
-                  <div class="layui-input-inline">
-                    <select name="status" lay-filter="status" lay-search>
-                      <option value="" data-i18n="all">Tất cả</option>
-                      <option value="0" data-i18n="statusPending">Chờ xử lí</option>
-                      <option value="1" data-i18n="statusDone">Hoàn tất</option>
-                      <option value="2" data-i18n="statusProcessing">Đang xử lí</option>
-                      <option value="3" data-i18n="statusFailed">Thất bại</option>
-                    </select>
+                  <div class="layui-inline">
+                    <label data-i18n="status">Trạng thái</label>：
+                    <div class="layui-input-inline">
+                      <select name="status" lay-filter="status" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                        <option value="0" data-i18n="statusPending">
+                          Chờ xử lí
+                        </option>
+                        <option value="1" data-i18n="statusDone">
+                          Hoàn tất
+                        </option>
+                        <option value="2" data-i18n="statusProcessing">
+                          Đang xử lí
+                        </option>
+                        <option value="3" data-i18n="statusFailed">
+                          Thất bại
+                        </option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div class="layui-inline">
-                  <button type="button" class="layui-btn" lay-submit lay-filter="doSearch"><i class="layui-icon layui-icon-search"></i> <span data-i18n="search">Tìm kiếm</span></button>
-                </div>
-                <div class="layui-inline">
-                  <button type="reset" class="layui-btn layui-btn-primary" id="btnReset"><i class="layui-icon layui-icon-refresh"></i> <span data-i18n="reset">Đặt lại</span></button>
-                </div>
-              </form>
-            </div>
-          </fieldset>
-        </div>
-        <div class="layui-card-body">
-          <table id="dataTable" lay-filter="dataTable"></table>
+                  <div class="layui-inline">
+                    <button
+                      type="button"
+                      class="layui-btn"
+                      lay-submit
+                      lay-filter="doSearch"
+                    >
+                      <i class="layui-icon layui-icon-search"></i>
+                      <span data-i18n="search">Tìm kiếm</span>
+                    </button>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="reset"
+                      class="layui-btn layui-btn-primary"
+                      id="btnReset"
+                    >
+                      <i class="layui-icon layui-icon-refresh"></i>
+                      <span data-i18n="reset">Đặt lại</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <table id="dataTable" lay-filter="dataTable"></table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="/lib/layui/layui.js"></script>
-  <script src="/js/hub-lang.js"></script>
-  <script src="/js/hub-api.js"></script>
-  <script>
-    layui.use(['table', 'form', 'laydate'], function () {
-      HubLang.init();
-      HubLang.applyDOM();
-      var table = layui.table;
-      var form = layui.form;
-      var laydate = layui.laydate;
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script>
+      layui.use(['table', 'form', 'laydate'], function () {
+        HubLang.init();
+        HubLang.applyDOM();
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
 
-      // Mặc định hôm nay
-      var today = new Date();
-      var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-      var defaultRange = todayStr + ' | ' + todayStr;
+        laydate.render({
+          elem: '#createTime',
+          type: 'date',
+          range: '|',
+          rangeLinked: true
+        });
 
-      laydate.render({ elem: '#createTime', type: 'date', range: '|', rangeLinked: true, value: defaultRange });
+        table.render({
+          elem: '#dataTable',
+          url: '/api/data/deposits',
+          method: 'get',
+          toolbar: true,
+          defaultToolbar: ['filter', 'print', 'exports'],
+          page: true,
+          limit: 10,
+          text: { none: HubLang.t('noData') },
+          parseData: function (res) {
+            return {
+              code: res.code === 0 ? 0 : 1,
+              msg: res.msg || '',
+              count: res.count || 0,
+              data: res.data || []
+            };
+          },
+          request: { pageName: 'page', limitName: 'limit' },
+          cols: [
+            [
+              { field: 'serial_no', title: HubLang.t('serialNo'), width: 220 },
+              { field: 'username', title: HubLang.t('account'), width: 130 },
+              {
+                field: 'user_parent_format',
+                title: HubLang.t('agent'),
+                width: 120
+              },
+              {
+                field: 'type',
+                title: HubLang.t('typeCol'),
+                width: 80,
+                templet: function (d) {
+                  return d.type == '1'
+                    ? HubLang.t('typeDeposit')
+                    : HubLang.t('typeWithdraw');
+                }
+              },
+              { field: 'amount', title: HubLang.t('amount'), width: 130 },
+              {
+                field: 'true_amount',
+                title: HubLang.t('trueAmount'),
+                width: 130
+              },
+              {
+                field: 'status',
+                title: HubLang.t('status'),
+                width: 100,
+                templet: function (d) {
+                  var map = {
+                    0: HubLang.t('statusWait'),
+                    1: HubLang.t('statusDone'),
+                    2: HubLang.t('statusProcessing'),
+                    3: HubLang.t('statusFailed')
+                  };
+                  return map[d.status] || d.status;
+                }
+              },
+              { field: 'operator', title: HubLang.t('operator'), width: 110 },
+              {
+                field: 'create_time',
+                title: HubLang.t('createTime'),
+                width: 160
+              },
+              {
+                field: 'success_time',
+                title: HubLang.t('successTime'),
+                width: 160
+              },
+              { field: 'id', title: 'ID', width: 100 },
+              { field: 'uid', title: 'UID', width: 90 },
+              { field: 'user_parent', title: HubLang.t('agentId'), width: 100 },
+              { field: 'user_tree', title: HubLang.t('agentTree'), width: 150 },
+              { field: 'group_id', title: HubLang.t('groupId'), width: 80 },
+              { field: 'firm_fee', title: HubLang.t('firmFee'), width: 120 },
+              { field: 'user_fee', title: HubLang.t('userFee'), width: 120 },
+              { field: 'rebate', title: HubLang.t('rebate'), width: 120 },
+              {
+                field: 'name',
+                title: HubLang.t('accountHolderShort'),
+                width: 150
+              },
+              { field: 'bank_id', title: HubLang.t('bankId'), width: 100 },
+              { field: 'branch', title: HubLang.t('branch'), width: 130 },
+              { field: 'account', title: HubLang.t('accountNo'), width: 150 },
+              {
+                field: 'transfer_time',
+                title: HubLang.t('transferTime'),
+                width: 160
+              },
+              { field: 'remark', title: HubLang.t('remark'), width: 150 },
+              {
+                field: 'user_remark',
+                title: HubLang.t('userRemark'),
+                width: 150
+              },
+              { field: 'prostatus', title: HubLang.t('proStatus'), width: 120 },
+              {
+                field: 'prize_amount',
+                title: HubLang.t('prizeAmount'),
+                width: 120
+              },
+              {
+                field: 'activity_id',
+                title: HubLang.t('activityId'),
+                width: 110
+              },
+              { field: 'extra', title: HubLang.t('extraInfo'), width: 150 },
+              {
+                field: 'category_id',
+                title: HubLang.t('categoryId'),
+                width: 100
+              },
+              {
+                field: 'merchant_id',
+                title: HubLang.t('merchantId'),
+                width: 110
+              },
+              { field: 'pay_type', title: HubLang.t('payType'), width: 120 },
+              { field: 'trade_id', title: HubLang.t('tradeId'), width: 200 },
+              { field: 'is_tester', title: HubLang.t('isTester'), width: 100 },
+              {
+                field: 'review_time',
+                title: HubLang.t('reviewTime'),
+                width: 160
+              },
+              {
+                field: 'transfer_record',
+                title: HubLang.t('transferRecord'),
+                width: 150
+              },
+              { field: 'currency', title: HubLang.t('currency'), width: 80 },
+              {
+                field: 'update_time',
+                title: HubLang.t('updateTime'),
+                width: 160
+              }
+            ]
+          ],
+          done: function (res) {
+            console.log(
+              '[deposits] Đã tải ' +
+                (res.data ? res.data.length : 0) +
+                '/' +
+                res.count +
+                ' giao dịch'
+            );
+          }
+        });
 
-      table.render({
-        elem: '#dataTable',
-        url: '/api/data/deposits',
-        method: 'get',
-        where: { create_time: defaultRange },
-        toolbar: true,
-        defaultToolbar: ['filter', 'print', 'exports'],
-        page: true,
-        limit: 10,
-        text: { none: HubLang.t('noData') },
-        parseData: function (res) {
-          return {
-            code: res.code === 0 ? 0 : 1,
-            msg: res.msg || '',
-            count: res.count || 0,
-            data: res.data || []
-          };
-        },
-        request: { pageName: 'page', limitName: 'limit' },
-        cols: [[
-          { field: 'serial_no', title: HubLang.t('serialNo'), width: 220 },
-          { field: 'username', title: HubLang.t('account'), width: 130 },
-          { field: 'user_parent_format', title: HubLang.t('agent'), width: 120 },
-          { field: 'type', title: HubLang.t('typeCol'), width: 80, templet: function (d) {
-            return d.type == '1' ? HubLang.t('typeDeposit') : HubLang.t('typeWithdraw');
-          }},
-          { field: 'amount', title: HubLang.t('amount'), width: 130 },
-          { field: 'true_amount', title: HubLang.t('trueAmount'), width: 130 },
-          { field: 'status', title: HubLang.t('status'), width: 100, templet: function (d) {
-            var map = { 0: HubLang.t('statusWait'), 1: HubLang.t('statusDone'), 2: HubLang.t('statusProcessing'), 3: HubLang.t('statusFailed') };
-            return map[d.status] || d.status;
-          }},
-          { field: 'operator', title: HubLang.t('operator'), width: 110 },
-          { field: 'create_time', title: HubLang.t('createTime'), width: 160 },
-          { field: 'success_time', title: HubLang.t('successTime'), width: 160 },
-          { field: 'id', title: 'ID', width: 100},
-          { field: 'uid', title: 'UID', width: 90},
-          { field: 'user_parent', title: HubLang.t('agentId'), width: 100},
-          { field: 'user_tree', title: HubLang.t('agentTree'), width: 150},
-          { field: 'group_id', title: HubLang.t('groupId'), width: 80},
-          { field: 'firm_fee', title: HubLang.t('firmFee'), width: 120},
-          { field: 'user_fee', title: HubLang.t('userFee'), width: 120},
-          { field: 'rebate', title: HubLang.t('rebate'), width: 120},
-          { field: 'name', title: HubLang.t('accountHolderShort'), width: 150},
-          { field: 'bank_id', title: HubLang.t('bankId'), width: 100},
-          { field: 'branch', title: HubLang.t('branch'), width: 130},
-          { field: 'account', title: HubLang.t('accountNo'), width: 150},
-          { field: 'transfer_time', title: HubLang.t('transferTime'), width: 160},
-          { field: 'remark', title: HubLang.t('remark'), width: 150},
-          { field: 'user_remark', title: HubLang.t('userRemark'), width: 150},
-          { field: 'prostatus', title: HubLang.t('proStatus'), width: 120},
-          { field: 'prize_amount', title: HubLang.t('prizeAmount'), width: 120},
-          { field: 'activity_id', title: HubLang.t('activityId'), width: 110},
-          { field: 'extra', title: HubLang.t('extraInfo'), width: 150},
-          { field: 'category_id', title: HubLang.t('categoryId'), width: 100},
-          { field: 'merchant_id', title: HubLang.t('merchantId'), width: 110},
-          { field: 'pay_type', title: HubLang.t('payType'), width: 120},
-          { field: 'trade_id', title: HubLang.t('tradeId'), width: 200},
-          { field: 'is_tester', title: HubLang.t('isTester'), width: 100},
-          { field: 'review_time', title: HubLang.t('reviewTime'), width: 160},
-          { field: 'transfer_record', title: HubLang.t('transferRecord'), width: 150},
-          { field: 'currency', title: HubLang.t('currency'), width: 80},
-          { field: 'update_time', title: HubLang.t('updateTime'), width: 160}
-        ]],
-        done: function (res) {
-          console.log('[deposits] Đã tải ' + (res.data ? res.data.length : 0) + '/' + res.count + ' giao dịch');
-        }
-      });
+        form.on('submit(doSearch)', function (data) {
+          table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+          return false;
+        });
 
-      form.on('submit(doSearch)', function (data) {
-        table.reload('dataTable', { where: data.field, page: { curr: 1 } });
-        return false;
-      });
-
-      document.getElementById('btnReset').addEventListener('click', function () {
-        setTimeout(function () {
-          form.render('select');
-          document.getElementById('createTime').value = defaultRange;
-          table.reload('dataTable', {
-            where: { username: '', create_time: defaultRange, type: '', status: '' },
-            page: { curr: 1 }
+        document
+          .getElementById('btnReset')
+          .addEventListener('click', function () {
+            setTimeout(function () {
+              form.render('select');
+              document.getElementById('createTime').value = '';
+              table.reload('dataTable', {
+                where: { username: '', create_time: '', type: '', status: '' },
+                page: { curr: 1 }
+              });
+            }, 50);
           });
-        }, 50);
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

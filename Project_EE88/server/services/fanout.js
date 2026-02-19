@@ -6,37 +6,22 @@ const dataStore = require('./dataStore');
 const config = require('../config/default');
 const { createLogger } = require('../utils/logger');
 
-const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const DEFAULT_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const log = createLogger('fanout');
 const limit = pLimit(config.fanout.concurrency);
 
 // ═══════════════════════════════════════
-// ── Display Cache (in-memory) ──
-// Giữ response đã hiển thị → lần sau load nhanh
+// ── SQLite-first refresh tracking ──
 // ═══════════════════════════════════════
 
-const displayCache = new Map();
-const refreshLocks = new Map();
-const MAX_CACHE_SIZE = 100;
-const CACHE_MAX_AGE = 30 * 60 * 1000;
-const STALE_TTL = 5 * 60 * 1000; // 5 phút
+const refreshInProgress = new Map();
+const lastRefreshAt = new Map();
+const REFRESH_TTL = 5 * 60 * 1000; // 5 phút
 
-function makeCacheKey(agentIds, endpointKey, params) {
-  const ids = agentIds.slice().sort().join(',');
-  const keys = Object.keys(params).filter(k => k !== 'page' && k !== 'limit').sort();
-  const paramStr = keys.map(k => k + '=' + params[k]).join('&');
-  return ids + ':' + endpointKey + ':' + paramStr;
-}
-
-function evictStaleEntries() {
-  const now = Date.now();
-  for (const [k, v] of displayCache) {
-    if (now - v.timestamp > CACHE_MAX_AGE) displayCache.delete(k);
-  }
-  while (displayCache.size > MAX_CACHE_SIZE) {
-    displayCache.delete(displayCache.keys().next().value);
-  }
+function makeRefreshKey(agentIds, endpointKey) {
+  return agentIds.slice().sort().join(',') + ':' + endpointKey;
 }
 
 // ═══════════════════════════════════════
@@ -71,16 +56,24 @@ async function fetchAllData(agents, endpointKey, params) {
   let errors = [];
 
   const results = await Promise.allSettled(
-    agents.map(agent =>
+    agents.map((agent) =>
       limit(async () => {
         const data = await fetchWithRelogin(agent, endpointKey, fetchParams);
 
         // Lưu vào dataStore (fail-safe)
         try {
           if (Array.isArray(data.data) && data.data.length > 0) {
-            dataStore.saveData(agent.id, endpointKey, data.data, data.total_data, null);
+            dataStore.saveData(
+              agent.id,
+              endpointKey,
+              data.data,
+              data.total_data,
+              null
+            );
           }
-        } catch (e) { /* fail-safe */ }
+        } catch (e) {
+          /* fail-safe */
+        }
 
         return { agent, data };
       })
@@ -93,7 +86,7 @@ async function fetchAllData(agents, endpointKey, params) {
       successCount++;
 
       if (Array.isArray(data.data)) {
-        data.data.forEach(row => {
+        data.data.forEach((row) => {
           row._agent_id = agent.id;
           row._agent_label = agent.label;
         });
@@ -120,29 +113,25 @@ async function fetchAllData(agents, endpointKey, params) {
   return { allData, totalData, successCount, errors };
 }
 
-function scheduleRefresh(agents, endpointKey, params, cacheKey) {
-  if (refreshLocks.has(cacheKey)) return;
-  refreshLocks.set(cacheKey, true);
+function scheduleRefresh(agents, endpointKey, params, refreshKey) {
+  if (refreshInProgress.get(refreshKey)) return;
+  refreshInProgress.set(refreshKey, true);
 
   fetchAllData(agents, endpointKey, params)
-    .then(result => {
-      displayCache.set(cacheKey, {
-        allData: result.allData,
-        totalData: result.totalData,
-        timestamp: Date.now()
-      });
-      log.ok(`Display refresh OK: ${endpointKey} (${result.allData.length} rows)`);
+    .then((result) => {
+      lastRefreshAt.set(refreshKey, Date.now());
+      log.ok(`BG refresh OK: ${endpointKey} (${result.allData.length} rows)`);
     })
-    .catch(err => {
-      log.warn(`Display refresh failed: ${endpointKey}: ${err.message}`);
+    .catch((err) => {
+      log.warn(`BG refresh failed: ${endpointKey}: ${err.message}`);
     })
     .finally(() => {
-      refreshLocks.delete(cacheKey);
+      refreshInProgress.delete(refreshKey);
     });
 }
 
 // ═══════════════════════════════════════
-// ── Fan-out fetch ──
+// ── Fan-out fetch (SQLite-first) ──
 // ═══════════════════════════════════════
 
 async function fanoutFetch(agents, endpointKey, params) {
@@ -150,43 +139,48 @@ async function fanoutFetch(agents, endpointKey, params) {
     return { code: 0, msg: '', count: 0, data: [], total_data: null };
   }
 
-  const clientPage = parseInt(params.page) || 1;
-  const clientLimit = parseInt(params.limit) || 10;
-  const agentIds = agents.map(a => a.id);
-  const key = makeCacheKey(agentIds, endpointKey, params);
+  const agentIds = agents.map((a) => a.id);
+  const refreshKey = makeRefreshKey(agentIds, endpointKey);
 
-  // 1. Display cache hit
-  const cached = displayCache.get(key);
-  if (cached) {
-    const age = Date.now() - cached.timestamp;
-    if (age > STALE_TTL) {
-      log.info(`Display STALE: ${endpointKey} (${Math.round(age / 1000)}s) — bg refresh`);
-      scheduleRefresh(agents, endpointKey, params, key);
-    } else {
-      log.info(`Display HIT: ${endpointKey} (${cached.allData.length} rows)`);
+  // 1. SQLite-first — query local DB
+  const localResult = dataStore.queryLocal(agentIds, endpointKey, params);
+
+  if (localResult && localResult.data.length > 0) {
+    const lastRefresh = lastRefreshAt.get(refreshKey);
+    const isRefreshing = refreshInProgress.get(refreshKey);
+    const isStale = !lastRefresh || Date.now() - lastRefresh > REFRESH_TTL;
+
+    if (isStale && !isRefreshing) {
+      scheduleRefresh(agents, endpointKey, params, refreshKey);
     }
 
-    const offset = (clientPage - 1) * clientLimit;
+    // fromLocal: true → client polls for fresh data
+    // fromLocal: false → data is fresh, stop polling
+    const fromLocal = !!(isRefreshing || isStale);
+
+    log.info(
+      `LOCAL ${fromLocal ? 'STALE' : 'FRESH'}: ${endpointKey} (${localResult.count} total, page ${params.page || 1})`
+    );
+
     return {
-      code: 0, msg: '',
-      count: cached.allData.length,
-      data: cached.allData.slice(offset, offset + clientLimit),
-      total_data: cached.totalData
+      code: 0,
+      msg: '',
+      count: localResult.count,
+      data: localResult.data,
+      total_data: localResult.totalData,
+      fromLocal
     };
   }
 
-  // 2. Blocking fetch từ EE88
+  // 2. No local data → blocking fetch từ EE88
   const startTime = Date.now();
-  log.info(`Display MISS: ${endpointKey} — fetching ${agents.length} agent(s)...`);
+  log.info(
+    `LOCAL MISS: ${endpointKey} — fetching ${agents.length} agent(s)...`
+  );
 
   const result = await fetchAllData(agents, endpointKey, params);
 
-  displayCache.set(key, {
-    allData: result.allData,
-    totalData: result.totalData,
-    timestamp: Date.now()
-  });
-  evictStaleEntries();
+  lastRefreshAt.set(refreshKey, Date.now());
 
   const duration = Date.now() - startTime;
   log.ok(`Fetch [${endpointKey}] — ${duration}ms`, {
@@ -195,10 +189,17 @@ async function fanoutFetch(agents, endpointKey, params) {
     thấtBại: result.errors.length
   });
 
+  // Server-side pagination cho blocking fetch
+  const clientPage = parseInt(params.page) || 1;
+  const clientLimit = parseInt(params.limit) || 10;
   const offset = (clientPage - 1) * clientLimit;
+
   return {
     code: result.successCount > 0 ? 0 : 1,
-    msg: result.errors.length > 0 ? `${result.errors.length}/${agents.length} agent lỗi` : '',
+    msg:
+      result.errors.length > 0
+        ? `${result.errors.length}/${agents.length} agent lỗi`
+        : '',
     count: result.allData.length,
     data: result.allData.slice(offset, offset + clientLimit),
     total_data: result.totalData
