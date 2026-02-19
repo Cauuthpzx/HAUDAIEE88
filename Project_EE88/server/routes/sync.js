@@ -7,9 +7,7 @@ const log = createLogger('sync-routes');
 const router = express.Router();
 
 function sseData(data) {
-  var json = JSON.stringify(data);
-  var encoded = Buffer.from(json).toString('base64');
-  return 'data: ' + JSON.stringify({ _enc: encoded }) + '\n\n';
+  return 'data: ' + JSON.stringify(data) + '\n\n';
 }
 
 // ── SSE endpoint (auth via query param vì EventSource không set header được) ──

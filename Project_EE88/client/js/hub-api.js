@@ -284,45 +284,42 @@ var HubAPI = {
 
 /**
  * Global jQuery AJAX interceptor
- * Tự động gắn JWT token vào tất cả $.ajax calls (bao gồm layui table)
- * Tự động redirect login khi 401
- * Phải dùng layui.use() vì layui.$ chỉ có sau khi modules sẵn sàng
+ * Tự động gắn JWT token + base64 decode response cho tất cả $.ajax calls
+ *
+ * QUAN TRỌNG: Phải chạy NGAY (không qua layui.use) vì layui.use(fn)
+ * load tất cả modules → callback chạy SAU layui.use(['table'], fn) của page
+ * → $.ajaxSetup chưa set khi table.render() fire AJAX đầu tiên.
  */
-if (typeof layui !== 'undefined') {
-  layui.use(function () {
-    var $ = layui.$;
-    if ($) {
-      $.ajaxSetup({
-        beforeSend: function (xhr) {
-          var token = HubAPI.getToken();
-          if (token) {
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.setRequestHeader('X-Enc', '1');
+if (typeof layui !== 'undefined' && layui.$) {
+  layui.$.ajaxSetup({
+    beforeSend: function (xhr) {
+      var token = HubAPI.getToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.setRequestHeader('X-Enc', '1');
+      }
+    },
+    dataFilter: function (data) {
+      if (
+        typeof HubCrypto !== 'undefined' &&
+        data &&
+        data.indexOf('"_enc"') !== -1
+      ) {
+        try {
+          var parsed = JSON.parse(data);
+          if (parsed && parsed._enc) {
+            var dec = HubCrypto.decryptSync(parsed._enc);
+            if (dec) return JSON.stringify(dec);
           }
-        },
-        dataFilter: function (data) {
-          if (
-            typeof HubCrypto !== 'undefined' &&
-            data &&
-            data.indexOf('"_enc"') !== -1
-          ) {
-            try {
-              var parsed = JSON.parse(data);
-              if (parsed && parsed._enc) {
-                var dec = HubCrypto.decryptSync(parsed._enc);
-                if (dec) return JSON.stringify(dec);
-              }
-            } catch (e) {}
-          }
-          return data;
-        },
-        statusCode: {
-          401: function () {
-            HubAPI.clearAuth();
-            window.top.location.href = HubAPI.LOGIN_URL;
-          }
-        }
-      });
+        } catch (e) {}
+      }
+      return data;
+    },
+    statusCode: {
+      401: function () {
+        HubAPI.clearAuth();
+        window.top.location.href = HubAPI.LOGIN_URL;
+      }
     }
   });
 }

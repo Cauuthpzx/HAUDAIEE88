@@ -1,16 +1,19 @@
 /**
  * Response Obfuscation Middleware
- * Wraps res.json() to base64-encode response body khi client gửi X-Enc: 1
+ * Base64-encode response body CHỈ cho endpoint /api/data/members
  *
- * - Client gửi X-Enc: 1 header → response body được base64 encode → { _enc: "base64_string" }
- * - Không có header → passthrough bình thường
+ * - Client gửi X-Enc: 1 header + path là /api/data/members → { _enc: "base64_string" }
+ * - Tất cả endpoint khác → passthrough bình thường
  */
 
 function responseEncryptMiddleware(req, res, next) {
   const originalJson = res.json.bind(res);
 
   res.json = function (body) {
-    if (req.headers['x-enc'] !== '1') {
+    if (
+      req.headers['x-enc'] !== '1' ||
+      !req.originalUrl.startsWith('/api/data/members')
+    ) {
       return originalJson(body);
     }
 

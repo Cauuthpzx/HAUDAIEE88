@@ -20,7 +20,11 @@ require('dotenv').config();
 const axios = require('axios');
 const path = require('path');
 const { getDb, closeDb } = require('../database/init');
-const { loginAgent, isSolverReady } = require('../services/loginService');
+const {
+  loginAgent,
+  isSolverReady,
+  initSolver
+} = require('../services/loginService');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('loginWorker');
@@ -60,7 +64,9 @@ async function healthCheckAll() {
   }
 
   const db = getDb();
-  const agents = db.prepare('SELECT * FROM ee88_agents WHERE status >= 0').all();
+  const agents = db
+    .prepare('SELECT * FROM ee88_agents WHERE status >= 0')
+    .all();
 
   if (agents.length === 0) return;
 
@@ -71,12 +77,14 @@ async function healthCheckAll() {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
     if (ok) {
-      db.prepare("UPDATE ee88_agents SET last_check = ?, status = 1, updated_at = ? WHERE id = ?")
-        .run(now, now, agent.id);
+      db.prepare(
+        'UPDATE ee88_agents SET last_check = ?, status = 1, updated_at = ? WHERE id = ?'
+      ).run(now, now, agent.id);
     } else {
       log.warn(`[${agent.label}] Session hết hạn`);
-      db.prepare("UPDATE ee88_agents SET last_check = ?, status = 0, updated_at = ? WHERE id = ?")
-        .run(now, now, agent.id);
+      db.prepare(
+        'UPDATE ee88_agents SET last_check = ?, status = 0, updated_at = ? WHERE id = ?'
+      ).run(now, now, agent.id);
 
       // Auto-login nếu có credentials
       if (agent.ee88_username && agent.ee88_password) {
@@ -121,25 +129,30 @@ parentPort.on('message', async (msg) => {
     await healthCheckAll();
   } else if (msg.type === 'shutdown') {
     if (_healthCheckTimer) clearInterval(_healthCheckTimer);
-    if (_initialTimeout) clearTimeout(_initialTimeout);
     closeDb();
     process.exit(0);
   }
 });
 
 // ── Periodic health check ──
-let _initialTimeout = null;
 let _healthCheckTimer = null;
 
 log.info('Login Worker đã khởi động');
 log.info(`Health check mỗi ${HEALTH_CHECK_INTERVAL / 60000} phút`);
 
-// Chạy health check lần đầu sau 10s (chờ server khởi động)
-_initialTimeout = setTimeout(() => {
-  healthCheckAll().catch(err => log.error('Health check lỗi:', err.message));
-}, 10000);
+// Init OCR engine trong worker thread, chạy health check đầu tiên sau khi ready
+initSolver()
+  .then(() => {
+    log.ok('OCR engine sẵn sàng trong worker');
+    healthCheckAll().catch((err) =>
+      log.error('Health check lỗi:', err.message)
+    );
+  })
+  .catch((err) => {
+    log.error('Không khởi tạo được OCR engine:', err.message);
+  });
 
 // Lặp lại mỗi 30 phút
 _healthCheckTimer = setInterval(() => {
-  healthCheckAll().catch(err => log.error('Health check lỗi:', err.message));
+  healthCheckAll().catch((err) => log.error('Health check lỗi:', err.message));
 }, HEALTH_CHECK_INTERVAL);

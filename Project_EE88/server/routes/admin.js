@@ -39,9 +39,7 @@ router.get(
 
     function onEvent(data) {
       try {
-        var json = JSON.stringify(data);
-        var encoded = Buffer.from(json).toString('base64');
-        res.write('data: ' + JSON.stringify({ _enc: encoded }) + '\n\n');
+        res.write('data: ' + JSON.stringify(data) + '\n\n');
       } catch (e) {
         cleanup();
       }
