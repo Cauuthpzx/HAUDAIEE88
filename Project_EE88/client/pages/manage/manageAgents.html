@@ -15,6 +15,10 @@
       .layui-card {
         margin: 15px;
       }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
       .status-active {
         color: #16b777;
         font-weight: 600;
@@ -109,7 +113,9 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script>
       layui.use(['table', 'form', 'layer'], function () {
@@ -237,7 +243,9 @@
               break;
             case 'delete':
               layer.confirm(
-                HubLang.t('confirmDeleteAgent') + d.label + '"?',
+                HubLang.t('confirmDeleteAgent') +
+                  HubUtils.escapeHtml(d.label) +
+                  '"?',
                 { icon: 3 },
                 function (idx) {
                   layer.close(idx);
@@ -266,7 +274,7 @@
         function openAgentForm(data) {
           var isEdit = !!data;
           var title = isEdit
-            ? HubLang.t('editAgentTitle') + data.label
+            ? HubLang.t('editAgentTitle') + HubUtils.escapeHtml(data.label)
             : HubLang.t('addNewAgentMgmt');
 
           var html =
@@ -277,7 +285,7 @@
             '</label>' +
             '<div class="layui-input-block">' +
             '<input type="text" name="label" value="' +
-            (isEdit ? data.label || '' : '') +
+            (isEdit ? HubUtils.escapeHtml(data.label) : '') +
             '" placeholder="' +
             HubLang.t('agentExample') +
             '" class="layui-input" lay-verify="required">' +
@@ -288,7 +296,7 @@
             '</label>' +
             '<div class="layui-input-block">' +
             '<input type="text" name="ee88_username" value="' +
-            (isEdit ? data.ee88_username || '' : '') +
+            (isEdit ? HubUtils.escapeHtml(data.ee88_username) : '') +
             '" placeholder="' +
             HubLang.t('ee88Username') +
             '" class="layui-input" lay-verify="required" autocomplete="off">' +
@@ -312,7 +320,9 @@
             '</label>' +
             '<div class="layui-input-block">' +
             '<input type="text" name="base_url" value="' +
-            (isEdit ? data.base_url || '' : 'https://a2u4k.ee88dly.com') +
+            (isEdit
+              ? HubUtils.escapeHtml(data.base_url)
+              : 'https://a2u4k.ee88dly.com') +
             '" placeholder="https://xxx.ee88dly.com" class="layui-input" lay-verify="required">' +
             '</div></div>';
 
@@ -427,7 +437,7 @@
         function loginAgent(d) {
           layer.confirm(
             HubLang.t('loginConfirmMsg') +
-              d.label +
+              HubUtils.escapeHtml(d.label) +
               '"?<br><small>' +
               HubLang.t('loginProcessHint') +
               '</small>',

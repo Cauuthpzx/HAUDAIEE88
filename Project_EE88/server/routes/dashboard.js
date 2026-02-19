@@ -15,11 +15,41 @@ const cache = new Map();
 const CACHE_TTL = 3 * 60 * 1000; // 3 phút
 const MAX_CACHE = 200;
 
-// GET /api/dashboard/stats?range=today|7d|30d
+// GET /api/dashboard/stats?range=today|7d|30d  OR  ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
 router.get('/stats', (req, res) => {
-  const range = ['today', '7d', '30d'].includes(req.query.range)
-    ? req.query.range
-    : 'today';
+  const today = new Date();
+  const todayStr = fmtDate(today);
+  let range, startStr, endStr;
+
+  // Custom date range takes priority
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (
+    req.query.start_date &&
+    req.query.end_date &&
+    dateRe.test(req.query.start_date) &&
+    dateRe.test(req.query.end_date)
+  ) {
+    startStr = req.query.start_date;
+    endStr = req.query.end_date <= todayStr ? req.query.end_date : todayStr;
+    range = startStr + ':' + endStr;
+  } else {
+    range = ['today', '7d', '30d'].includes(req.query.range)
+      ? req.query.range
+      : 'today';
+    endStr = todayStr;
+    if (range === '30d') {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 29);
+      startStr = fmtDate(d);
+    } else if (range === '7d') {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 6);
+      startStr = fmtDate(d);
+    } else {
+      startStr = todayStr;
+    }
+  }
+
   const cacheKey = req.user.id + ':' + range;
   const now = Date.now();
 
@@ -34,24 +64,8 @@ router.get('/stats', (req, res) => {
     const isAdmin = req.user.role === 'admin';
     const ph = agentIds.map(() => '?').join(',');
 
-    // Date range
-    const today = new Date();
-    const todayStr = fmtDate(today);
-    let startStr;
-    if (range === '30d') {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 29);
-      startStr = fmtDate(d);
-    } else if (range === '7d') {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 6);
-      startStr = fmtDate(d);
-    } else {
-      startStr = todayStr;
-    }
-
     const startTime = startStr + ' 00:00:00';
-    const endTime = todayStr + ' 23:59:59';
+    const endTime = endStr + ' 23:59:59';
 
     const getData = db.transaction(() => {
       // 1-3. Members: gộp 3 queries thành 1
@@ -105,7 +119,7 @@ router.get('/stats', (req, res) => {
          FROM data_report_lottery
          WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?`
         )
-        .get(...agentIds, startStr, todayStr);
+        .get(...agentIds, startStr, endStr);
 
       // 8. Xu hướng nạp/rút theo ngày (cho biểu đồ)
       // date_key lưu "YYYY-MM-DD|YYYY-MM-DD", SUBSTR lấy ngày để group đúng
@@ -118,7 +132,7 @@ router.get('/stats', (req, res) => {
          WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
          GROUP BY SUBSTR(date_key, 1, 10) ORDER BY SUBSTR(date_key, 1, 10)`
         )
-        .all(...agentIds, startStr, todayStr);
+        .all(...agentIds, startStr, endStr);
 
       // 9. First-deposit members: LEFT JOIN thay NOT IN (nhanh hơn)
       const firstDeposit = db
@@ -162,9 +176,9 @@ router.get('/stats', (req, res) => {
           )
           .all(
             startStr,
-            todayStr,
+            endStr,
             startStr,
-            todayStr,
+            endStr,
             startTime,
             endTime,
             ...agentIds
@@ -190,7 +204,7 @@ router.get('/stats', (req, res) => {
       data: {
         range,
         startDate: startStr,
-        endDate: todayStr,
+        endDate: endStr,
         members: {
           total: d.members.total,
           new: d.members.new_cnt,

@@ -16,39 +16,83 @@
       .layui-card {
         margin: 15px;
       }
-      .stat-cards {
-        display: flex;
-        gap: 15px;
-        padding: 0 15px;
-        flex-wrap: wrap;
-        margin-top: 15px;
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
       }
-      .stat-card {
-        flex: 1;
-        min-width: 160px;
-        background: #fff;
-        border-radius: 4px;
-        padding: 15px 20px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
       }
-      .stat-card .label {
+      .layui-field-box .layui-inline label {
         font-size: 13px;
-        color: #999;
-        margin-bottom: 6px;
+        margin-right: 5px;
       }
-      .stat-card .value {
+      .db-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .db-kpi-card {
+        flex: 1;
+        min-width: 155px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition:
+          box-shadow 0.2s,
+          transform 0.2s;
+        border-left: 3px solid transparent;
+      }
+      .db-kpi-card:hover {
+        box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 0 0 1px rgba(0, 0, 0, 0.04);
+        transform: translateY(-1px);
+      }
+      .db-kpi-card[data-accent='blue'] {
+        border-left-color: #1e9fff;
+      }
+      .db-kpi-card[data-accent='green'] {
+        border-left-color: #16b777;
+      }
+      .db-kpi-card[data-accent='yellow'] {
+        border-left-color: #ffb800;
+      }
+      .db-kpi-card[data-accent='red'] {
+        border-left-color: #ff5722;
+      }
+      .db-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .db-kpi-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .db-kpi-value {
         font-size: 22px;
-        font-weight: 600;
-        color: #333;
+        font-weight: 700;
+        line-height: 1.2;
       }
-      .stat-card .value.green {
-        color: #16b777;
-      }
-      .stat-card .value.blue {
-        color: #1e9fff;
-      }
-      .stat-card .value.orange {
-        color: #ffb800;
+      .db-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
       }
       .page-info {
         font-size: 11px;
@@ -97,78 +141,130 @@
       {{# } }}
     </script>
 
-    <!-- Stat Cards -->
-    <div class="stat-cards" id="statsArea">
-      <div class="stat-card">
-        <div class="label" data-i18n="totalAgents">Tổng đại lý</div>
-        <div class="value blue" id="statTotalAgents">&mdash;</div>
-      </div>
-      <div class="stat-card">
-        <div class="label" data-i18n="active">Hoạt động</div>
-        <div class="value green" id="statActiveAgents">&mdash;</div>
-      </div>
-      <div class="stat-card">
-        <div class="label" data-i18n="fullySynced">Đã đồng bộ đủ</div>
-        <div class="value orange" id="statFullySynced">&mdash;</div>
-      </div>
-      <div class="stat-card">
-        <div class="label" data-i18n="status">Trạng thái</div>
-        <div class="value" id="statSyncState" style="font-size: 14px">
-          &mdash;
-        </div>
-      </div>
-    </div>
-
-    <!-- Table -->
     <div class="layui-row">
       <div class="layui-col-md12">
         <div class="layui-card">
-          <div class="layui-card-header">
+          <div class="layui-form layui-card-header">
             <fieldset class="layui-elem-field">
               <legend data-i18n="syncDataTitle">Đồng bộ dữ liệu</legend>
+              <div class="layui-field-box">
+                <div class="db-kpi-row" id="statsArea">
+                  <div class="db-kpi-card" data-accent="blue">
+                    <div class="db-kpi-icon" style="background: #1e9fff">
+                      <i class="hi hi-users"></i>
+                    </div>
+                    <div class="db-kpi-info">
+                      <div class="db-kpi-value" id="statTotalAgents">
+                        &mdash;
+                      </div>
+                      <div class="db-kpi-label" data-i18n="totalAgents">
+                        Tổng đại lý
+                      </div>
+                    </div>
+                  </div>
+                  <div class="db-kpi-card" data-accent="green">
+                    <div class="db-kpi-icon" style="background: #16b777">
+                      <i class="hi hi-circle-check"></i>
+                    </div>
+                    <div class="db-kpi-info">
+                      <div class="db-kpi-value" id="statActiveAgents">
+                        &mdash;
+                      </div>
+                      <div class="db-kpi-label" data-i18n="active">
+                        Hoạt động
+                      </div>
+                    </div>
+                  </div>
+                  <div class="db-kpi-card" data-accent="yellow">
+                    <div class="db-kpi-icon" style="background: #ffb800">
+                      <i class="hi hi-arrows-rotate"></i>
+                    </div>
+                    <div class="db-kpi-info">
+                      <div class="db-kpi-value" id="statFullySynced">
+                        &mdash;
+                      </div>
+                      <div class="db-kpi-label" data-i18n="fullySynced">
+                        Đã đồng bộ đủ
+                      </div>
+                    </div>
+                  </div>
+                  <div class="db-kpi-card" data-accent="red">
+                    <div class="db-kpi-icon" style="background: #ff5722">
+                      <i class="hi hi-signal"></i>
+                    </div>
+                    <div class="db-kpi-info">
+                      <div
+                        class="db-kpi-value"
+                        id="statSyncState"
+                        style="font-size: 14px"
+                      >
+                        &mdash;
+                      </div>
+                      <div class="db-kpi-label" data-i18n="status">
+                        Trạng thái
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <form class="layui-form" lay-filter="searchForm">
+                  <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div class="layui-input-inline" style="width: 150px">
+                      <select name="agent_id" id="filterAgent">
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
+                    <label>Endpoint</label>：
+                    <div class="layui-input-inline" style="width: 180px">
+                      <select name="endpoint" id="filterEndpoint">
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
+                    <label data-i18n="status">Trạng thái</label>：
+                    <div class="layui-input-inline" style="width: 140px">
+                      <select name="status">
+                        <option value="" data-i18n="all">Tất cả</option>
+                        <option value="done" data-i18n="completed">
+                          Hoàn tất
+                        </option>
+                        <option value="syncing" data-i18n="syncRunning">
+                          Đang chạy
+                        </option>
+                        <option value="idle" data-i18n="notSynced">
+                          Chưa đồng bộ
+                        </option>
+                        <option value="error" data-i18n="error">Lỗi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="button"
+                      class="layui-btn"
+                      lay-submit
+                      lay-filter="doSearch"
+                    >
+                      <i class="hi hi-magnifying-glass"></i>
+                      <span data-i18n="search">Tìm</span>
+                    </button>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="reset"
+                      class="layui-btn layui-btn-primary"
+                      id="btnReset"
+                    >
+                      <i class="hi hi-arrows-rotate"></i>
+                      <span data-i18n="reset">Đặt lại</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </fieldset>
-            <form
-              class="layui-form layui-form-sm"
-              lay-filter="searchForm"
-              style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-top: 10px;
-              "
-            >
-              <select name="agent_id" id="filterAgent" style="width: 150px">
-                <option value="" data-i18n="all">Tất cả — Đại lý</option>
-              </select>
-              <select name="endpoint" id="filterEndpoint" style="width: 180px">
-                <option value="" data-i18n="all">Tất cả — Endpoint</option>
-              </select>
-              <select name="status" style="width: 140px">
-                <option value="" data-i18n="all">Tất cả — Trạng thái</option>
-                <option value="done" data-i18n="completed">Hoàn tất</option>
-                <option value="syncing" data-i18n="syncRunning">
-                  Đang chạy
-                </option>
-                <option value="idle" data-i18n="notSynced">Chưa đồng bộ</option>
-                <option value="error" data-i18n="error">Lỗi</option>
-              </select>
-              <button
-                type="button"
-                class="layui-btn layui-btn-xs"
-                lay-submit
-                lay-filter="doSearch"
-              >
-                <i class="layui-icon layui-icon-search"></i>
-                <span data-i18n="search">Tìm kiếm</span>
-              </button>
-              <button
-                type="reset"
-                class="layui-btn layui-btn-xs layui-btn-primary"
-                id="btnReset"
-              >
-                <span data-i18n="reset">Đặt lại</span>
-              </button>
-            </form>
           </div>
           <div class="layui-card-body">
             <table
@@ -182,7 +278,9 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script>
       layui.use(['treeTable', 'form', 'layer'], function () {
@@ -245,7 +343,11 @@
         var epSel = $('#filterEndpoint');
         STATIC_EPS.forEach(function (ep) {
           epSel.append(
-            '<option value="' + ep.key + '">' + ep.name + '</option>'
+            '<option value="' +
+              HubUtils.escapeHtml(ep.key) +
+              '">' +
+              HubUtils.escapeHtml(ep.name) +
+              '</option>'
           );
         });
         form.render('select');
@@ -448,13 +550,15 @@
                           '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' +
                           c +
                           ';margin-right:6px;vertical-align:middle;"></span><b>' +
-                          d.name +
+                          HubUtils.escapeHtml(d.name) +
                           '</b>' +
                           syncIcon
                         );
                       }
                       return (
-                        '<span style="color:#1e9fff;">' + d.name + '</span>'
+                        '<span style="color:#1e9fff;">' +
+                        HubUtils.escapeHtml(d.name) +
+                        '</span>'
                       );
                     }
                   },
@@ -710,8 +814,17 @@
             try {
               // Reset retry count khi nhận được message thành công
               sseRetryCount = 0;
-              var data = JSON.parse(event.data);
-              handleProgressData(data);
+              var parsed = JSON.parse(event.data);
+              if (
+                typeof HubCrypto !== 'undefined' &&
+                HubCrypto.isEncrypted(parsed)
+              ) {
+                HubCrypto.decrypt(parsed._enc).then(function (data) {
+                  handleProgressData(data);
+                });
+              } else {
+                handleProgressData(parsed);
+              }
             } catch (e) {}
           };
 
@@ -883,7 +996,10 @@
 
           if (obj.event === 'sync') {
             layer.confirm(
-              HubLang.t('confirmSyncAgent') + ' "' + d.name + '"?',
+              HubLang.t('confirmSyncAgent') +
+                ' "' +
+                HubUtils.escapeHtml(d.name) +
+                '"?',
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
@@ -904,7 +1020,10 @@
             );
           } else if (obj.event === 'clear') {
             layer.confirm(
-              HubLang.t('confirmClearAgentLocks') + ' "' + d.name + '"?',
+              HubLang.t('confirmClearAgentLocks') +
+                ' "' +
+                HubUtils.escapeHtml(d.name) +
+                '"?',
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
@@ -990,7 +1109,11 @@
               var sel = $('#filterAgent');
               res.data.forEach(function (a) {
                 sel.append(
-                  '<option value="' + a.id + '">' + a.label + '</option>'
+                  '<option value="' +
+                    a.id +
+                    '">' +
+                    HubUtils.escapeHtml(a.label) +
+                    '</option>'
                 );
               });
               form.render('select');

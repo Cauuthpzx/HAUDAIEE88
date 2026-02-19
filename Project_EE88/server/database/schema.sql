@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS hub_users (
   password_hash TEXT NOT NULL,
   display_name TEXT DEFAULT '',
   role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('admin', 'user')),
+  must_change_password INTEGER NOT NULL DEFAULT 0,
   token_version INTEGER NOT NULL DEFAULT 0,
   status INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now', 'localtime')),

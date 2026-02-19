@@ -188,7 +188,9 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
@@ -508,7 +510,7 @@
             HubLang.t('member') +
             '</label>' +
             '<div class="layui-input-block"><input type="text" value="' +
-            userData.username +
+            HubUtils.escapeHtml(userData.username) +
             '" class="layui-input" disabled></div></div>' +
             '<fieldset class="layui-elem-field" style="margin:0 0 10px 110px;">' +
             '<legend style="font-size:13px;">' +
@@ -529,7 +531,8 @@
 
           var layerIdx = layer.open({
             type: 1,
-            title: HubLang.t('rebateSetup') + userData.username,
+            title:
+              HubLang.t('rebateSetup') + HubUtils.escapeHtml(userData.username),
             area: ['550px', 'auto'],
             content: formHtml,
             success: function () {

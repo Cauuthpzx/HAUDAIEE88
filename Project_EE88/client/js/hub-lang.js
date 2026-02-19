@@ -14,9 +14,9 @@ var HubLang = (function () {
   var DEFAULT_LANG = 'vi';
 
   var LANGS = {
-    vi: { label: 'Tiếng Việt', short: 'VN', flag: '/images/vn.svg' },
-    en: { label: 'English', short: 'EN', flag: '/images/uk.svg' },
-    'zh-CN': { label: '中文', short: 'CN', flag: '/images/china.svg' }
+    vi: { label: 'Tiếng Việt', short: 'VN', flag: '/images/vn.gif' },
+    en: { label: 'English', short: 'EN', flag: '/images/uk.gif' },
+    'zh-CN': { label: '中文', short: 'CN', flag: '/images/china.gif' }
   };
 
   // ── App-specific messages ──
@@ -76,6 +76,11 @@ var HubLang = (function () {
       loginSuccess: 'Đăng nhập thành công!',
       loginFailed: 'Đăng nhập thất bại',
       connectionError: 'Lỗi kết nối',
+      mustChangePwMsg:
+        'Bạn đang dùng mật khẩu mặc định. Vui lòng đổi mật khẩu ngay để bảo mật tài khoản.',
+      securityWarning: 'Cảnh báo bảo mật',
+      changePwNow: 'Đổi ngay',
+      later: 'Để sau',
 
       // ── Common UI ──
       search: 'Tìm kiếm',
@@ -124,8 +129,8 @@ var HubLang = (function () {
       thisWeek: 'Tuần này',
       thisMonth: 'Tháng này',
       lastMonth: 'Tháng trước',
-      dateStartEnd: 'Ngày bắt đầu - Ngày kết thúc',
-      dateStartEndTime: 'Thời gian bắt đầu - Thời gian kết thúc',
+      dateStartEnd: 'Chọn khoảng thời gian',
+      dateStartEndTime: 'Chọn khoảng thời gian',
       summaryData: 'Dữ liệu tổng hợp:',
 
       // ── Status values ──
@@ -424,6 +429,7 @@ var HubLang = (function () {
       dbLoginFail: 'Thất bại',
       dbRecentActivity: 'Hoạt động gần đây',
       dbDateRange: 'Khoảng thời gian',
+      dbPickDateRange: 'Chọn khoảng thời gian',
       dbLast7Days: '7 ngày',
       dbLast30Days: '30 ngày',
       dbTotalMembers: 'Tổng hội viên',
@@ -597,6 +603,11 @@ var HubLang = (function () {
       loginSuccess: 'Login successful!',
       loginFailed: 'Login failed',
       connectionError: 'Connection error',
+      mustChangePwMsg:
+        'You are using the default password. Please change it now to secure your account.',
+      securityWarning: 'Security Warning',
+      changePwNow: 'Change now',
+      later: 'Later',
 
       // ── Common UI ──
       search: 'Search',
@@ -645,8 +656,8 @@ var HubLang = (function () {
       thisWeek: 'This week',
       thisMonth: 'This month',
       lastMonth: 'Last month',
-      dateStartEnd: 'Start - End',
-      dateStartEndTime: 'Start time - End time',
+      dateStartEnd: 'Pick date range',
+      dateStartEndTime: 'Pick date range',
       summaryData: 'Summary data:',
 
       // ── Status values ──
@@ -944,6 +955,7 @@ var HubLang = (function () {
       dbLoginFail: 'Failed',
       dbRecentActivity: 'Recent Activity',
       dbDateRange: 'Date Range',
+      dbPickDateRange: 'Pick date range',
       dbLast7Days: '7 Days',
       dbLast30Days: '30 Days',
       dbTotalMembers: 'Total Members',
@@ -1117,6 +1129,10 @@ var HubLang = (function () {
       loginSuccess: '登录成功！',
       loginFailed: '登录失败',
       connectionError: '连接错误',
+      mustChangePwMsg: '您正在使用默认密码。请立即更改密码以保护您的账户安全。',
+      securityWarning: '安全警告',
+      changePwNow: '立即更改',
+      later: '稍后',
 
       // ── Common UI ──
       search: '搜索',
@@ -1165,8 +1181,8 @@ var HubLang = (function () {
       thisWeek: '本周',
       thisMonth: '本月',
       lastMonth: '上月',
-      dateStartEnd: '开始 - 结束',
-      dateStartEndTime: '开始时间 - 结束时间',
+      dateStartEnd: '选择时间范围',
+      dateStartEndTime: '选择时间范围',
       summaryData: '汇总数据：',
 
       // ── Status values ──
@@ -1464,6 +1480,7 @@ var HubLang = (function () {
       dbLoginFail: '失败',
       dbRecentActivity: '近期活动',
       dbDateRange: '时间范围',
+      dbPickDateRange: '选择时间范围',
       dbLast7Days: '7天',
       dbLast30Days: '30天',
       dbTotalMembers: '会员总数',

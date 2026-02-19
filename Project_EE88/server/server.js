@@ -23,6 +23,7 @@ const adminRoutes = require('./routes/admin');
 const syncRoutes = require('./routes/sync');
 const dashboardRoutes = require('./routes/dashboard');
 const errorHandler = require('./middleware/errorHandler');
+const responseEncryptMiddleware = require('./middleware/responseEncrypt');
 
 const log = createLogger('server');
 const app = express();
@@ -64,7 +65,17 @@ app.use(
   })
 );
 
-app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, cb) {
+      // Cho phép same-origin (origin === undefined) + localhost dev
+      if (!origin || origin === 'http://localhost:' + PORT)
+        return cb(null, true);
+      cb(null, false);
+    },
+    credentials: true
+  })
+);
 
 // ── Rate Limiting ──
 app.use(
@@ -123,6 +134,9 @@ app.use(express.json({ limit: config.security.bodyLimit }));
 
 // ── Nén response (gzip) — PHẢI đặt trước routes + static ──
 app.use(compression({ threshold: 1024 }));
+
+// ── Mã hóa response (AES-256-CBC per-session key) ──
+app.use(responseEncryptMiddleware);
 
 // ── Routes ──
 // Auth: không cần JWT
@@ -208,9 +222,12 @@ app.use(errorHandler);
 const { execSync } = require('child_process');
 
 function killPort(port) {
+  // Validate port is a number to prevent command injection
+  const p = parseInt(port, 10);
+  if (!p || p < 1 || p > 65535) return;
   try {
     const result = execSync(
-      `netstat -ano | findstr ":${port}" | findstr "LISTENING"`,
+      `netstat -ano | findstr ":${p}" | findstr "LISTENING"`,
       { encoding: 'utf8' }
     );
     const lines = result.trim().split('\n');

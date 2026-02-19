@@ -1,3 +1,4 @@
+/* global HubCrypto */
 /**
  * Passive event listener patch
  * Tắt Chrome [Violation] warning cho touchstart/touchmove/mousewheel
@@ -84,20 +85,23 @@ var HubAPI = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username, password: password })
-    }).then(function (res) {
-      return res.json();
-    }).then(function (data) {
-      if (data.code === 0 && data.data) {
-        self.setAuth(data.data.token, data.data.user);
-      }
-      return data;
-    });
+    })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        if (data.code === 0 && data.data) {
+          self.setAuth(data.data.token, data.data.user);
+        }
+        return data;
+      });
   },
 
   /**
    * Đăng xuất
    */
   logout: function () {
+    if (typeof HubCrypto !== 'undefined') HubCrypto.clearKey();
     this.clearAuth();
     window.top.location.href = this.LOGIN_URL;
   },
@@ -113,6 +117,7 @@ var HubAPI = {
     var token = this.getToken();
     if (token) {
       options.headers['Authorization'] = 'Bearer ' + token;
+      options.headers['X-Enc'] = '1';
     }
 
     return fetch(url, options).then(function (res) {
@@ -142,22 +147,33 @@ var HubAPI = {
     }
 
     var qs = Object.entries(params)
-      .filter(function (e) { return e[1] !== undefined && e[1] !== ''; })
-      .map(function (e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); })
+      .filter(function (e) {
+        return e[1] !== undefined && e[1] !== '';
+      })
+      .map(function (e) {
+        return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]);
+      })
       .join('&');
 
     var url = qs ? '/api/data/' + endpoint + '?' + qs : '/api/data/' + endpoint;
 
-    return this._fetch(url).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    }).then(function (data) {
-      // Cache response
-      if (typeof HubCache !== 'undefined' && data && data.code === 0) {
-        HubCache.set(endpoint, params, data);
-      }
-      return data;
-    });
+    return this._fetch(url)
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        return typeof HubCrypto !== 'undefined'
+          ? HubCrypto.decryptIfNeeded(data)
+          : data;
+      })
+      .then(function (data) {
+        // Cache response
+        if (typeof HubCache !== 'undefined' && data && data.code === 0) {
+          HubCache.set(endpoint, params, data);
+        }
+        return data;
+      });
   },
 
   /**
@@ -171,30 +187,48 @@ var HubAPI = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    }).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    });
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        return typeof HubCrypto !== 'undefined'
+          ? HubCrypto.decryptIfNeeded(data)
+          : data;
+      });
   },
 
   /**
    * Gọi admin endpoint (GET)
    */
   adminGet: function (path) {
-    return this._fetch('/api/admin/' + path).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    });
+    return this._fetch('/api/admin/' + path)
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        return typeof HubCrypto !== 'undefined'
+          ? HubCrypto.decryptIfNeeded(data)
+          : data;
+      });
   },
 
   /**
    * Gọi dashboard endpoint (GET) — không cần admin
    */
   dashboardGet: function (path) {
-    return this._fetch('/api/dashboard/' + path).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    });
+    return this._fetch('/api/dashboard/' + path)
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        return typeof HubCrypto !== 'undefined'
+          ? HubCrypto.decryptIfNeeded(data)
+          : data;
+      });
   },
 
   /**
@@ -205,10 +239,16 @@ var HubAPI = {
       method: method || 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined
-    }).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    });
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        return typeof HubCrypto !== 'undefined'
+          ? HubCrypto.decryptIfNeeded(data)
+          : data;
+      });
   },
 
   /**
@@ -220,19 +260,25 @@ var HubAPI = {
     var userReady = opts.ready;
     delete opts.separator;
 
-    return layui.laydate.render(Object.assign({
-      type: 'date',
-      range: sep,
-      rangeLinked: true
-    }, opts, {
-      elem: elem,
-      ready: function () {
-        var key = layui.$(elem).attr('lay-key');
-        var el = document.getElementById('layui-laydate' + key);
-        if (el) el.classList.add('laydate-single-panel');
-        if (userReady) userReady.apply(this, arguments);
-      }
-    }));
+    return layui.laydate.render(
+      Object.assign(
+        {
+          type: 'date',
+          range: sep,
+          rangeLinked: true
+        },
+        opts,
+        {
+          elem: elem,
+          ready: function () {
+            var key = layui.$(elem).attr('lay-key');
+            var el = document.getElementById('layui-laydate' + key);
+            if (el) el.classList.add('laydate-single-panel');
+            if (userReady) userReady.apply(this, arguments);
+          }
+        }
+      )
+    );
   }
 };
 
@@ -251,7 +297,24 @@ if (typeof layui !== 'undefined') {
           var token = HubAPI.getToken();
           if (token) {
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.setRequestHeader('X-Enc', '1');
           }
+        },
+        dataFilter: function (data) {
+          if (
+            typeof HubCrypto !== 'undefined' &&
+            data &&
+            data.indexOf('"_enc"') !== -1
+          ) {
+            try {
+              var parsed = JSON.parse(data);
+              if (parsed && parsed._enc) {
+                var dec = HubCrypto.decryptSync(parsed._enc);
+                if (dec) return JSON.stringify(dec);
+              }
+            } catch (e) {}
+          }
+          return data;
         },
         statusCode: {
           401: function () {

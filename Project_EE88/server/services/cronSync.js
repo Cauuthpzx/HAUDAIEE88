@@ -39,18 +39,23 @@ const SYNC_TIMEOUT = 30 * 60 * 1000; // 30 phút timeout
 // → sync 1 lần = ~21 pages (~2.5 min) thay vì 65 lần = ~1365 pages (~18 min)
 const NON_DATE_EPS = ['members', 'invites', 'bet-orders'];
 const DATE_EPS = [
-  'deposits', 'withdrawals', 'lottery-bets',
-  'lottery-bets-summary', 'report-lottery', 'report-funds', 'report-third'
+  'deposits',
+  'withdrawals',
+  'lottery-bets',
+  'lottery-bets-summary',
+  'report-lottery',
+  'report-funds',
+  'report-third'
 ];
 const ALL_EPS = [...NON_DATE_EPS, ...DATE_EPS];
 
 const DATE_PARAM_MAP = {
-  deposits:               { start: 'start_time', end: 'end_time' },
-  withdrawals:            { start: 'start_time', end: 'end_time' },
-  'report-lottery':       { start: 'start_time', end: 'end_time' },
-  'report-funds':         { start: 'start_time', end: 'end_time' },
-  'report-third':         { start: 'start_time', end: 'end_time' },
-  'lottery-bets':         { type: 'range', param: 'hs_date_time', sep: '|' },
+  deposits: { start: 'start_time', end: 'end_time' },
+  withdrawals: { start: 'start_time', end: 'end_time' },
+  'report-lottery': { start: 'start_time', end: 'end_time' },
+  'report-funds': { start: 'start_time', end: 'end_time' },
+  'report-third': { start: 'start_time', end: 'end_time' },
+  'lottery-bets': { type: 'range', param: 'hs_date_time', sep: '|' },
   'lottery-bets-summary': { type: 'range', param: 'hs_date_time', sep: '|' }
 };
 
@@ -68,13 +73,36 @@ function epName(key) {
 
 function initProgress(agentId, label) {
   const endpoints = {};
-  NON_DATE_EPS.forEach(ep => {
-    endpoints[ep] = { name: epName(ep), total: 1, completed: 0, rows: 0, status: 'pending', currentPage: 0, totalPages: 0, error: null };
+  NON_DATE_EPS.forEach((ep) => {
+    endpoints[ep] = {
+      name: epName(ep),
+      total: 1,
+      completed: 0,
+      rows: 0,
+      status: 'pending',
+      currentPage: 0,
+      totalPages: 0,
+      error: null
+    };
   });
-  DATE_EPS.forEach(ep => {
-    endpoints[ep] = { name: epName(ep), total: SYNC_DAYS, completed: 0, rows: 0, status: 'pending', currentPage: 0, totalPages: 0, error: null };
+  DATE_EPS.forEach((ep) => {
+    endpoints[ep] = {
+      name: epName(ep),
+      total: SYNC_DAYS,
+      completed: 0,
+      rows: 0,
+      status: 'pending',
+      currentPage: 0,
+      totalPages: 0,
+      error: null
+    };
   });
-  syncProgress.set(agentId, { label, status: 'syncing', startedAt: Date.now(), endpoints });
+  syncProgress.set(agentId, {
+    label,
+    status: 'syncing',
+    startedAt: Date.now(),
+    endpoints
+  });
   emitProgress();
 }
 
@@ -98,7 +126,13 @@ function getSyncProgressSnapshot() {
       const ep = p.endpoints[key];
       if (ep) eps.push({ key, ...ep });
     }
-    agents.push({ agentId, label: p.label, status: p.status, elapsed: Date.now() - p.startedAt, endpoints: eps });
+    agents.push({
+      agentId,
+      label: p.label,
+      status: p.status,
+      elapsed: Date.now() - p.startedAt,
+      endpoints: eps
+    });
   }
   return { agents, timestamp: Date.now() };
 }
@@ -108,9 +142,13 @@ function getSyncProgressSnapshot() {
 // ═══════════════════════════════════════
 
 const CLR = {
-  reset: '\x1b[0m', bold: '\x1b[1m',
-  gray: '\x1b[90m', cyan: '\x1b[36m', green: '\x1b[32m',
-  red: '\x1b[31m', yellow: '\x1b[33m'
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  gray: '\x1b[90m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m'
 };
 
 let _treeHeight = 0;
@@ -119,12 +157,16 @@ let _treeThrottle = 0;
 function progressBar(completed, total, width) {
   const pct = total > 0 ? completed / total : 0;
   const f = Math.round(pct * width);
-  return CLR.green + '█'.repeat(f) + CLR.gray + '░'.repeat(width - f) + CLR.reset;
+  return (
+    CLR.green + '█'.repeat(f) + CLR.gray + '░'.repeat(width - f) + CLR.reset
+  );
 }
 
 function fmtSec(ms) {
   const s = Math.round(ms / 1000);
-  return s >= 60 ? Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's' : s + 's';
+  return s >= 60
+    ? Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's'
+    : s + 's';
 }
 
 function statusIcon(st) {
@@ -140,7 +182,10 @@ function printSyncTree(force) {
   _treeThrottle = now;
 
   const snap = getSyncProgressSnapshot();
-  if (!snap.agents || snap.agents.length === 0) { clearSyncTree(); return; }
+  if (!snap.agents || snap.agents.length === 0) {
+    clearSyncTree();
+    return;
+  }
 
   if (_treeHeight > 0) {
     process.stdout.write('\x1b[' + _treeHeight + 'A\x1b[0J');
@@ -158,8 +203,14 @@ function printSyncTree(force) {
       const b = progressBar(ep.completed, ep.total, 15);
       const cnt = `${ep.completed}/${ep.total}`.padStart(6);
       const ic = statusIcon(ep.status);
-      const rows = ep.rows > 0 ? CLR.gray + ` ${ep.rows.toLocaleString()}r` + CLR.reset : '';
-      const pageInfo = ep.totalPages > 1 ? CLR.yellow + ` p${ep.currentPage || 0}/${ep.totalPages}` + CLR.reset : '';
+      const rows =
+        ep.rows > 0
+          ? CLR.gray + ` ${ep.rows.toLocaleString()}r` + CLR.reset
+          : '';
+      const pageInfo =
+        ep.totalPages > 1
+          ? CLR.yellow + ` p${ep.currentPage || 0}/${ep.totalPages}` + CLR.reset
+          : '';
       lines.push(`${pre}${name} ${b} ${cnt} ${ic}${rows}${pageInfo}`);
     });
   }
@@ -180,10 +231,18 @@ function clearSyncTree() {
 // ═══════════════════════════════════════
 
 function fmtDate(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return (
+    d.getFullYear() +
+    '-' +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(d.getDate()).padStart(2, '0')
+  );
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function buildDateParams(ep, dateStr) {
   const m = DATE_PARAM_MAP[ep];
@@ -200,26 +259,39 @@ function buildDateParams(ep, dateStr) {
 
 function isDayLocked(agentId, dateKey) {
   const db = getDb();
-  return !!db.prepare('SELECT 1 FROM sync_day_locks WHERE agent_id = ? AND date_key = ?').get(agentId, dateKey);
+  return !!db
+    .prepare('SELECT 1 FROM sync_day_locks WHERE agent_id = ? AND date_key = ?')
+    .get(agentId, dateKey);
 }
 
 function lockDay(agentId, dateKey, rowCounts) {
   const db = getDb();
-  const hash = crypto.createHash('md5').update(JSON.stringify(rowCounts)).digest('hex');
-  db.prepare(`
+  const hash = crypto
+    .createHash('md5')
+    .update(JSON.stringify(rowCounts))
+    .digest('hex');
+  db.prepare(
+    `
     INSERT OR REPLACE INTO sync_day_locks (agent_id, date_key, data_hash, row_counts, locked_at)
     VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
-  `).run(agentId, dateKey, hash, JSON.stringify(rowCounts));
+  `
+  ).run(agentId, dateKey, hash, JSON.stringify(rowCounts));
 }
 
 function getLockedDays(agentId) {
   const db = getDb();
-  return db.prepare('SELECT date_key, data_hash, row_counts, locked_at FROM sync_day_locks WHERE agent_id = ? ORDER BY date_key').all(agentId);
+  return db
+    .prepare(
+      'SELECT date_key, data_hash, row_counts, locked_at FROM sync_day_locks WHERE agent_id = ? ORDER BY date_key'
+    )
+    .all(agentId);
 }
 
 function clearLocks(agentId) {
   const db = getDb();
-  const r = db.prepare('DELETE FROM sync_day_locks WHERE agent_id = ?').run(agentId);
+  const r = db
+    .prepare('DELETE FROM sync_day_locks WHERE agent_id = ?')
+    .run(agentId);
   return r.changes;
 }
 
@@ -235,7 +307,10 @@ async function fetchWithRelogin(agent, ep, params) {
       log.warn(`[${agent.label}] phiên hết hạn — đăng nhập lại...`);
       const newAgent = await autoRelogin(agent);
       if (newAgent) {
-        Object.assign(agent, { cookie: newAgent.cookie, user_agent: newAgent.user_agent });
+        Object.assign(agent, {
+          cookie: newAgent.cookie,
+          user_agent: newAgent.user_agent
+        });
         return await fetchEndpointForAgent(newAgent, ep, params);
       }
     }
@@ -259,46 +334,72 @@ async function fetchWithRelogin(agent, ep, params) {
  */
 async function fetchAndSaveBatches(agent, ep, params, dateKey, onPage) {
   let lastErr;
+  let totalRows = 0;
+  let totalData = null;
+  let totalPages = 1;
+  let resumePage = 1; // Track last successful page for retry resume
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      let totalRows = 0;
+      // Page 1 chỉ cần fetch 1 lần (lấy totalPages + save batch 1)
+      if (resumePage <= 1) {
+        const res1 = await fetchWithRelogin(agent, ep, {
+          ...params,
+          page: 1,
+          limit: PAGE_SIZE
+        });
+        if (!res1 || res1.code !== 0) {
+          throw new Error(
+            (res1 && res1.msg) || 'API code ' + (res1 ? res1.code : 'null')
+          );
+        }
 
-      // Page 1
-      const res1 = await fetchWithRelogin(agent, ep, { ...params, page: 1, limit: PAGE_SIZE });
-      if (!res1 || res1.code !== 0) {
-        throw new Error((res1 && res1.msg) || 'API code ' + (res1 ? res1.code : 'null'));
+        // Rate-limit detection: API trả data="" (string) thay vì array khi bị throttle
+        if (!Array.isArray(res1.data)) {
+          throw Object.assign(new Error('API rate-limited (data is string)'), {
+            isRateLimit: true
+          });
+        }
+
+        totalData = res1.total_data || null;
+        const firstBatch = res1.data;
+        const totalCount = parseInt(res1.count) || firstBatch.length;
+        totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+        // Save batch 1 ngay
+        if (firstBatch.length > 0) {
+          dataStore.saveData(agent.id, ep, firstBatch, null, dateKey);
+          totalRows += firstBatch.length;
+        }
+
+        if (onPage) onPage({ page: 1, totalPages, rows: totalRows });
+        resumePage = 2;
       }
 
-      // Rate-limit detection: API trả data="" (string) thay vì array khi bị throttle
-      if (!Array.isArray(res1.data)) {
-        throw Object.assign(new Error('API rate-limited (data is string)'), { isRateLimit: true });
-      }
-
-      const totalData = res1.total_data || null;
-      const firstBatch = res1.data;
-      const totalCount = parseInt(res1.count) || firstBatch.length;
-      const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-      // Save batch 1 ngay
-      if (firstBatch.length > 0) {
-        dataStore.saveData(agent.id, ep, firstBatch, null, dateKey);
-        totalRows += firstBatch.length;
-      }
-
-      // Page progress callback
-      if (onPage) onPage({ page: 1, totalPages, rows: totalRows });
-
-      // Remaining pages — fetch + save + free memory mỗi batch
-      // Early-stop: break khi page trống hoặc < PAGE_SIZE (tránh fetch thừa khi count sai)
-      for (let page = 2; page <= totalPages; page++) {
+      // Remaining pages — resume từ resumePage thay vì luôn từ 2
+      for (let page = resumePage; page <= totalPages; page++) {
         if (BATCH_DELAY > 0) await sleep(BATCH_DELAY);
-        const resN = await fetchWithRelogin(agent, ep, { ...params, page, limit: PAGE_SIZE });
-        if (resN && resN.code === 0 && Array.isArray(resN.data) && resN.data.length > 0) {
+        const resN = await fetchWithRelogin(agent, ep, {
+          ...params,
+          page,
+          limit: PAGE_SIZE
+        });
+        if (
+          resN &&
+          resN.code === 0 &&
+          Array.isArray(resN.data) &&
+          resN.data.length > 0
+        ) {
           dataStore.saveData(agent.id, ep, resN.data, null, dateKey);
           totalRows += resN.data.length;
           if (onPage) onPage({ page, totalPages, rows: totalRows });
+          resumePage = page + 1; // Track next page to resume from
           if (resN.data.length < PAGE_SIZE) break; // Last page
+        } else if (resN && !Array.isArray(resN.data)) {
+          // Rate-limited mid-pagination — retry from this page
+          throw Object.assign(new Error('API rate-limited (data is string)'), {
+            isRateLimit: true
+          });
         } else {
           break; // Empty page — no more data
         }
@@ -310,14 +411,15 @@ async function fetchAndSaveBatches(agent, ep, params, dateKey, onPage) {
       }
 
       return { totalRows, totalData };
-
     } catch (e) {
       lastErr = e;
       if (attempt < MAX_RETRIES) {
-        // Rate-limited: đợi lâu hơn (15s) để API cooldown
         const delay = e.isRateLimit ? 15000 : 2000;
-        log.warn(`[${agent.label}] ${ep} thử lại ${attempt + 1}/${MAX_RETRIES}${e.isRateLimit ? ' (rate-limited, đợi 15s)' : ''}`);
+        log.warn(
+          `[${agent.label}] ${ep} p${resumePage} thử lại ${attempt + 1}/${MAX_RETRIES}${e.isRateLimit ? ' (rate-limited, đợi 15s)' : ''}`
+        );
         await sleep(delay);
+        // resumePage giữ nguyên — retry từ trang lỗi, không restart từ 1
       }
     }
   }
@@ -338,8 +440,13 @@ async function syncAfterLogin(agentId) {
   agentSyncLocks.set(agentId, true);
 
   const db = getDb();
-  const agent = db.prepare('SELECT * FROM ee88_agents WHERE id = ? AND status = 1').get(agentId);
-  if (!agent) { agentSyncLocks.delete(agentId); return; }
+  const agent = db
+    .prepare('SELECT * FROM ee88_agents WHERE id = ? AND status = 1')
+    .get(agentId);
+  if (!agent) {
+    agentSyncLocks.delete(agentId);
+    return;
+  }
 
   initProgress(agentId, agent.label);
   const startTime = Date.now();
@@ -348,7 +455,9 @@ async function syncAfterLogin(agentId) {
   let syncAborted = false;
   const timeoutId = setTimeout(() => {
     syncAborted = true;
-    log.error(`[${agent.label}] TIMEOUT — sync quá ${SYNC_TIMEOUT / 60000} phút, huỷ bỏ`);
+    log.error(
+      `[${agent.label}] TIMEOUT — sync quá ${SYNC_TIMEOUT / 60000} phút, huỷ bỏ`
+    );
   }, SYNC_TIMEOUT);
 
   try {
@@ -372,10 +481,24 @@ async function syncAfterLogin(agentId) {
     const invitePromise = (async () => {
       updateEp(agentId, 'invites', { status: 'syncing' });
       try {
-        const result = await fetchAndSaveBatches(agent, 'invites', {}, null, (info) => {
-          updateEp(agentId, 'invites', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        const result = await fetchAndSaveBatches(
+          agent,
+          'invites',
+          {},
+          null,
+          (info) => {
+            updateEp(agentId, 'invites', {
+              currentPage: info.page,
+              totalPages: info.totalPages,
+              rows: info.rows
+            });
+          }
+        );
+        updateEp(agentId, 'invites', {
+          completed: 1,
+          rows: result.totalRows,
+          status: 'done'
         });
-        updateEp(agentId, 'invites', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
         updateEp(agentId, 'invites', { status: 'error', error: e.message });
         clearSyncTree();
@@ -387,14 +510,18 @@ async function syncAfterLogin(agentId) {
     const datePromise = (async () => {
       const dates = [];
       for (let i = SYNC_DAYS; i >= 1; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
+        const d = new Date();
+        d.setDate(d.getDate() - i);
         dates.push(fmtDate(d));
       }
 
       const epDayCount = {};
       const epRowCount = {};
-      DATE_EPS.forEach(ep => { epDayCount[ep] = 0; epRowCount[ep] = 0; });
-      DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'syncing' }));
+      DATE_EPS.forEach((ep) => {
+        epDayCount[ep] = 0;
+        epRowCount[ep] = 0;
+      });
+      DATE_EPS.forEach((ep) => updateEp(agentId, ep, { status: 'syncing' }));
 
       for (let di = 0; di < dates.length; di += DAY_CONCURRENCY) {
         if (syncAborted) {
@@ -404,51 +531,66 @@ async function syncAfterLogin(agentId) {
 
         const dayBatch = dates.slice(di, di + DAY_CONCURRENCY);
 
-        await Promise.allSettled(dayBatch.map(async (dateStr) => {
-          if (syncAborted) return;
+        await Promise.allSettled(
+          dayBatch.map(async (dateStr) => {
+            if (syncAborted) return;
 
-          if (isDayLocked(agent.id, dateStr)) {
-            DATE_EPS.forEach(ep => {
+            if (isDayLocked(agent.id, dateStr)) {
+              DATE_EPS.forEach((ep) => {
+                epDayCount[ep]++;
+                updateEp(agentId, ep, { completed: epDayCount[ep] });
+              });
+              return;
+            }
+
+            const dayRowCounts = {};
+            const dateKeyFull = dateStr + '|' + dateStr;
+            const dayResults = await Promise.allSettled(
+              DATE_EPS.map(async (ep) => {
+                const params = buildDateParams(ep, dateStr);
+                try {
+                  const result = await fetchAndSaveBatches(
+                    agent,
+                    ep,
+                    params,
+                    dateKeyFull
+                  );
+                  dayRowCounts[ep] = result.totalRows;
+                  return { ep, rows: result.totalRows };
+                } catch (e) {
+                  dayRowCounts[ep] = -1;
+                  throw e;
+                }
+              })
+            );
+
+            const allOk = dayResults.every((r) => r.status === 'fulfilled');
+            DATE_EPS.forEach((ep) => {
               epDayCount[ep]++;
-              updateEp(agentId, ep, { completed: epDayCount[ep] });
+              if (dayRowCounts[ep] >= 0)
+                epRowCount[ep] += dayRowCounts[ep] || 0;
+              updateEp(agentId, ep, {
+                completed: epDayCount[ep],
+                rows: epRowCount[ep]
+              });
             });
-            return;
-          }
 
-          const dayRowCounts = {};
-          const dateKeyFull = dateStr + '|' + dateStr;
-          const dayResults = await Promise.allSettled(
-            DATE_EPS.map(async ep => {
-              const params = buildDateParams(ep, dateStr);
-              try {
-                const result = await fetchAndSaveBatches(agent, ep, params, dateKeyFull);
-                dayRowCounts[ep] = result.totalRows;
-                return { ep, rows: result.totalRows };
-              } catch (e) {
-                dayRowCounts[ep] = -1;
-                throw e;
-              }
-            })
-          );
-
-          const allOk = dayResults.every(r => r.status === 'fulfilled');
-          DATE_EPS.forEach(ep => {
-            epDayCount[ep]++;
-            if (dayRowCounts[ep] >= 0) epRowCount[ep] += dayRowCounts[ep] || 0;
-            updateEp(agentId, ep, { completed: epDayCount[ep], rows: epRowCount[ep] });
-          });
-
-          if (allOk) {
-            lockDay(agent.id, dateStr, dayRowCounts);
-          } else {
-            const errEps = dayResults.filter(r => r.status === 'rejected').map((r, i) => DATE_EPS[i]);
-            clearSyncTree();
-            log.error(`[${agent.label}] ngày ${dateStr} lỗi: ${errEps.join(', ')}`);
-          }
-        }));
+            if (allOk) {
+              lockDay(agent.id, dateStr, dayRowCounts);
+            } else {
+              const errEps = dayResults
+                .filter((r) => r.status === 'rejected')
+                .map((r, i) => DATE_EPS[i]);
+              clearSyncTree();
+              log.error(
+                `[${agent.label}] ngày ${dateStr} lỗi: ${errEps.join(', ')}`
+              );
+            }
+          })
+        );
       }
 
-      DATE_EPS.forEach(ep => updateEp(agentId, ep, { status: 'done' }));
+      DATE_EPS.forEach((ep) => updateEp(agentId, ep, { status: 'done' }));
     })();
 
     await Promise.allSettled([invitePromise, datePromise]);
@@ -460,16 +602,32 @@ async function syncAfterLogin(agentId) {
       updateEp(agentId, 'members', { status: 'syncing' });
       log.info(`[${agent.label}] Phase 2: members (solo pagination)...`);
       try {
-        const result = await fetchAndSaveBatches(agent, 'members', {}, null, (info) => {
-          updateEp(agentId, 'members', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        const result = await fetchAndSaveBatches(
+          agent,
+          'members',
+          {},
+          null,
+          (info) => {
+            updateEp(agentId, 'members', {
+              currentPage: info.page,
+              totalPages: info.totalPages,
+              rows: info.rows
+            });
+          }
+        );
+        updateEp(agentId, 'members', {
+          completed: 1,
+          rows: result.totalRows,
+          status: 'done'
         });
-        updateEp(agentId, 'members', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
         updateEp(agentId, 'members', { status: 'error', error: e.message });
         clearSyncTree();
         log.error(`[${agent.label}] ${epName('members')} lỗi: ${e.message}`);
       }
-      log.info(`[${agent.label}] Phase 2 xong — ${((Date.now() - startTime) / 1000).toFixed(0)}s`);
+      log.info(
+        `[${agent.label}] Phase 2 xong — ${((Date.now() - startTime) / 1000).toFixed(0)}s`
+      );
     }
 
     // ── Phase 3: bet-orders (solo — multi-page pagination, ~5 min) ──
@@ -478,10 +636,24 @@ async function syncAfterLogin(agentId) {
       log.info(`[${agent.label}] Phase 3: bet-orders (solo pagination)...`);
       try {
         const params = { start_time: today, end_time: today };
-        const result = await fetchAndSaveBatches(agent, 'bet-orders', params, null, (info) => {
-          updateEp(agentId, 'bet-orders', { currentPage: info.page, totalPages: info.totalPages, rows: info.rows });
+        const result = await fetchAndSaveBatches(
+          agent,
+          'bet-orders',
+          params,
+          null,
+          (info) => {
+            updateEp(agentId, 'bet-orders', {
+              currentPage: info.page,
+              totalPages: info.totalPages,
+              rows: info.rows
+            });
+          }
+        );
+        updateEp(agentId, 'bet-orders', {
+          completed: 1,
+          rows: result.totalRows,
+          status: 'done'
         });
-        updateEp(agentId, 'bet-orders', { completed: 1, rows: result.totalRows, status: 'done' });
       } catch (e) {
         updateEp(agentId, 'bet-orders', { status: 'error', error: e.message });
         clearSyncTree();
@@ -492,12 +664,14 @@ async function syncAfterLogin(agentId) {
     const sec = ((Date.now() - startTime) / 1000).toFixed(0);
     clearSyncTree();
     log.ok(`[${agent.label}] đồng bộ hoàn tất — ${sec}s`);
-
   } catch (e) {
     clearSyncTree();
     log.error(`[${agent.label}] đồng bộ lỗi: ${e.message}`);
     const p = syncProgress.get(agentId);
-    if (p) { p.status = 'error'; emitProgress(); }
+    if (p) {
+      p.status = 'error';
+      emitProgress();
+    }
   } finally {
     clearTimeout(timeoutId);
     agentSyncLocks.delete(agentId);
@@ -507,7 +681,10 @@ async function syncAfterLogin(agentId) {
       emitProgress();
     }
     // Giữ progress data 60s để client kịp thấy kết quả/lỗi
-    setTimeout(() => { syncProgress.delete(agentId); emitProgress(); }, 60000);
+    setTimeout(() => {
+      syncProgress.delete(agentId);
+      emitProgress();
+    }, 60000);
   }
 }
 
@@ -518,17 +695,25 @@ async function syncAfterLogin(agentId) {
 async function syncAllAgents() {
   const db = getDb();
   const agents = db.prepare('SELECT * FROM ee88_agents WHERE status = 1').all();
-  if (agents.length === 0) { log.warn('Không có agent active'); return; }
+  if (agents.length === 0) {
+    log.warn('Không có agent active');
+    return;
+  }
 
   log.info(`Bắt đầu đồng bộ ${agents.length} đại lý (song song)`);
   await Promise.allSettled(
-    agents.filter(a => !agentSyncLocks.get(a.id))
-      .map(a => syncAfterLogin(a.id))
+    agents
+      .filter((a) => !agentSyncLocks.get(a.id))
+      .map((a) => syncAfterLogin(a.id))
   );
 }
 
-function isSyncRunning() { return agentSyncLocks.size > 0; }
-function isAgentSyncing(agentId) { return !!agentSyncLocks.get(agentId); }
+function isSyncRunning() {
+  return agentSyncLocks.size > 0;
+}
+function isAgentSyncing(agentId) {
+  return !!agentSyncLocks.get(agentId);
+}
 
 module.exports = {
   syncAfterLogin,

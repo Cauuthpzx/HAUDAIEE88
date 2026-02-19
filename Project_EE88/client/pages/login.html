@@ -1037,6 +1037,26 @@
                   } else {
                     localStorage.removeItem('hub_saved_user');
                   }
+
+                  // Cảnh báo đổi mật khẩu mặc định
+                  if (res.data && res.data.must_change_password) {
+                    layer.confirm(
+                      HubLang.t('mustChangePwMsg'),
+                      {
+                        icon: 0,
+                        title: HubLang.t('securityWarning'),
+                        btn: [HubLang.t('changePwNow'), HubLang.t('later')]
+                      },
+                      function () {
+                        window.location.href = '/pages/admin.html#editPassword';
+                      },
+                      function () {
+                        window.location.href = '/pages/admin.html';
+                      }
+                    );
+                    return;
+                  }
+
                   layer.msg(
                     HubLang.t('loginSuccess'),
                     { icon: 1, time: 1000 },

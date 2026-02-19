@@ -81,6 +81,7 @@
         flex: 1;
         padding: 0;
         overflow: hidden;
+        background: #f2f2f2;
       }
       .hub-body .layui-tabs-item {
         height: 100%;
@@ -89,6 +90,11 @@
         width: 100%;
         height: 100%;
         border: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .hub-body .layui-tabs-item iframe.loaded {
+        opacity: 1;
       }
       /* ── Flag icon ── */
       .hub-flag {
@@ -137,7 +143,7 @@
             <dl class="layui-nav-child">
               <dd>
                 <a href="javascript:;" data-lang="vi"
-                  ><img src="/images/vn.svg" class="hub-flag" /><span
+                  ><img src="/images/vn.gif" class="hub-flag" /><span
                     style="vertical-align: middle"
                     >Tiếng Việt</span
                   ></a
@@ -145,7 +151,7 @@
               </dd>
               <dd>
                 <a href="javascript:;" data-lang="en"
-                  ><img src="/images/uk.svg" class="hub-flag" /><span
+                  ><img src="/images/uk.gif" class="hub-flag" /><span
                     style="vertical-align: middle"
                     >English</span
                   ></a
@@ -153,7 +159,7 @@
               </dd>
               <dd>
                 <a href="javascript:;" data-lang="zh-CN"
-                  ><img src="/images/china.svg" class="hub-flag" /><span
+                  ><img src="/images/china.gif" class="hub-flag" /><span
                     style="vertical-align: middle"
                     >中文</span
                   ></a
@@ -479,6 +485,7 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script>
@@ -577,7 +584,10 @@
             } else {
               tabs.add(TABS_ID, {
                 title: title,
-                content: '<iframe src="' + url + '"></iframe>',
+                content:
+                  '<iframe src="' +
+                  url +
+                  '" onload="this.classList.add(\'loaded\')"></iframe>',
                 id: url,
                 done: function (data) {
                   dropdown.render(
@@ -658,7 +668,10 @@
             } else {
               tabs.add(TABS_ID, {
                 title: title,
-                content: '<iframe src="' + url + '"></iframe>',
+                content:
+                  '<iframe src="' +
+                  url +
+                  '" onload="this.classList.add(\'loaded\')"></iframe>',
                 id: url,
                 done: function (data) {
                   dropdown.render(

@@ -11,7 +11,10 @@ const log = createLogger('database');
 function findProjectRoot(startDir) {
   let dir = path.resolve(startDir);
   while (true) {
-    if (fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'captcha'))) {
+    if (
+      fs.existsSync(path.join(dir, 'package.json')) &&
+      fs.existsSync(path.join(dir, 'captcha'))
+    ) {
       return dir;
     }
     const parent = path.dirname(dir);
@@ -37,8 +40,8 @@ function getDb() {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
-  db.pragma('cache_size = -32000');   // 32MB cache (default 2MB)
-  db.pragma('temp_store = MEMORY');   // Sort/temp in RAM
+  db.pragma('cache_size = -32000'); // 32MB cache (default 2MB)
+  db.pragma('temp_store = MEMORY'); // Sort/temp in RAM
   db.pragma('mmap_size = 30000000'); // 30MB memory-mapped I/O
   db.pragma('synchronous = NORMAL'); // Faster writes, WAL ensures safety
 
@@ -52,7 +55,10 @@ function getDb() {
   log.ok('Schema đã sẵn sàng');
 
   // Migrate: thêm cột mới cho ee88_agents (Phase 5: auto-login)
-  const cols = db.prepare("PRAGMA table_info(ee88_agents)").all().map(c => c.name);
+  const cols = db
+    .prepare('PRAGMA table_info(ee88_agents)')
+    .all()
+    .map((c) => c.name);
   if (!cols.includes('ee88_username')) {
     db.exec("ALTER TABLE ee88_agents ADD COLUMN ee88_username TEXT DEFAULT ''");
     log.info('Migrate: thêm cột ee88_username');
@@ -62,7 +68,7 @@ function getDb() {
     log.info('Migrate: thêm cột ee88_password');
   }
   if (!cols.includes('last_login')) {
-    db.exec("ALTER TABLE ee88_agents ADD COLUMN last_login TEXT");
+    db.exec('ALTER TABLE ee88_agents ADD COLUMN last_login TEXT');
     log.info('Migrate: thêm cột last_login');
   }
   if (!cols.includes('user_agent')) {
@@ -70,11 +76,33 @@ function getDb() {
     log.info('Migrate: thêm cột user_agent');
   }
 
-  // Migrate: token_version cho hub_users (logout all devices)
-  const userCols = db.prepare("PRAGMA table_info(hub_users)").all().map(c => c.name);
+  // Migrate: token_version + must_change_password cho hub_users
+  const userCols = db
+    .prepare('PRAGMA table_info(hub_users)')
+    .all()
+    .map((c) => c.name);
   if (!userCols.includes('token_version')) {
-    db.exec("ALTER TABLE hub_users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
+    db.exec(
+      'ALTER TABLE hub_users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0'
+    );
     log.info('Migrate: thêm cột token_version');
+  }
+  if (!userCols.includes('must_change_password')) {
+    db.exec(
+      'ALTER TABLE hub_users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0'
+    );
+    // Đánh dấu admin mặc định phải đổi mật khẩu (nếu vẫn dùng password mặc định)
+    const admin = db
+      .prepare(
+        "SELECT id, password_hash FROM hub_users WHERE username = 'admin'"
+      )
+      .get();
+    if (admin && bcrypt.compareSync('admin123', admin.password_hash)) {
+      db.prepare(
+        'UPDATE hub_users SET must_change_password = 1 WHERE id = ?'
+      ).run(admin.id);
+    }
+    log.info('Migrate: thêm cột must_change_password');
   }
 
   // Migrate: bảng nhật ký hoạt động
@@ -92,8 +120,12 @@ function getDb() {
       created_at   TEXT DEFAULT (datetime('now', 'localtime'))
     )
   `);
-  db.exec('CREATE INDEX IF NOT EXISTS idx_activity_created ON hub_activity_log(created_at DESC)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_activity_action ON hub_activity_log(action)');
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_activity_created ON hub_activity_log(created_at DESC)'
+  );
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_activity_action ON hub_activity_log(action)'
+  );
 
   // Migrate: bảng lịch sử login EE88
   db.exec(`
@@ -111,20 +143,36 @@ function getDb() {
       FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
     )
   `);
-  db.exec('CREATE INDEX IF NOT EXISTS idx_login_hist_agent ON agent_login_history(agent_id, created_at DESC)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_login_hist_created ON agent_login_history(created_at)');
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_login_hist_agent ON agent_login_history(agent_id, created_at DESC)'
+  );
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_login_hist_created ON agent_login_history(created_at)'
+  );
   // Migrate: bảng sync_day_locks (đã trong schema, đảm bảo index)
-  db.exec('CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id)');
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id)'
+  );
 
   // Migrate: mã hóa ee88_password (Security: encrypt at rest)
-  const { encrypt, isEncrypted, ensureEncryptionKey } = require('../utils/crypto');
+  const {
+    encrypt,
+    isEncrypted,
+    ensureEncryptionKey
+  } = require('../utils/crypto');
   ensureEncryptionKey();
-  const agentsToEncrypt = db.prepare("SELECT id, ee88_password FROM ee88_agents WHERE ee88_password != ''").all();
+  const agentsToEncrypt = db
+    .prepare(
+      "SELECT id, ee88_password FROM ee88_agents WHERE ee88_password != ''"
+    )
+    .all();
   let encryptedCount = 0;
   for (const a of agentsToEncrypt) {
     if (!isEncrypted(a.ee88_password)) {
-      db.prepare('UPDATE ee88_agents SET ee88_password = ? WHERE id = ?')
-        .run(encrypt(a.ee88_password), a.id);
+      db.prepare('UPDATE ee88_agents SET ee88_password = ? WHERE id = ?').run(
+        encrypt(a.ee88_password),
+        a.id
+      );
       encryptedCount++;
     }
   }
@@ -133,27 +181,43 @@ function getDb() {
   }
 
   // Seed admin nếu chưa có user nào
-  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users').get().cnt;
+  const userCount = db
+    .prepare('SELECT COUNT(*) as cnt FROM hub_users')
+    .get().cnt;
   if (userCount === 0) {
     const hash = bcrypt.hashSync('admin123', 10);
     db.prepare(
-      'INSERT INTO hub_users (username, password_hash, display_name, role) VALUES (?, ?, ?, ?)'
+      'INSERT INTO hub_users (username, password_hash, display_name, role, must_change_password) VALUES (?, ?, ?, ?, 1)'
     ).run('admin', hash, 'Administrator', 'admin');
-    log.ok('Đã tạo tài khoản admin mặc định (admin / admin123)');
+    log.ok(
+      'Đã tạo tài khoản admin mặc định (admin / admin123) — yêu cầu đổi mật khẩu lần đầu'
+    );
   }
 
   // Migrate agent từ .env nếu chưa có agent nào
-  const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents').get().cnt;
-  if (agentCount === 0 && process.env.EE88_BASE_URL && process.env.EE88_COOKIE) {
-    const result = db.prepare(
-      'INSERT INTO ee88_agents (label, base_url, cookie) VALUES (?, ?, ?)'
-    ).run('Agent chính', process.env.EE88_BASE_URL, process.env.EE88_COOKIE);
+  const agentCount = db
+    .prepare('SELECT COUNT(*) as cnt FROM ee88_agents')
+    .get().cnt;
+  if (
+    agentCount === 0 &&
+    process.env.EE88_BASE_URL &&
+    process.env.EE88_COOKIE
+  ) {
+    const result = db
+      .prepare(
+        'INSERT INTO ee88_agents (label, base_url, cookie) VALUES (?, ?, ?)'
+      )
+      .run('Agent chính', process.env.EE88_BASE_URL, process.env.EE88_COOKIE);
     log.ok(`Đã migrate agent từ .env (id=${result.lastInsertRowid})`);
 
     // Gán agent cho admin
-    const admin = db.prepare('SELECT id FROM hub_users WHERE username = ?').get('admin');
+    const admin = db
+      .prepare('SELECT id FROM hub_users WHERE username = ?')
+      .get('admin');
     if (admin) {
-      db.prepare('INSERT INTO user_agent_permissions (user_id, agent_id) VALUES (?, ?)').run(admin.id, result.lastInsertRowid);
+      db.prepare(
+        'INSERT INTO user_agent_permissions (user_id, agent_id) VALUES (?, ?)'
+      ).run(admin.id, result.lastInsertRowid);
       log.ok('Đã gán agent cho admin');
     }
   }

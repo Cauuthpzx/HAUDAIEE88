@@ -14,9 +14,23 @@
         font-family: sans-serif;
       }
 
+      .layui-card {
+        margin: 15px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .layui-field-box .layui-inline label {
+        font-size: 13px;
+        margin-right: 5px;
+      }
+
       /* ── Dashboard ── */
       .db-range-bar {
-        padding: 15px;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -25,8 +39,8 @@
       .db-kpi-row {
         display: flex;
         gap: 12px;
-        padding: 0 15px 15px;
         flex-wrap: wrap;
+        margin-bottom: 15px;
       }
       .db-kpi-card {
         flex: 1;
@@ -86,8 +100,8 @@
       .db-charts-row {
         display: flex;
         gap: 15px;
-        padding: 0 15px 15px;
         flex-wrap: wrap;
+        margin-bottom: 15px;
       }
       .db-chart-box {
         background: #fff;
@@ -104,22 +118,11 @@
         margin-bottom: 10px;
       }
 
-      .db-agent-area {
-        padding: 0 15px 15px;
-      }
-      .db-agent-area .layui-card {
-        margin: 0;
-        border-radius: 8px;
-        border: none;
-        overflow: hidden;
-        box-shadow:
-          0 1px 4px rgba(0, 0, 0, 0.06),
-          0 0 0 1px rgba(0, 0, 0, 0.03);
-      }
-      .db-agent-area .layui-card-header {
-        font-weight: 600;
+      .db-agent-title {
+        font-size: 13px;
         color: #555;
-        border-bottom: 1px solid #f0f0f0;
+        font-weight: 600;
+        margin-bottom: 10px;
       }
 
       .db-no-data {
@@ -168,132 +171,165 @@
     </style>
   </head>
   <body>
-    <!-- Range selector -->
-    <div class="db-range-bar">
-      <span style="font-size: 13px; color: #999" data-i18n="dbDateRange"
-        >Khoảng thời gian:</span
-      >
-      <div class="layui-btn-group">
-        <button
-          class="layui-btn layui-btn-sm db-range"
-          data-range="today"
-          data-i18n="today"
-        >
-          Hôm nay
-        </button>
-        <button
-          class="layui-btn layui-btn-sm layui-btn-primary db-range"
-          data-range="7d"
-          data-i18n="dbLast7Days"
-        >
-          7 ngày
-        </button>
-        <button
-          class="layui-btn layui-btn-sm layui-btn-primary db-range"
-          data-range="30d"
-          data-i18n="dbLast30Days"
-        >
-          30 ngày
-        </button>
-      </div>
-      <span id="dateLabel" style="font-size: 12px; color: #666"></span>
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="db-kpi-row">
-      <div class="db-kpi-card" data-accent="blue">
-        <div class="db-kpi-icon" style="background: #1e9fff">
-          <i class="hi hi-users"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_totalMembers">-</div>
-          <div class="db-kpi-label" data-i18n="dbTotalMembers">
-            Tổng hội viên
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="dashboard">Tổng quan</legend>
+              <div class="layui-field-box">
+                <div class="db-range-bar">
+                  <span
+                    style="font-size: 13px; color: #999"
+                    data-i18n="dbDateRange"
+                    >Khoảng thời gian:</span
+                  >
+                  <div class="layui-btn-group">
+                    <button
+                      class="layui-btn layui-btn-sm db-range"
+                      data-range="today"
+                      data-i18n="today"
+                    >
+                      Hôm nay
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary db-range"
+                      data-range="7d"
+                      data-i18n="dbLast7Days"
+                    >
+                      7 ngày
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary db-range"
+                      data-range="30d"
+                      data-i18n="dbLast30Days"
+                    >
+                      30 ngày
+                    </button>
+                  </div>
+                  <div class="layui-input-inline" style="width: 220px">
+                    <input
+                      type="text"
+                      id="dbDatePicker"
+                      class="layui-input"
+                      placeholder="Chọn khoảng thời gian"
+                      data-i18n="dbPickDateRange"
+                      data-i18n-attr="placeholder"
+                      readonly
+                      autocomplete="off"
+                    />
+                  </div>
+                  <span
+                    id="dateLabel"
+                    style="font-size: 12px; color: #666"
+                  ></span>
+                </div>
+              </div>
+            </fieldset>
           </div>
-        </div>
-      </div>
-      <div class="db-kpi-card" data-accent="green">
-        <div class="db-kpi-icon" style="background: #16b777">
-          <i class="hi hi-circle-plus"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_newMembers">-</div>
-          <div class="db-kpi-label" data-i18n="dbNewMembers">Hội viên mới</div>
-        </div>
-      </div>
-      <div class="db-kpi-card" data-accent="yellow">
-        <div class="db-kpi-icon" style="background: #ffb800">
-          <i class="hi hi-circle-check"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_activeMembers">-</div>
-          <div class="db-kpi-label" data-i18n="dbActiveMembers">
-            Đang hoạt động
-          </div>
-        </div>
-      </div>
-      <div class="db-kpi-card" data-accent="green">
-        <div class="db-kpi-icon" style="background: #16b777">
-          <i class="hi hi-o hi-o-credit-card"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_depositTotal">-</div>
-          <div class="db-kpi-label" data-i18n="dbDepositTotal">Tổng nạp</div>
-          <div class="db-kpi-sub" id="kpi_depositSub"></div>
-        </div>
-      </div>
-      <div class="db-kpi-card" data-accent="red">
-        <div class="db-kpi-icon" style="background: #ff5722">
-          <i class="hi hi-o hi-o-money-bill-1"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_withdrawTotal">-</div>
-          <div class="db-kpi-label" data-i18n="dbWithdrawTotal">Tổng rút</div>
-          <div class="db-kpi-sub" id="kpi_withdrawSub"></div>
-        </div>
-      </div>
-      <div class="db-kpi-card" data-accent="purple">
-        <div class="db-kpi-icon" style="background: #7c3aed">
-          <i class="hi hi-chart-bar"></i>
-        </div>
-        <div class="db-kpi-info">
-          <div class="db-kpi-value" id="kpi_netWinLoss">-</div>
-          <div class="db-kpi-label" data-i18n="dbNetWinLoss">
-            Thắng / Thua ròng
-          </div>
-        </div>
-      </div>
-    </div>
+          <div class="layui-card-body">
+            <!-- KPI Cards -->
+            <div class="db-kpi-row">
+              <div class="db-kpi-card" data-accent="blue">
+                <div class="db-kpi-icon" style="background: #1e9fff">
+                  <i class="hi hi-users"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_totalMembers">-</div>
+                  <div class="db-kpi-label" data-i18n="dbTotalMembers">
+                    Tổng hội viên
+                  </div>
+                </div>
+              </div>
+              <div class="db-kpi-card" data-accent="green">
+                <div class="db-kpi-icon" style="background: #16b777">
+                  <i class="hi hi-circle-plus"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_newMembers">-</div>
+                  <div class="db-kpi-label" data-i18n="dbNewMembers">
+                    Hội viên mới
+                  </div>
+                </div>
+              </div>
+              <div class="db-kpi-card" data-accent="yellow">
+                <div class="db-kpi-icon" style="background: #ffb800">
+                  <i class="hi hi-circle-check"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_activeMembers">-</div>
+                  <div class="db-kpi-label" data-i18n="dbActiveMembers">
+                    Đang hoạt động
+                  </div>
+                </div>
+              </div>
+              <div class="db-kpi-card" data-accent="green">
+                <div class="db-kpi-icon" style="background: #16b777">
+                  <i class="hi hi-o hi-o-credit-card"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_depositTotal">-</div>
+                  <div class="db-kpi-label" data-i18n="dbDepositTotal">
+                    Tổng nạp
+                  </div>
+                  <div class="db-kpi-sub" id="kpi_depositSub"></div>
+                </div>
+              </div>
+              <div class="db-kpi-card" data-accent="red">
+                <div class="db-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-o hi-o-money-bill-1"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_withdrawTotal">-</div>
+                  <div class="db-kpi-label" data-i18n="dbWithdrawTotal">
+                    Tổng rút
+                  </div>
+                  <div class="db-kpi-sub" id="kpi_withdrawSub"></div>
+                </div>
+              </div>
+              <div class="db-kpi-card" data-accent="purple">
+                <div class="db-kpi-icon" style="background: #7c3aed">
+                  <i class="hi hi-chart-bar"></i>
+                </div>
+                <div class="db-kpi-info">
+                  <div class="db-kpi-value" id="kpi_netWinLoss">-</div>
+                  <div class="db-kpi-label" data-i18n="dbNetWinLoss">
+                    Thắng / Thua ròng
+                  </div>
+                </div>
+              </div>
+            </div>
 
-    <!-- Charts -->
-    <div class="db-charts-row">
-      <div class="db-chart-box" style="flex: 2; min-width: 300px">
-        <div class="db-chart-title" data-i18n="dbDepositWithdrawTrend">
-          Xu hướng Nạp / Rút
-        </div>
-        <div id="chartBar" style="height: 300px"></div>
-      </div>
-      <div class="db-chart-box" style="flex: 1; min-width: 250px">
-        <div class="db-chart-title" data-i18n="dbWinLossBreakdown">
-          Phân bố Thắng / Thua
-        </div>
-        <div id="chartPie" style="height: 300px"></div>
-      </div>
-    </div>
+            <!-- Charts -->
+            <div class="db-charts-row">
+              <div class="db-chart-box" style="flex: 2; min-width: 300px">
+                <div class="db-chart-title" data-i18n="dbDepositWithdrawTrend">
+                  Xu hướng Nạp / Rút
+                </div>
+                <div id="chartBar" style="height: 300px"></div>
+              </div>
+              <div class="db-chart-box" style="flex: 1; min-width: 250px">
+                <div class="db-chart-title" data-i18n="dbWinLossBreakdown">
+                  Phân bố Thắng / Thua
+                </div>
+                <div id="chartPie" style="height: 300px"></div>
+              </div>
+            </div>
 
-    <!-- Per-agent table (admin only) -->
-    <div class="db-agent-area" id="agentTableArea" style="display: none">
-      <div class="layui-card">
-        <div class="layui-card-header" data-i18n="dbPerAgent">
-          Chi tiết theo đại lý
-        </div>
-        <div class="layui-card-body">
-          <table id="agentTable" lay-filter="agentTable"></table>
+            <!-- Per-agent table (admin only) -->
+            <div id="agentTableArea" style="display: none">
+              <div class="db-agent-title" data-i18n="dbPerAgent">
+                Chi tiết theo đại lý
+              </div>
+              <table id="agentTable" lay-filter="agentTable"></table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script>
@@ -303,15 +339,41 @@
       document.title = HubLang.t('dashboard');
 
       var currentRange = 'today';
+      var customStart = null,
+        customEnd = null;
       var barChart = null,
         pieChart = null;
 
-      layui.use(['table'], function () {
+      layui.use(['table', 'laydate'], function () {
         var $ = layui.$;
+        var laydate = layui.laydate;
+
+        // Date range picker
+        laydate.render({
+          elem: '#dbDatePicker',
+          type: 'date',
+          range: '|',
+          rangeLinked: true,
+          max: 0,
+          done: function (value) {
+            if (!value) return;
+            var parts = value.split('|');
+            if (parts.length === 2) {
+              customStart = parts[0].trim();
+              customEnd = parts[1].trim();
+              currentRange = 'custom';
+              $('.db-range').addClass('layui-btn-primary');
+              loadDashboard();
+            }
+          }
+        });
 
         // Range buttons
         $('.db-range').on('click', function () {
           currentRange = $(this).data('range');
+          customStart = null;
+          customEnd = null;
+          $('#dbDatePicker').val('');
           $('.db-range').addClass('layui-btn-primary');
           $(this).removeClass('layui-btn-primary');
           loadDashboard();
@@ -325,7 +387,11 @@
             '#kpi_totalMembers, #kpi_newMembers, #kpi_activeMembers, #kpi_depositTotal, #kpi_withdrawTotal, #kpi_netWinLoss'
           ).text('...');
 
-          HubAPI.dashboardGet('stats?range=' + currentRange)
+          var qs =
+            currentRange === 'custom' && customStart && customEnd
+              ? 'start_date=' + customStart + '&end_date=' + customEnd
+              : 'range=' + currentRange;
+          HubAPI.dashboardGet('stats?' + qs)
             .then(function (res) {
               if (res.code !== 0) {
                 showError(res.msg || HubLang.t('error'));

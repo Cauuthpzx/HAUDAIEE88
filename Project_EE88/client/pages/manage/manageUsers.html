@@ -15,6 +15,10 @@
       .layui-card {
         margin: 15px;
       }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
       .status-active {
         color: #16b777;
         font-weight: 600;
@@ -91,7 +95,9 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-crypto.js"></script>
     <script src="/js/hub-api.js"></script>
     <script>
       layui.use(['table', 'form', 'layer'], function () {
@@ -176,7 +182,9 @@
                           return d.agents
                             .map(function (a) {
                               return (
-                                '<span class="agent-tag">' + a.label + '</span>'
+                                '<span class="agent-tag">' +
+                                HubUtils.escapeHtml(a.label) +
+                                '</span>'
                               );
                             })
                             .join('');
@@ -228,7 +236,9 @@
               break;
             case 'delete':
               layer.confirm(
-                HubLang.t('confirmDeleteUser') + d.username + '"?',
+                HubLang.t('confirmDeleteUser') +
+                  HubUtils.escapeHtml(d.username) +
+                  '"?',
                 { icon: 3 },
                 function (idx) {
                   layer.close(idx);
@@ -257,7 +267,7 @@
         function openUserForm(data) {
           var isEdit = !!data;
           var title = isEdit
-            ? HubLang.t('editUserTitle') + data.username
+            ? HubLang.t('editUserTitle') + HubUtils.escapeHtml(data.username)
             : HubLang.t('addNewUser');
 
           var html =
@@ -268,7 +278,7 @@
             '</label>' +
             '<div class="layui-input-block">' +
             '<input type="text" name="username" value="' +
-            (isEdit ? data.username : '') +
+            (isEdit ? HubUtils.escapeHtml(data.username) : '') +
             '" placeholder="' +
             HubLang.t('username') +
             '" class="layui-input"' +
@@ -292,7 +302,7 @@
             '</label>' +
             '<div class="layui-input-block">' +
             '<input type="text" name="display_name" value="' +
-            (isEdit ? data.display_name || '' : '') +
+            (isEdit ? HubUtils.escapeHtml(data.display_name) : '') +
             '" placeholder="' +
             HubLang.t('displayName') +
             '" class="layui-input">' +
@@ -416,7 +426,7 @@
             '<p style="margin-bottom:10px;color:#666;">' +
             HubLang.t('selectAgentAccess') +
             '<b>' +
-            user.username +
+            HubUtils.escapeHtml(user.username) +
             '</b>' +
             HubLang.t('selectAgentAccessSuffix') +
             '</p>';
@@ -433,7 +443,7 @@
                 '<input type="checkbox" name="agent_' +
                 agent.id +
                 '" lay-skin="primary" title="' +
-                agent.label +
+                HubUtils.escapeHtml(agent.label) +
                 ' (ID: ' +
                 agent.id +
                 ')"' +
@@ -452,7 +462,7 @@
 
           var layerIdx = layer.open({
             type: 1,
-            title: HubLang.t('permTitle') + user.username,
+            title: HubLang.t('permTitle') + HubUtils.escapeHtml(user.username),
             area: ['450px', 'auto'],
             content: html,
             success: function () {

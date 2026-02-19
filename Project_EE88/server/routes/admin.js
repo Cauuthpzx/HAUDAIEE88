@@ -9,7 +9,7 @@ const { getOCRWorker } = require('../services/captchaSolver');
 const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
-const { encrypt } = require('../utils/crypto');
+const { encrypt, encryptResponse } = require('../utils/crypto');
 const { clearPermCache } = require('../middleware/permission');
 
 const adminEmitter = require('../services/adminEvents');
@@ -36,10 +36,19 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
     res.write(': connected\n\n');
+    var ek = req.user.ek;
 
     function onEvent(data) {
       try {
-        res.write('data: ' + JSON.stringify(data) + '\n\n');
+        var json = JSON.stringify(data);
+        if (ek) {
+          try {
+            json = JSON.stringify({ _enc: encryptResponse(json, ek) });
+          } catch (e) {
+            /* fallback */
+          }
+        }
+        res.write('data: ' + json + '\n\n');
       } catch (e) {
         cleanup();
       }
@@ -299,12 +308,10 @@ router.post('/agents', async (req, res) => {
   let { label, base_url, ee88_username, ee88_password } = req.body;
 
   if (!label || !base_url || !ee88_username || !ee88_password) {
-    return res
-      .status(400)
-      .json({
-        code: -1,
-        msg: 'Thiếu thông tin (label, base_url, username, password)'
-      });
+    return res.status(400).json({
+      code: -1,
+      msg: 'Thiếu thông tin (label, base_url, username, password)'
+    });
   }
 
   // Input validation
@@ -325,12 +332,10 @@ router.post('/agents', async (req, res) => {
     .prepare('SELECT id, label FROM ee88_agents WHERE ee88_username = ?')
     .get(ee88_username);
   if (existingAgent) {
-    return res
-      .status(400)
-      .json({
-        code: -1,
-        msg: `Tài khoản EE88 "${ee88_username}" đã tồn tại (agent: ${existingAgent.label})`
-      });
+    return res.status(400).json({
+      code: -1,
+      msg: `Tài khoản EE88 "${ee88_username}" đã tồn tại (agent: ${existingAgent.label})`
+    });
   }
 
   const encryptedPassword = encrypt(ee88_password);
@@ -742,12 +747,10 @@ router.post('/users', (req, res) => {
     !validator.isLength(username, { min: 2, max: 50 }) ||
     !validator.isAlphanumeric(username, 'en-US', { ignore: '_-.' })
   ) {
-    return res
-      .status(400)
-      .json({
-        code: -1,
-        msg: 'Tên đăng nhập 2-50 ký tự, chỉ gồm chữ, số, _, -, .'
-      });
+    return res.status(400).json({
+      code: -1,
+      msg: 'Tên đăng nhập 2-50 ký tự, chỉ gồm chữ, số, _, -, .'
+    });
   }
   if (!validator.isLength(password, { min: 6, max: 128 })) {
     return res

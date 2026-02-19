@@ -3,9 +3,22 @@ const { authMiddleware, adminOnly } = require('../middleware/auth');
 const cronSync = require('../services/cronSync');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
+const { encryptResponse } = require('../utils/crypto');
 
 const log = createLogger('sync-routes');
 const router = express.Router();
+
+function sseData(data, ek) {
+  var json = JSON.stringify(data);
+  if (ek) {
+    try {
+      json = JSON.stringify({ _enc: encryptResponse(json, ek) });
+    } catch (e) {
+      /* fallback unencrypted */
+    }
+  }
+  return 'data: ' + json + '\n\n';
+}
 
 // ── SSE endpoint (auth via query param vì EventSource không set header được) ──
 router.get(
@@ -26,14 +39,14 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
 
+    var ek = req.user.ek;
+
     // Gửi snapshot ngay lập tức
-    res.write(
-      'data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n'
-    );
+    res.write(sseData(cronSync.getSyncProgressSnapshot(), ek));
 
     function onProgress(data) {
       try {
-        res.write('data: ' + JSON.stringify(data) + '\n\n');
+        res.write(sseData(data, ek));
       } catch (e) {
         cleanup();
       }
