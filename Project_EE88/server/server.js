@@ -112,11 +112,13 @@ app.get('/api/health', (req, res) => {
 
 // ── Phục vụ file tĩnh từ client/ ──
 const clientDir = path.join(__dirname, '..', 'client');
+const isProd = process.env.NODE_ENV === 'production';
 // Lib files: cache 1 năm + immutable (không bao giờ revalidate)
 app.use('/lib', express.static(path.join(clientDir, 'lib'), {
   maxAge: '365d', immutable: true, etag: false, lastModified: false
 }));
-app.use(express.static(clientDir, { maxAge: '7d', etag: true }));
+// Dev: no-cache (luôn revalidate bằng ETag) — Prod: cache 7 ngày
+app.use(express.static(clientDir, { maxAge: isProd ? '7d' : 0, etag: true }));
 log.info(`Thư mục client: ${clientDir}`);
 
 // ── Phục vụ SPA từ spa/ (truy cập qua /spa/) ──
@@ -126,8 +128,8 @@ if (fs.existsSync(spaDir)) {
   app.use('/spa/js/pages', express.static(path.join(spaDir, 'js', 'pages'), {
     maxAge: 0, etag: true, lastModified: true
   }));
-  // Còn lại: cache 7 ngày
-  app.use('/spa', express.static(spaDir, { maxAge: '7d', etag: true }));
+  // Dev: no-cache — Prod: cache 7 ngày
+  app.use('/spa', express.static(spaDir, { maxAge: isProd ? '7d' : 0, etag: true }));
   log.info(`Thư mục SPA: ${spaDir}`);
 }
 

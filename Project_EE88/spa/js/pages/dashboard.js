@@ -277,36 +277,38 @@
   // ── Per-agent table ──
 
   function renderAgentTable(d, container) {
-    layui.table.render({
-      elem: '#db_agentTable',
-      data: d.perAgent,
-      text: { none: HubLang.t('noData') },
-      page: false,
-      cols: [[
-        { field: 'label', title: HubLang.t('agent'), width: 120 },
-        { field: 'members', title: HubLang.t('dbTotalMembers'), width: 100, align: 'right',
-          templet: function (row) { return fmtNum(row.members); } },
-        { field: 'deposit', title: HubLang.t('dbDepositTotal'), width: 130, align: 'right',
-          templet: function (row) { return '<span style="color:#16b777">' + fmtMoney(row.deposit) + '</span>'; } },
-        { field: 'withdrawal', title: HubLang.t('dbWithdrawTotal'), width: 130, align: 'right',
-          templet: function (row) { return '<span style="color:#ff5722">' + fmtMoney(row.withdrawal) + '</span>'; } },
-        { field: 'lotteryWL', title: HubLang.t('dbLotteryWL'), width: 130, align: 'right',
-          templet: function (row) {
-            var v = row.lotteryWL || 0;
-            return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
-          } },
-        { field: 'thirdWL', title: HubLang.t('dbThirdPartyWL'), width: 130, align: 'right',
-          templet: function (row) {
-            var v = row.thirdWL || 0;
-            return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
-          } },
-        { field: 'net', title: HubLang.t('dbNet'), minWidth: 120, align: 'right',
-          templet: function (row) {
-            var net = (row.deposit || 0) - (row.withdrawal || 0);
-            return '<span style="color:' + (net >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(net) + '</span>';
+    layui.use('table', function () {
+      layui.table.render({
+        elem: '#db_agentTable',
+        data: d.perAgent,
+        text: { none: HubLang.t('noData') },
+        page: false,
+        cols: [[
+          { field: 'label', title: HubLang.t('agent'), width: 120 },
+          { field: 'members', title: HubLang.t('dbTotalMembers'), width: 100, align: 'right',
+            templet: function (row) { return fmtNum(row.members); } },
+          { field: 'deposit', title: HubLang.t('dbDepositTotal'), width: 130, align: 'right',
+            templet: function (row) { return '<span style="color:#16b777">' + fmtMoney(row.deposit) + '</span>'; } },
+          { field: 'withdrawal', title: HubLang.t('dbWithdrawTotal'), width: 130, align: 'right',
+            templet: function (row) { return '<span style="color:#ff5722">' + fmtMoney(row.withdrawal) + '</span>'; } },
+          { field: 'lotteryWL', title: HubLang.t('dbLotteryWL'), width: 130, align: 'right',
+            templet: function (row) {
+              var v = row.lotteryWL || 0;
+              return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
+            } },
+          { field: 'thirdWL', title: HubLang.t('dbThirdPartyWL'), width: 130, align: 'right',
+            templet: function (row) {
+              var v = row.thirdWL || 0;
+              return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
+            } },
+          { field: 'net', title: HubLang.t('dbNet'), minWidth: 120, align: 'right',
+            templet: function (row) {
+              var net = (row.deposit || 0) - (row.withdrawal || 0);
+              return '<span style="color:' + (net >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(net) + '</span>';
+            }
           }
-        }
-      ]]
+        ]]
+      });
     });
   }
 

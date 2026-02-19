@@ -10,9 +10,12 @@
     "watch": [
       "*.js",
       "config/",
+      "database/",
+      "middleware/",
       "services/",
       "routes/",
-      "utils/"
+      "utils/",
+      "workers/"
     ],
     "ignore": [
       "logs/"
