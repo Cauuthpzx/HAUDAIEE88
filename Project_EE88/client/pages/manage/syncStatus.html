@@ -1,666 +1,949 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sync Status</title>
-  <link rel="stylesheet" href="/lib/layui/css/layui.css">
-  <link rel="stylesheet" href="/css/hub-icons.css">
-  <style>
-    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
-    .layui-card { margin: 15px; }
-    .stat-cards { display: flex; gap: 15px; padding: 0 15px; flex-wrap: wrap; margin-top: 15px; }
-    .stat-card {
-      flex: 1; min-width: 160px; background: #fff; border-radius: 4px;
-      padding: 15px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-    .stat-card .label { font-size: 13px; color: #999; margin-bottom: 6px; }
-    .stat-card .value { font-size: 22px; font-weight: 600; color: #333; }
-    .stat-card .value.green { color: #16b777; }
-    .stat-card .value.blue { color: #1e9fff; }
-    .stat-card .value.orange { color: #ffb800; }
-    .page-info { font-size: 11px; color: #1e9fff; margin-left: 4px; }
-    .error-text { font-size: 11px; color: #ff5722; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .syncing-spin { display: inline-block; animation: spin 1s linear infinite; }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sync Status</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+      }
+      .stat-cards {
+        display: flex;
+        gap: 15px;
+        padding: 0 15px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+      .stat-card {
+        flex: 1;
+        min-width: 160px;
+        background: #fff;
+        border-radius: 4px;
+        padding: 15px 20px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+      .stat-card .label {
+        font-size: 13px;
+        color: #999;
+        margin-bottom: 6px;
+      }
+      .stat-card .value {
+        font-size: 22px;
+        font-weight: 600;
+        color: #333;
+      }
+      .stat-card .value.green {
+        color: #16b777;
+      }
+      .stat-card .value.blue {
+        color: #1e9fff;
+      }
+      .stat-card .value.orange {
+        color: #ffb800;
+      }
+      .page-info {
+        font-size: 11px;
+        color: #1e9fff;
+        margin-left: 4px;
+      }
+      .error-text {
+        font-size: 11px;
+        color: #ff5722;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .syncing-spin {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Row action template -->
+    <script type="text/html" id="toolbarTpl">
+      {{# if(d.isAgent){ }}
+      <div class="layui-btn-group">
+        <button
+          class="layui-btn layui-btn-xs layui-btn-normal"
+          lay-event="sync"
+        >
+          <i class="hi hi-arrows-rotate"></i> Đồng bộ
+        </button>
+        <button
+          class="layui-btn layui-btn-xs layui-btn-danger"
+          lay-event="clear"
+        >
+          <i class="hi hi-trash-can"></i> Xoá khoá
+        </button>
+      </div>
+      {{# } }}
+    </script>
 
-  <!-- Row action template -->
-  <script type="text/html" id="toolbarTpl">
-    {{# if(d.isAgent){ }}
-    <div class="layui-btn-group">
-      <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="sync"><i class="hi hi-arrows-rotate"></i> Đồng bộ</button>
-      <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clear"><i class="hi hi-trash-can"></i> Xoá khoá</button>
-    </div>
-    {{# } }}
-  </script>
-
-  <!-- Stat Cards -->
-  <div class="stat-cards" id="statsArea">
-    <div class="stat-card">
-      <div class="label">Tổng đại lý</div>
-      <div class="value blue" id="statTotalAgents">&mdash;</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Hoạt động</div>
-      <div class="value green" id="statActiveAgents">&mdash;</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Đã đồng bộ đủ</div>
-      <div class="value orange" id="statFullySynced">&mdash;</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Trạng thái</div>
-      <div class="value" id="statSyncState" style="font-size:14px;">&mdash;</div>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div class="layui-row">
-    <div class="layui-col-md12">
-      <div class="layui-card">
-        <div class="layui-card-header">
-          <fieldset class="layui-elem-field">
-            <legend>Đồng bộ dữ liệu</legend>
-          </fieldset>
-          <form class="layui-form layui-form-sm" lay-filter="searchForm" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-            <select name="agent_id" id="filterAgent" style="width:150px;">
-              <option value="">Tất cả — Đại lý</option>
-            </select>
-            <select name="endpoint" id="filterEndpoint" style="width:180px;">
-              <option value="">Tất cả — Endpoint</option>
-            </select>
-            <select name="status" style="width:140px;">
-              <option value="">Tất cả — Trạng thái</option>
-              <option value="done">Hoàn tất</option>
-              <option value="syncing">Đang chạy</option>
-              <option value="idle">Chưa đồng bộ</option>
-              <option value="error">Lỗi</option>
-            </select>
-            <button type="button" class="layui-btn layui-btn-xs" lay-submit lay-filter="doSearch">
-              <i class="layui-icon layui-icon-search"></i> Tìm kiếm
-            </button>
-            <button type="reset" class="layui-btn layui-btn-xs layui-btn-primary" id="btnReset">
-              Đặt lại
-            </button>
-          </form>
-        </div>
-        <div class="layui-card-body">
-          <table class="layui-hide" id="syncTree" lay-filter="syncTree"></table>
+    <!-- Stat Cards -->
+    <div class="stat-cards" id="statsArea">
+      <div class="stat-card">
+        <div class="label">Tổng đại lý</div>
+        <div class="value blue" id="statTotalAgents">&mdash;</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Hoạt động</div>
+        <div class="value green" id="statActiveAgents">&mdash;</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Đã đồng bộ đủ</div>
+        <div class="value orange" id="statFullySynced">&mdash;</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Trạng thái</div>
+        <div class="value" id="statSyncState" style="font-size: 14px">
+          &mdash;
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="/lib/layui/layui.js"></script>
-  <script src="/js/hub-lang.js"></script>
-  <script src="/js/hub-api.js"></script>
-  <script>
-    layui.use(['treeTable', 'form', 'layer'], function () {
-      HubLang.init();
-      var treeTable = layui.treeTable;
-      var form = layui.form;
-      var layer = layui.layer;
-      var $ = layui.$;
+    <!-- Table -->
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend>Đồng bộ dữ liệu</legend>
+            </fieldset>
+            <form
+              class="layui-form layui-form-sm"
+              lay-filter="searchForm"
+              style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 10px;
+              "
+            >
+              <select name="agent_id" id="filterAgent" style="width: 150px">
+                <option value="">Tất cả — Đại lý</option>
+              </select>
+              <select name="endpoint" id="filterEndpoint" style="width: 180px">
+                <option value="">Tất cả — Endpoint</option>
+              </select>
+              <select name="status" style="width: 140px">
+                <option value="">Tất cả — Trạng thái</option>
+                <option value="done">Hoàn tất</option>
+                <option value="syncing">Đang chạy</option>
+                <option value="idle">Chưa đồng bộ</option>
+                <option value="error">Lỗi</option>
+              </select>
+              <button
+                type="button"
+                class="layui-btn layui-btn-xs"
+                lay-submit
+                lay-filter="doSearch"
+              >
+                <i class="layui-icon layui-icon-search"></i> Tìm kiếm
+              </button>
+              <button
+                type="reset"
+                class="layui-btn layui-btn-xs layui-btn-primary"
+                id="btnReset"
+              >
+                Đặt lại
+              </button>
+            </form>
+          </div>
+          <div class="layui-card-body">
+            <table
+              class="layui-hide"
+              id="syncTree"
+              lay-filter="syncTree"
+            ></table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      var agents = [];
-      var snap = null;
-      var rendered = false;
-      var currentFilter = {};
-      var sse = null;
-      var pollTimer = null;
-      var statsTimer = null;
-      var sseRetryCount = 0;
-      var MAX_SSE_RETRIES = 3;
-      var totalDays = 65;
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script>
+      layui.use(['treeTable', 'form', 'layer'], function () {
+        HubLang.init();
+        var treeTable = layui.treeTable;
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
 
-      // ═══════════════════════════════════════
-      // ── Static endpoint list — phải KHỚP thứ tự server ALL_EPS ──
-      // ═══════════════════════════════════════
+        var agents = [];
+        var snap = null;
+        var rendered = false;
+        var currentFilter = {};
+        var sse = null;
+        var pollTimer = null;
+        var statsTimer = null;
+        var sseRetryCount = 0;
+        var MAX_SSE_RETRIES = 3;
+        var totalDays = 65;
 
-      var STATIC_EPS = [
-        { key: 'members', name: 'Danh sách hội viên', isDate: false },
-        { key: 'invites', name: 'Mã mời', isDate: false },
-        { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: false },
-        { key: 'deposits', name: 'Nạp / Rút tiền', isDate: true },
-        { key: 'withdrawals', name: 'Lịch sử rút tiền', isDate: true },
-        { key: 'lottery-bets', name: 'Đơn cược xổ số', isDate: true },
-        { key: 'report-lottery', name: 'Báo cáo xổ số', isDate: true },
-        { key: 'report-funds', name: 'Sao kê giao dịch', isDate: true },
-        { key: 'report-third', name: 'Báo cáo nhà cung cấp game', isDate: true }
-      ];
+        // ═══════════════════════════════════════
+        // ── Static endpoint list — phải KHỚP thứ tự server ALL_EPS ──
+        // ═══════════════════════════════════════
 
-      // Populate endpoint filter dropdown
-      var epSel = $('#filterEndpoint');
-      STATIC_EPS.forEach(function (ep) {
-        epSel.append('<option value="' + ep.key + '">' + ep.name + '</option>');
-      });
-      form.render('select');
+        var STATIC_EPS = [
+          { key: 'members', name: 'Danh sách hội viên', isDate: false },
+          { key: 'invites', name: 'Mã mời', isDate: false },
+          { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: false },
+          { key: 'deposits', name: 'Nạp / Rút tiền', isDate: true },
+          { key: 'withdrawals', name: 'Lịch sử rút tiền', isDate: true },
+          { key: 'lottery-bets', name: 'Đơn cược xổ số', isDate: true },
+          { key: 'report-lottery', name: 'Báo cáo xổ số', isDate: true },
+          { key: 'report-funds', name: 'Sao kê giao dịch', isDate: true },
+          {
+            key: 'report-third',
+            name: 'Báo cáo nhà cung cấp game',
+            isDate: true
+          }
+        ];
 
-      // ═══════════════════════════════════════
-      // ── Helpers ──
-      // ═══════════════════════════════════════
+        // Populate endpoint filter dropdown
+        var epSel = $('#filterEndpoint');
+        STATIC_EPS.forEach(function (ep) {
+          epSel.append(
+            '<option value="' + ep.key + '">' + ep.name + '</option>'
+          );
+        });
+        form.render('select');
 
-      function fmtElapsed(ms) {
-        var s = Math.round(ms / 1000);
-        if (s < 60) return s + 's';
-        return Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's';
-      }
+        // ═══════════════════════════════════════
+        // ── Helpers ──
+        // ═══════════════════════════════════════
 
-      function setNum(id, val) {
-        var el = document.getElementById(id);
-        if (el) el.textContent = val;
-      }
-
-      function fmtRows(n) {
-        if (!n || n <= 0) return '\u2014';
-        return n.toLocaleString();
-      }
-
-      // ═══════════════════════════════════════
-      // ── Build tree data ──
-      // ═══════════════════════════════════════
-
-      function buildTreeData() {
-        var snapMap = {};
-        if (snap && snap.agents) {
-          snap.agents.forEach(function (a) { snapMap[a.agentId] = a; });
+        function fmtElapsed(ms) {
+          var s = Math.round(ms / 1000);
+          if (s < 60) return s + 's';
+          return (
+            Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's'
+          );
         }
 
-        return agents.map(function (a) {
-          var pa = snapMap[a.id];
-          // Dùng progress data khi CÓ (syncing/done/error) — không chỉ khi syncing
-          var hasProgress = pa && pa.endpoints && pa.endpoints.length > 0;
-          var isSyncing = pa && pa.status === 'syncing';
+        function setNum(id, val) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = val;
+        }
 
-          var node = {
-            id: a.id,
-            name: a.label,
-            isAgent: true,
-            agentId: a.id,
-            lockedDays: a.lockedDays || 0,
-            agentStatus: a.status,
-            syncing: isSyncing,
-            syncStatus: pa ? pa.status : null,
-            elapsed: (isSyncing || (pa && pa.status === 'done')) ? (pa.elapsed || 0) : 0
+        function fmtRows(n) {
+          if (!n || n <= 0) return '\u2014';
+          return n.toLocaleString();
+        }
+
+        // ═══════════════════════════════════════
+        // ── Build tree data ──
+        // ═══════════════════════════════════════
+
+        function buildTreeData() {
+          var snapMap = {};
+          if (snap && snap.agents) {
+            snap.agents.forEach(function (a) {
+              snapMap[a.agentId] = a;
+            });
+          }
+
+          return agents.map(function (a) {
+            var pa = snapMap[a.id];
+            // Dùng progress data khi CÓ (syncing/done/error) — không chỉ khi syncing
+            var hasProgress = pa && pa.endpoints && pa.endpoints.length > 0;
+            var isSyncing = pa && pa.status === 'syncing';
+
+            var node = {
+              id: a.id,
+              name: a.label,
+              isAgent: true,
+              agentId: a.id,
+              lockedDays: a.lockedDays || 0,
+              lastSyncAt: a.lastSyncAt || null,
+              agentStatus: a.status,
+              syncing: isSyncing,
+              syncStatus: pa ? pa.status : null,
+              elapsed:
+                isSyncing || (pa && pa.status === 'done') ? pa.elapsed || 0 : 0
+            };
+
+            if (hasProgress) {
+              // Real-time data từ progress snapshot
+              node.children = pa.endpoints.map(function (ep, idx) {
+                return {
+                  id: a.id * 1000 + idx + 1,
+                  name: ep.name || ep.key,
+                  epKey: ep.key,
+                  isAgent: false,
+                  total: ep.total,
+                  completed: ep.completed,
+                  dataRows: ep.rows || 0,
+                  epStatus: ep.status,
+                  currentPage: ep.currentPage || 0,
+                  totalPages: ep.totalPages || 0,
+                  error: ep.error || null
+                };
+              });
+            } else {
+              // Static data từ /status (hiện rows từ DB cho TẤT CẢ endpoints)
+              var agentRows = a.rows || {};
+              node.children = STATIC_EPS.map(function (ep, idx) {
+                var total, completed, rows, status;
+                rows = agentRows[ep.key] || 0;
+
+                if (ep.isDate) {
+                  total = totalDays;
+                  completed = a.lockedDays || 0;
+                  status = (a.lockedDays || 0) >= totalDays ? 'done' : 'idle';
+                } else {
+                  total = 1;
+                  completed = rows > 0 ? 1 : 0;
+                  status = rows > 0 ? 'done' : 'idle';
+                }
+                return {
+                  id: a.id * 1000 + idx + 1,
+                  name: ep.name,
+                  epKey: ep.key,
+                  isAgent: false,
+                  total: total,
+                  completed: completed,
+                  dataRows: rows,
+                  epStatus: status,
+                  currentPage: 0,
+                  totalPages: 0,
+                  error: null
+                };
+              });
+            }
+
+            return node;
+          });
+        }
+
+        // ═══════════════════════════════════════
+        // ── Filter tree data ──
+        // ═══════════════════════════════════════
+
+        function filterTreeData(data) {
+          if (
+            !currentFilter.agent_id &&
+            !currentFilter.endpoint &&
+            !currentFilter.status
+          ) {
+            return data;
+          }
+          var result = [];
+          data.forEach(function (agent) {
+            if (
+              currentFilter.agent_id &&
+              String(agent.id) !== String(currentFilter.agent_id)
+            )
+              return;
+            var children = agent.children || [];
+            if (currentFilter.endpoint || currentFilter.status) {
+              children = children.filter(function (c) {
+                if (
+                  currentFilter.endpoint &&
+                  c.epKey !== currentFilter.endpoint
+                )
+                  return false;
+                if (currentFilter.status && c.epStatus !== currentFilter.status)
+                  return false;
+                return true;
+              });
+              if (children.length === 0) return;
+            }
+            var cloned = {};
+            for (var k in agent) {
+              if (agent.hasOwnProperty(k)) cloned[k] = agent[k];
+            }
+            cloned.children = children;
+            result.push(cloned);
+          });
+          return result;
+        }
+
+        // ═══════════════════════════════════════
+        // ── Render tree ──
+        // ═══════════════════════════════════════
+
+        var barToolbarHtml =
+          '<div class="layui-btn-group">' +
+          '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="syncAll">' +
+          '<i class="hi hi-arrows-rotate"></i> Đồng bộ tất cả' +
+          '</button>' +
+          '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clearSelected">' +
+          '<i class="hi hi-trash-can"></i> Xoá khoá đã chọn' +
+          '</button>' +
+          '</div><span id="syncingIndicator"></span>';
+
+        function renderTree() {
+          var data = filterTreeData(buildTreeData());
+          if (!rendered) {
+            treeTable.render({
+              id: 'syncTree',
+              elem: '#syncTree',
+              toolbar: barToolbarHtml,
+              defaultToolbar: ['filter'],
+              data: data,
+              tree: {
+                customName: { children: 'children' },
+                view: { showIcon: false }
+              },
+              size: 'sm',
+              even: true,
+              cols: [
+                [
+                  { type: 'checkbox', width: 50 },
+                  {
+                    field: 'name',
+                    title: 'Đại lý / Loại dữ liệu',
+                    minWidth: 150,
+                    templet: function (d) {
+                      if (d.isAgent) {
+                        var c = d.agentStatus === 1 ? '#16b777' : '#ff5722';
+                        var syncIcon = d.syncing
+                          ? ' <i class="hi hi-arrows-rotate syncing-spin" style="font-size:12px;color:#1e9fff;"></i>'
+                          : '';
+                        return (
+                          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' +
+                          c +
+                          ';margin-right:6px;vertical-align:middle;"></span><b>' +
+                          d.name +
+                          '</b>' +
+                          syncIcon
+                        );
+                      }
+                      return (
+                        '<span style="color:#1e9fff;">' + d.name + '</span>'
+                      );
+                    }
+                  },
+                  {
+                    title: 'Trạng thái',
+                    width: 100,
+                    align: 'center',
+                    templet: function (d) {
+                      if (d.isAgent) {
+                        if (d.syncing)
+                          return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
+                        if (d.syncStatus === 'done')
+                          return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
+                        if (d.syncStatus === 'error')
+                          return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
+                        return d.agentStatus === 1
+                          ? '<span style="color:#16b777;font-weight:600;">Hoạt động</span>'
+                          : '<span style="color:#ff5722;font-weight:600;">Khoá</span>';
+                      }
+                      if (d.epStatus === 'done')
+                        return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
+                      if (d.epStatus === 'error')
+                        return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
+                      if (d.epStatus === 'syncing')
+                        return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
+                      if (d.epStatus === 'pending')
+                        return '<span style="color:#999;">Chờ</span>';
+                      return '<span style="color:#666;">\u2014</span>';
+                    }
+                  },
+                  {
+                    title: 'Tiến trình',
+                    minWidth: 160,
+                    templet: function (d) {
+                      var completed, total, color;
+                      if (d.isAgent) {
+                        if (d.syncing && d.children) {
+                          // Khi đang sync: tính tổng từ children
+                          completed = 0;
+                          total = 0;
+                          for (var ci = 0; ci < d.children.length; ci++) {
+                            completed += d.children[ci].completed || 0;
+                            total += d.children[ci].total || 0;
+                          }
+                        } else {
+                          completed = d.lockedDays;
+                          total = totalDays;
+                        }
+                      } else {
+                        completed = d.completed || 0;
+                        total = d.total || 0;
+                      }
+                      var pct =
+                        total > 0 ? Math.round((completed / total) * 100) : 0;
+                      if (pct > 100) pct = 100;
+                      if (d.isAgent) {
+                        color =
+                          pct >= 100
+                            ? '#16b777'
+                            : pct >= 50
+                              ? '#ffb800'
+                              : '#ff5722';
+                      } else {
+                        color =
+                          d.epStatus === 'done'
+                            ? '#16b777'
+                            : d.epStatus === 'error'
+                              ? '#ff5722'
+                              : d.epStatus === 'idle'
+                                ? '#999'
+                                : '#1e9fff';
+                      }
+
+                      var html =
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                        '<div style="flex:1;height:6px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden;">' +
+                        '<div style="width:' +
+                        pct +
+                        '%;height:100%;background:' +
+                        color +
+                        ';border-radius:3px;transition:width .3s;"></div></div>' +
+                        '<span style="font-size:12px;color:' +
+                        color +
+                        ';font-weight:600;white-space:nowrap;">' +
+                        completed +
+                        '/' +
+                        total +
+                        '</span>';
+
+                      // Page progress cho multi-page endpoints
+                      if (
+                        !d.isAgent &&
+                        d.totalPages > 1 &&
+                        d.epStatus === 'syncing'
+                      ) {
+                        html +=
+                          '<span class="page-info">p' +
+                          d.currentPage +
+                          '/' +
+                          d.totalPages +
+                          '</span>';
+                      }
+
+                      html += '</div>';
+
+                      // Error message
+                      if (!d.isAgent && d.error) {
+                        html +=
+                          '<div class="error-text" title="' +
+                          d.error.replace(/"/g, '&quot;') +
+                          '">' +
+                          d.error +
+                          '</div>';
+                      }
+
+                      return html;
+                    }
+                  },
+                  {
+                    title: 'Dòng dữ liệu',
+                    width: 90,
+                    align: 'right',
+                    templet: function (d) {
+                      if (d.isAgent) {
+                        // Tổng rows tất cả endpoints
+                        var totalRows = 0;
+                        if (d.children) {
+                          for (var i = 0; i < d.children.length; i++) {
+                            totalRows += d.children[i].dataRows || 0;
+                          }
+                        }
+                        return totalRows > 0
+                          ? '<span style="font-weight:600;color:#1e9fff;">' +
+                              totalRows.toLocaleString() +
+                              '</span>'
+                          : '<span style="color:#999;">\u2014</span>';
+                      }
+                      return d.dataRows > 0
+                        ? '<span style="font-weight:600;">' +
+                            d.dataRows.toLocaleString() +
+                            '</span>'
+                        : '<span style="color:#999;">\u2014</span>';
+                    }
+                  },
+                  {
+                    title: 'Ngày khoá',
+                    width: 80,
+                    align: 'center',
+                    templet: function (d) {
+                      if (d.isAgent) {
+                        var ld = d.lockedDays || 0;
+                        if (ld > 0)
+                          return (
+                            '<span style="color:#ffb800;"><i class="hi hi-lock" style="font-size:14px;"></i> ' +
+                            ld +
+                            '</span>'
+                          );
+                        return '<span style="color:#999;">0</span>';
+                      }
+                      return '';
+                    }
+                  },
+                  {
+                    title: 'Thời gian',
+                    width: 130,
+                    align: 'center',
+                    templet: function (d) {
+                      if (!d.isAgent) return '';
+                      if (d.syncing && d.elapsed) {
+                        return (
+                          '<span style="font-size:12px;color:#1e9fff;"><i class="hi hi-arrows-rotate syncing-spin" style="font-size:11px;"></i> ' +
+                          fmtElapsed(d.elapsed) +
+                          '</span>'
+                        );
+                      }
+                      if (d.lastSyncAt) {
+                        var t = d.lastSyncAt.replace('T', ' ').substring(0, 16);
+                        return (
+                          '<span style="font-size:11px;color:#999;">' +
+                          t +
+                          '</span>'
+                        );
+                      }
+                      return '<span style="color:#666;">\u2014</span>';
+                    }
+                  },
+                  {
+                    title: 'Thao tác',
+                    width: 160,
+                    align: 'center',
+                    toolbar: '#toolbarTpl'
+                  }
+                ]
+              ],
+              done: function () {
+                HubLang.applyDOM();
+              }
+            });
+            rendered = true;
+          } else {
+            treeTable.reloadData('syncTree', { data: data });
+          }
+        }
+
+        // ═══════════════════════════════════════
+        // ── SSE Real-time Progress ──
+        // ═══════════════════════════════════════
+
+        function connectSSE() {
+          if (sse) return; // already connected
+          var token = HubAPI.getToken();
+          if (!token) return;
+
+          stopPolling(); // Stop polling khi dùng SSE
+
+          sse = new EventSource(
+            '/api/admin/sync/progress?token=' + encodeURIComponent(token)
+          );
+
+          sse.onmessage = function (event) {
+            try {
+              // Reset retry count khi nhận được message thành công
+              sseRetryCount = 0;
+              var data = JSON.parse(event.data);
+              handleProgressData(data);
+            } catch (e) {}
           };
 
-          if (hasProgress) {
-            // Real-time data từ progress snapshot
-            node.children = pa.endpoints.map(function (ep, idx) {
-              return {
-                id: a.id * 1000 + idx + 1,
-                name: ep.name || ep.key,
-                epKey: ep.key,
-                isAgent: false,
-                total: ep.total,
-                completed: ep.completed,
-                dataRows: ep.rows || 0,
-                epStatus: ep.status,
-                currentPage: ep.currentPage || 0,
-                totalPages: ep.totalPages || 0,
-                error: ep.error || null
-              };
-            });
-          } else {
-            // Static data từ /status (hiện rows từ DB cho TẤT CẢ endpoints)
-            var agentRows = a.rows || {};
-            node.children = STATIC_EPS.map(function (ep, idx) {
-              var total, completed, rows, status;
-              rows = agentRows[ep.key] || 0;
-
-              if (ep.isDate) {
-                total = totalDays;
-                completed = a.lockedDays || 0;
-                status = (a.lockedDays || 0) >= totalDays ? 'done' : 'idle';
-              } else {
-                total = 1;
-                completed = rows > 0 ? 1 : 0;
-                status = rows > 0 ? 'done' : 'idle';
-              }
-              return {
-                id: a.id * 1000 + idx + 1,
-                name: ep.name,
-                epKey: ep.key,
-                isAgent: false,
-                total: total,
-                completed: completed,
-                dataRows: rows,
-                epStatus: status,
-                currentPage: 0,
-                totalPages: 0,
-                error: null
-              };
-            });
-          }
-
-          return node;
-        });
-      }
-
-      // ═══════════════════════════════════════
-      // ── Filter tree data ──
-      // ═══════════════════════════════════════
-
-      function filterTreeData(data) {
-        if (!currentFilter.agent_id && !currentFilter.endpoint && !currentFilter.status) {
-          return data;
-        }
-        var result = [];
-        data.forEach(function (agent) {
-          if (currentFilter.agent_id && String(agent.id) !== String(currentFilter.agent_id)) return;
-          var children = agent.children || [];
-          if (currentFilter.endpoint || currentFilter.status) {
-            children = children.filter(function (c) {
-              if (currentFilter.endpoint && c.epKey !== currentFilter.endpoint) return false;
-              if (currentFilter.status && c.epStatus !== currentFilter.status) return false;
-              return true;
-            });
-            if (children.length === 0) return;
-          }
-          var cloned = {};
-          for (var k in agent) { if (agent.hasOwnProperty(k)) cloned[k] = agent[k]; }
-          cloned.children = children;
-          result.push(cloned);
-        });
-        return result;
-      }
-
-      // ═══════════════════════════════════════
-      // ── Render tree ──
-      // ═══════════════════════════════════════
-
-      var barToolbarHtml = '<div class="layui-btn-group">'
-        + '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="syncAll">'
-        + '<i class="hi hi-arrows-rotate"></i> Đồng bộ tất cả'
-        + '</button>'
-        + '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clearSelected">'
-        + '<i class="hi hi-trash-can"></i> Xoá khoá đã chọn'
-        + '</button>'
-        + '</div><span id="syncingIndicator"></span>';
-
-      function renderTree() {
-        var data = filterTreeData(buildTreeData());
-        if (!rendered) {
-          treeTable.render({
-            id: 'syncTree',
-            elem: '#syncTree',
-            toolbar: barToolbarHtml,
-            defaultToolbar: ['filter'],
-            data: data,
-            tree: {
-              customName: { children: 'children' },
-              view: { showIcon: false }
-            },
-            size: 'sm',
-            even: true,
-            cols: [[
-              { type: 'checkbox', width: 50 },
-              { field: 'name', title: 'Đại lý / Loại dữ liệu', minWidth: 200, templet: function (d) {
-                if (d.isAgent) {
-                  var c = d.agentStatus === 1 ? '#16b777' : '#ff5722';
-                  var syncIcon = d.syncing ? ' <i class="hi hi-arrows-rotate syncing-spin" style="font-size:12px;color:#1e9fff;"></i>' : '';
-                  return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'
-                    + c + ';margin-right:6px;vertical-align:middle;"></span><b>' + d.name + '</b>' + syncIcon;
-                }
-                return '<span style="color:#1e9fff;">' + d.name + '</span>';
-              }},
-              { title: 'Trạng thái', width: 130, align: 'center', templet: function (d) {
-                if (d.isAgent) {
-                  if (d.syncing) return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
-                  if (d.syncStatus === 'done') return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
-                  if (d.syncStatus === 'error') return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
-                  return d.agentStatus === 1
-                    ? '<span style="color:#16b777;font-weight:600;">Hoạt động</span>'
-                    : '<span style="color:#ff5722;font-weight:600;">Khoá</span>';
-                }
-                if (d.epStatus === 'done') return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
-                if (d.epStatus === 'error') return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
-                if (d.epStatus === 'syncing') return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
-                if (d.epStatus === 'pending') return '<span style="color:#999;">Chờ</span>';
-                return '<span style="color:#666;">\u2014</span>';
-              }},
-              { title: 'Tiến trình', minWidth: 200, templet: function (d) {
-                var completed, total, color;
-                if (d.isAgent) {
-                  if (d.syncing && d.children) {
-                    // Khi đang sync: tính tổng từ children
-                    completed = 0; total = 0;
-                    for (var ci = 0; ci < d.children.length; ci++) {
-                      completed += d.children[ci].completed || 0;
-                      total += d.children[ci].total || 0;
-                    }
-                  } else {
-                    completed = d.lockedDays; total = totalDays;
-                  }
-                } else {
-                  completed = d.completed || 0; total = d.total || 0;
-                }
-                var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-                if (pct > 100) pct = 100;
-                if (d.isAgent) {
-                  color = pct >= 100 ? '#16b777' : pct >= 50 ? '#ffb800' : '#ff5722';
-                } else {
-                  color = d.epStatus === 'done' ? '#16b777' : d.epStatus === 'error' ? '#ff5722' : d.epStatus === 'idle' ? '#999' : '#1e9fff';
-                }
-
-                var html = '<div style="display:flex;align-items:center;gap:8px;">'
-                  + '<div style="flex:1;height:6px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden;">'
-                  + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;transition:width .3s;"></div></div>'
-                  + '<span style="font-size:12px;color:' + color + ';font-weight:600;white-space:nowrap;">'
-                  + completed + '/' + total + '</span>';
-
-                // Page progress cho multi-page endpoints
-                if (!d.isAgent && d.totalPages > 1 && d.epStatus === 'syncing') {
-                  html += '<span class="page-info">p' + d.currentPage + '/' + d.totalPages + '</span>';
-                }
-
-                html += '</div>';
-
-                // Error message
-                if (!d.isAgent && d.error) {
-                  html += '<div class="error-text" title="' + d.error.replace(/"/g, '&quot;') + '">' + d.error + '</div>';
-                }
-
-                return html;
-              }},
-              { title: 'Dòng dữ liệu', width: 110, align: 'right', templet: function (d) {
-                if (d.isAgent) {
-                  // Tổng rows tất cả endpoints
-                  var totalRows = 0;
-                  if (d.children) {
-                    for (var i = 0; i < d.children.length; i++) {
-                      totalRows += d.children[i].dataRows || 0;
-                    }
-                  }
-                  return totalRows > 0
-                    ? '<span style="font-weight:600;color:#1e9fff;">' + totalRows.toLocaleString() + '</span>'
-                    : '<span style="color:#999;">\u2014</span>';
-                }
-                return d.dataRows > 0
-                  ? '<span style="font-weight:600;">' + d.dataRows.toLocaleString() + '</span>'
-                  : '<span style="color:#999;">\u2014</span>';
-              }},
-              { title: 'Ngày khoá', width: 100, align: 'center', templet: function (d) {
-                if (d.isAgent) {
-                  var ld = d.lockedDays || 0;
-                  if (ld > 0) return '<span style="color:#ffb800;"><i class="hi hi-lock" style="font-size:14px;"></i> ' + ld + '</span>';
-                  return '<span style="color:#999;">0</span>';
-                }
-                return '';
-              }},
-              { title: 'Thời gian', width: 90, align: 'right', templet: function (d) {
-                if (!d.isAgent || !d.elapsed) return '';
-                return '<span style="font-size:12px;color:#1e9fff;">' + fmtElapsed(d.elapsed) + '</span>';
-              }},
-              { title: 'Thao tác', width: 200, align: 'center', toolbar: '#toolbarTpl' }
-            ]],
-            done: function () {
-              HubLang.applyDOM();
+          sse.onerror = function () {
+            disconnectSSE();
+            sseRetryCount++;
+            if (sseRetryCount <= MAX_SSE_RETRIES) {
+              // Retry SSE sau 3s
+              setTimeout(connectSSE, 3000);
+            } else {
+              // Fallback to polling
+              startPolling();
             }
-          });
-          rendered = true;
-        } else {
-          treeTable.reloadData('syncTree', { data: data });
+          };
         }
-      }
 
-      // ═══════════════════════════════════════
-      // ── SSE Real-time Progress ──
-      // ═══════════════════════════════════════
+        function disconnectSSE() {
+          if (sse) {
+            sse.close();
+            sse = null;
+          }
+        }
 
-      function connectSSE() {
-        if (sse) return; // already connected
-        var token = HubAPI.getToken();
-        if (!token) return;
+        // ═══════════════════════════════════════
+        // ── Polling Fallback ──
+        // ═══════════════════════════════════════
 
-        stopPolling(); // Stop polling khi dùng SSE
+        function startPolling() {
+          if (pollTimer || sse) return;
+          pollTimer = setInterval(function () {
+            HubAPI.adminGet('sync/progress-data')
+              .then(function (res) {
+                if (res.code === 0 && res.data) handleProgressData(res.data);
+              })
+              .catch(function (err) {
+                console.warn('Poll progress lỗi:', err.message);
+              });
+          }, 2000);
+        }
 
-        sse = new EventSource('/api/admin/sync/progress?token=' + encodeURIComponent(token));
+        function stopPolling() {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        }
 
-        sse.onmessage = function (event) {
-          try {
-            // Reset retry count khi nhận được message thành công
-            sseRetryCount = 0;
-            var data = JSON.parse(event.data);
-            handleProgressData(data);
-          } catch (e) {}
-        };
+        // ═══════════════════════════════════════
+        // ── Handle progress data (từ SSE hoặc polling) ──
+        // ═══════════════════════════════════════
 
-        sse.onerror = function () {
-          disconnectSSE();
-          sseRetryCount++;
-          if (sseRetryCount <= MAX_SSE_RETRIES) {
-            // Retry SSE sau 3s
-            setTimeout(connectSSE, 3000);
+        function handleProgressData(data) {
+          if (data.agents && data.agents.length > 0) {
+            snap = data;
+            var stillSyncing = data.agents.some(function (a) {
+              return a.status === 'syncing';
+            });
+            updateSyncState(stillSyncing);
+            renderTree();
           } else {
-            // Fallback to polling
-            startPolling();
+            if (snap) {
+              // Vừa sync xong — refresh static data
+              snap = null;
+              loadAgents();
+            }
+            updateSyncState(false);
+            // Ngắt SSE/polling khi không còn sync
+            disconnectSSE();
+            stopPolling();
           }
-        };
-      }
+        }
 
-      function disconnectSSE() {
-        if (sse) { sse.close(); sse = null; }
-      }
+        function updateSyncState(isSyncing) {
+          var stateEl = document.getElementById('statSyncState');
+          if (stateEl) {
+            stateEl.textContent = isSyncing ? 'Đang chạy' : 'Sẵn sàng';
+            stateEl.style.color = isSyncing ? '#ff4d4f' : '#16b777';
+          }
+          var ind = document.getElementById('syncingIndicator');
+          if (ind) {
+            ind.innerHTML = isSyncing
+              ? '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;margin-left:10px;">' +
+                '<i class="hi hi-arrows-rotate syncing-spin"></i> Đang đồng bộ...</span>'
+              : '';
+          }
+        }
 
-      // ═══════════════════════════════════════
-      // ── Polling Fallback ──
-      // ═══════════════════════════════════════
+        // ═══════════════════════════════════════
+        // ── Events ──
+        // ═══════════════════════════════════════
 
-      function startPolling() {
-        if (pollTimer || sse) return;
-        pollTimer = setInterval(function () {
-          HubAPI.adminGet('sync/progress-data').then(function (res) {
-            if (res.code === 0 && res.data) handleProgressData(res.data);
-          }).catch(function (err) {
-            console.warn('Poll progress lỗi:', err.message);
-          });
-        }, 2000);
-      }
+        // Table-level toolbar
+        treeTable.on('toolbar(syncTree)', function (obj) {
+          if (obj.event === 'syncAll') {
+            layer.confirm(
+              'Đồng bộ tất cả agents?',
+              { icon: 3 },
+              function (idx) {
+                layer.close(idx);
+                var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
+                HubAPI.adminRequest('sync/run-all', 'POST', {})
+                  .then(function (res) {
+                    layer.close(loadIdx);
+                    if (res.code === 0) {
+                      layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
+                      // Kết nối SSE ngay lập tức để nhận progress
+                      setTimeout(connectSSE, 500);
+                    } else {
+                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                    }
+                  })
+                  .catch(function () {
+                    layer.close(loadIdx);
+                    layer.msg('Lỗi kết nối', { icon: 2 });
+                  });
+              }
+            );
+          } else if (obj.event === 'clearSelected') {
+            var checked = treeTable.checkStatus('syncTree');
+            var selectedIds = [];
+            if (checked && checked.data) {
+              checked.data.forEach(function (row) {
+                if (row.isAgent && row.id) selectedIds.push(row.id);
+              });
+            }
+            if (selectedIds.length === 0) {
+              layer.msg('Chưa chọn tài khoản nào', { icon: 0 });
+              return;
+            }
+            layer.confirm(
+              'Xoá khoá ngày của ' + selectedIds.length + ' đại lý đã chọn?',
+              { icon: 3 },
+              function (idx) {
+                layer.close(idx);
+                var loadIdx = layer.load();
+                var promises = selectedIds.map(function (aid) {
+                  return HubAPI.adminRequest('sync/clear', 'POST', {
+                    agent_id: aid
+                  });
+                });
+                Promise.all(promises)
+                  .then(function () {
+                    layer.close(loadIdx);
+                    layer.msg('Đã xoá', { icon: 1 });
+                    loadAgents();
+                  })
+                  .catch(function () {
+                    layer.close(loadIdx);
+                    layer.msg('Lỗi kết nối', { icon: 2 });
+                  });
+              }
+            );
+          }
+        });
 
-      function stopPolling() {
-        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-      }
+        // Row-level tool
+        treeTable.on('tool(syncTree)', function (obj) {
+          var d = obj.data;
+          if (!d.isAgent) return;
 
-      // ═══════════════════════════════════════
-      // ── Handle progress data (từ SSE hoặc polling) ──
-      // ═══════════════════════════════════════
+          if (obj.event === 'sync') {
+            layer.confirm(
+              'Đồng bộ "' + d.name + '"?',
+              { icon: 3 },
+              function (idx) {
+                layer.close(idx);
+                HubAPI.adminRequest('sync/run', 'POST', { agent_id: d.agentId })
+                  .then(function (res) {
+                    if (res.code === 0) {
+                      layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
+                      // Kết nối SSE ngay lập tức
+                      setTimeout(connectSSE, 500);
+                    } else {
+                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                    }
+                  })
+                  .catch(function () {
+                    layer.msg('Lỗi kết nối', { icon: 2 });
+                  });
+              }
+            );
+          } else if (obj.event === 'clear') {
+            layer.confirm(
+              'Xoá tất cả khoá ngày của "' + d.name + '"?',
+              { icon: 3 },
+              function (idx) {
+                layer.close(idx);
+                HubAPI.adminRequest('sync/clear', 'POST', {
+                  agent_id: d.agentId
+                })
+                  .then(function (res) {
+                    if (res.code === 0) {
+                      layer.msg(res.msg || 'Đã xoá', { icon: 1 });
+                      loadAgents();
+                    } else {
+                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                    }
+                  })
+                  .catch(function () {
+                    layer.msg('Lỗi kết nối', { icon: 2 });
+                  });
+              }
+            );
+          }
+        });
 
-      function handleProgressData(data) {
-        if (data.agents && data.agents.length > 0) {
-          snap = data;
-          var stillSyncing = data.agents.some(function (a) { return a.status === 'syncing'; });
-          updateSyncState(stillSyncing);
+        // Filter
+        form.on('submit(doSearch)', function (data) {
+          currentFilter = {};
+          if (data.field.agent_id) currentFilter.agent_id = data.field.agent_id;
+          if (data.field.endpoint) currentFilter.endpoint = data.field.endpoint;
+          if (data.field.status) currentFilter.status = data.field.status;
           renderTree();
-        } else {
-          if (snap) {
-            // Vừa sync xong — refresh static data
-            snap = null;
-            loadAgents();
-          }
-          updateSyncState(false);
-          // Ngắt SSE/polling khi không còn sync
+          return false;
+        });
+
+        document
+          .getElementById('btnReset')
+          .addEventListener('click', function () {
+            currentFilter = {};
+            setTimeout(function () {
+              form.render('select');
+              renderTree();
+            }, 50);
+          });
+
+        // ═══════════════════════════════════════
+        // ── Data loading ──
+        // ═══════════════════════════════════════
+
+        function loadAgents() {
+          HubAPI.adminGet('sync/status')
+            .then(function (res) {
+              if (res.code !== 0) return;
+              var d = res.data;
+              agents = d.agents || [];
+              totalDays = d.totalDays || 65;
+
+              // Stat cards
+              var active = agents.filter(function (a) {
+                return a.status === 1;
+              }).length;
+              var full = agents.filter(function (a) {
+                return (a.lockedDays || 0) >= totalDays;
+              }).length;
+              setNum('statTotalAgents', agents.length);
+              setNum('statActiveAgents', active);
+              setNum('statFullySynced', full + '/' + agents.length);
+
+              // Nếu đang sync → kết nối SSE
+              if (d.syncing) {
+                connectSSE();
+              }
+
+              updateSyncState(d.syncing);
+              renderTree();
+            })
+            .catch(function (err) {
+              console.warn('loadAgents lỗi:', err.message);
+            });
+        }
+
+        function loadAgentFilter() {
+          HubAPI.adminGet('agents')
+            .then(function (res) {
+              if (res.code !== 0 || !res.data) return;
+              var sel = $('#filterAgent');
+              res.data.forEach(function (a) {
+                sel.append(
+                  '<option value="' + a.id + '">' + a.label + '</option>'
+                );
+              });
+              form.render('select');
+            })
+            .catch(function () {});
+        }
+
+        // ── Init ──
+        loadAgents();
+        loadAgentFilter();
+        // Refresh static data mỗi 30s
+        statsTimer = setInterval(loadAgents, 30000);
+
+        window.addEventListener('beforeunload', function () {
           disconnectSSE();
           stopPolling();
-        }
-      }
-
-      function updateSyncState(isSyncing) {
-        var stateEl = document.getElementById('statSyncState');
-        if (stateEl) {
-          stateEl.textContent = isSyncing ? 'Đang chạy' : 'Sẵn sàng';
-          stateEl.style.color = isSyncing ? '#ff4d4f' : '#16b777';
-        }
-        var ind = document.getElementById('syncingIndicator');
-        if (ind) {
-          ind.innerHTML = isSyncing
-            ? '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;margin-left:10px;">'
-              + '<i class="hi hi-arrows-rotate syncing-spin"></i> Đang đồng bộ...</span>'
-            : '';
-        }
-      }
-
-      // ═══════════════════════════════════════
-      // ── Events ──
-      // ═══════════════════════════════════════
-
-      // Table-level toolbar
-      treeTable.on('toolbar(syncTree)', function (obj) {
-        if (obj.event === 'syncAll') {
-          layer.confirm('Đồng bộ tất cả agents?', { icon: 3 }, function (idx) {
-            layer.close(idx);
-            var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
-            HubAPI.adminRequest('sync/run-all', 'POST', {}).then(function (res) {
-              layer.close(loadIdx);
-              if (res.code === 0) {
-                layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
-                // Kết nối SSE ngay lập tức để nhận progress
-                setTimeout(connectSSE, 500);
-              } else {
-                layer.msg(res.msg || 'Lỗi', { icon: 2 });
-              }
-            }).catch(function () {
-              layer.close(loadIdx);
-              layer.msg('Lỗi kết nối', { icon: 2 });
-            });
-          });
-        } else if (obj.event === 'clearSelected') {
-          var checked = treeTable.checkStatus('syncTree');
-          var selectedIds = [];
-          if (checked && checked.data) {
-            checked.data.forEach(function (row) {
-              if (row.isAgent && row.id) selectedIds.push(row.id);
-            });
-          }
-          if (selectedIds.length === 0) {
-            layer.msg('Chưa chọn tài khoản nào', { icon: 0 });
-            return;
-          }
-          layer.confirm('Xoá khoá ngày của ' + selectedIds.length + ' đại lý đã chọn?', { icon: 3 }, function (idx) {
-            layer.close(idx);
-            var loadIdx = layer.load();
-            var promises = selectedIds.map(function (aid) {
-              return HubAPI.adminRequest('sync/clear', 'POST', { agent_id: aid });
-            });
-            Promise.all(promises).then(function () {
-              layer.close(loadIdx);
-              layer.msg('Đã xoá', { icon: 1 });
-              loadAgents();
-            }).catch(function () {
-              layer.close(loadIdx);
-              layer.msg('Lỗi kết nối', { icon: 2 });
-            });
-          });
-        }
-      });
-
-      // Row-level tool
-      treeTable.on('tool(syncTree)', function (obj) {
-        var d = obj.data;
-        if (!d.isAgent) return;
-
-        if (obj.event === 'sync') {
-          layer.confirm('Đồng bộ "' + d.name + '"?', { icon: 3 }, function (idx) {
-            layer.close(idx);
-            HubAPI.adminRequest('sync/run', 'POST', { agent_id: d.agentId }).then(function (res) {
-              if (res.code === 0) {
-                layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
-                // Kết nối SSE ngay lập tức
-                setTimeout(connectSSE, 500);
-              } else {
-                layer.msg(res.msg || 'Lỗi', { icon: 2 });
-              }
-            }).catch(function () { layer.msg('Lỗi kết nối', { icon: 2 }); });
-          });
-        } else if (obj.event === 'clear') {
-          layer.confirm('Xoá tất cả khoá ngày của "' + d.name + '"?', { icon: 3 }, function (idx) {
-            layer.close(idx);
-            HubAPI.adminRequest('sync/clear', 'POST', { agent_id: d.agentId }).then(function (res) {
-              if (res.code === 0) {
-                layer.msg(res.msg || 'Đã xoá', { icon: 1 });
-                loadAgents();
-              } else {
-                layer.msg(res.msg || 'Lỗi', { icon: 2 });
-              }
-            }).catch(function () { layer.msg('Lỗi kết nối', { icon: 2 }); });
-          });
-        }
-      });
-
-      // Filter
-      form.on('submit(doSearch)', function (data) {
-        currentFilter = {};
-        if (data.field.agent_id) currentFilter.agent_id = data.field.agent_id;
-        if (data.field.endpoint) currentFilter.endpoint = data.field.endpoint;
-        if (data.field.status) currentFilter.status = data.field.status;
-        renderTree();
-        return false;
-      });
-
-      document.getElementById('btnReset').addEventListener('click', function () {
-        currentFilter = {};
-        setTimeout(function () {
-          form.render('select');
-          renderTree();
-        }, 50);
-      });
-
-      // ═══════════════════════════════════════
-      // ── Data loading ──
-      // ═══════════════════════════════════════
-
-      function loadAgents() {
-        HubAPI.adminGet('sync/status').then(function (res) {
-          if (res.code !== 0) return;
-          var d = res.data;
-          agents = d.agents || [];
-          totalDays = d.totalDays || 65;
-
-          // Stat cards
-          var active = agents.filter(function (a) { return a.status === 1; }).length;
-          var full = agents.filter(function (a) { return (a.lockedDays || 0) >= totalDays; }).length;
-          setNum('statTotalAgents', agents.length);
-          setNum('statActiveAgents', active);
-          setNum('statFullySynced', full + '/' + agents.length);
-
-          // Nếu đang sync → kết nối SSE
-          if (d.syncing) {
-            connectSSE();
-          }
-
-          updateSyncState(d.syncing);
-          renderTree();
-        }).catch(function (err) {
-          console.warn('loadAgents lỗi:', err.message);
+          if (statsTimer) clearInterval(statsTimer);
         });
-      }
-
-      function loadAgentFilter() {
-        HubAPI.adminGet('agents').then(function (res) {
-          if (res.code !== 0 || !res.data) return;
-          var sel = $('#filterAgent');
-          res.data.forEach(function (a) {
-            sel.append('<option value="' + a.id + '">' + a.label + '</option>');
-          });
-          form.render('select');
-        }).catch(function () {});
-      }
-
-      // ── Init ──
-      loadAgents();
-      loadAgentFilter();
-      // Refresh static data mỗi 30s
-      statsTimer = setInterval(loadAgents, 30000);
-
-      window.addEventListener('beforeunload', function () {
-        disconnectSSE();
-        stopPolling();
-        if (statsTimer) clearInterval(statsTimer);
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

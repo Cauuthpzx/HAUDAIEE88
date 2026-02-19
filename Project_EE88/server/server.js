@@ -8,7 +8,12 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-const { createLogger, accessLogStream, LOG_DIR, cleanOldLogs } = require('./utils/logger');
+const {
+  createLogger,
+  accessLogStream,
+  LOG_DIR,
+  cleanOldLogs
+} = require('./utils/logger');
 const config = require('./config/default');
 const { getDb, closeDb } = require('./database/init');
 const proxyRoutes = require('./routes/proxy');
@@ -27,8 +32,19 @@ const PORT = process.env.PORT || 3001;
 if (config.jwt.secret === 'agent-hub-secret-change-me') {
   const newSecret = crypto.randomBytes(32).toString('hex');
   config.jwt.secret = newSecret;
-  log.warn('JWT_SECRET chưa thay đổi! Đã sinh secret tạm thời.');
-  log.warn('Hãy đặt JWT_SECRET trong .env để token ổn định qua các lần restart.');
+
+  // Ghi vào .env để token ổn định qua restart
+  const envPath = path.join(__dirname, '..', '.env');
+  let envContent = '';
+  try {
+    envContent = fs.readFileSync(envPath, 'utf8');
+  } catch (e) {
+    /* no .env yet */
+  }
+  if (!envContent.includes('JWT_SECRET=')) {
+    fs.appendFileSync(envPath, `\nJWT_SECRET=${newSecret}\n`);
+    log.ok('JWT_SECRET đã sinh và ghi vào .env — token ổn định qua restart.');
+  }
 }
 
 // ── Dọn log cũ ──
@@ -39,47 +55,69 @@ const db = getDb();
 log.ok('Database đã khởi tạo');
 
 // ── Security Middleware ──
-app.disable('x-powered-by');                  // Ẩn fingerprint Express
-app.set('trust proxy', 1);                    // IP chính xác qua reverse proxy
-app.use(helmet({
-  contentSecurityPolicy: false,               // Tắt CSP — Layui dùng inline scripts/styles
-  crossOriginEmbedderPolicy: false
-}));
+app.disable('x-powered-by'); // Ẩn fingerprint Express
+app.set('trust proxy', 1); // IP chính xác qua reverse proxy
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Tắt CSP — Layui dùng inline scripts/styles
+    crossOriginEmbedderPolicy: false
+  })
+);
 
 app.use(cors());
 
 // ── Rate Limiting ──
-app.use('/api/', rateLimit({
-  windowMs: config.security.rateLimit.windowMs,
-  max: config.security.rateLimit.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { code: -1, msg: 'Quá nhiều yêu cầu, vui lòng thử lại sau' }
-}));
+app.use(
+  '/api/',
+  rateLimit({
+    windowMs: config.security.rateLimit.windowMs,
+    max: config.security.rateLimit.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { code: -1, msg: 'Quá nhiều yêu cầu, vui lòng thử lại sau' }
+  })
+);
 
-app.use('/api/auth/login', rateLimit({
-  windowMs: config.security.authRateLimit.windowMs,
-  max: config.security.authRateLimit.max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { code: -1, msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút' }
-}));
+app.use(
+  '/api/auth/login',
+  rateLimit({
+    windowMs: config.security.authRateLimit.windowMs,
+    max: config.security.authRateLimit.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      code: -1,
+      msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút'
+    }
+  })
+);
 
 // Strict rate limit cho admin sensitive operations
-app.use('/api/admin/agents/login', rateLimit({
-  windowMs: 15 * 60 * 1000, max: 20,
-  standardHeaders: true, legacyHeaders: false,
-  message: { code: -1, msg: 'Quá nhiều yêu cầu login agent, đợi 15 phút' }
-}));
+app.use(
+  '/api/admin/agents/login',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { code: -1, msg: 'Quá nhiều yêu cầu login agent, đợi 15 phút' }
+  })
+);
 
 // Morgan: file log (skip health), dev console chỉ khi NODE_ENV !== production
 const skipHealth = (req) => req.path === '/api/health';
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev', { skip: skipHealth }));
 }
-app.use(morgan('[:date[iso]] :method :url :status :res[content-length] - :response-time ms ":user-agent"', {
-  stream: accessLogStream, skip: skipHealth
-}));
+app.use(
+  morgan(
+    '[:date[iso]] :method :url :status :res[content-length] - :response-time ms ":user-agent"',
+    {
+      stream: accessLogStream,
+      skip: skipHealth
+    }
+  )
+);
 
 app.use(express.json({ limit: config.security.bodyLimit }));
 
@@ -104,19 +142,32 @@ app.use('/api/admin', syncRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
-  const stats = db.prepare(
-    'SELECT (SELECT COUNT(*) FROM ee88_agents WHERE status = 1) as agents, (SELECT COUNT(*) FROM hub_users WHERE status = 1) as users'
-  ).get();
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), agents: stats.agents, users: stats.users });
+  const stats = db
+    .prepare(
+      'SELECT (SELECT COUNT(*) FROM ee88_agents WHERE status = 1) as agents, (SELECT COUNT(*) FROM hub_users WHERE status = 1) as users'
+    )
+    .get();
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    agents: stats.agents,
+    users: stats.users
+  });
 });
 
 // ── Phục vụ file tĩnh từ client/ ──
 const clientDir = path.join(__dirname, '..', 'client');
 const isProd = process.env.NODE_ENV === 'production';
 // Lib files: cache 1 năm + immutable (không bao giờ revalidate)
-app.use('/lib', express.static(path.join(clientDir, 'lib'), {
-  maxAge: '365d', immutable: true, etag: false, lastModified: false
-}));
+app.use(
+  '/lib',
+  express.static(path.join(clientDir, 'lib'), {
+    maxAge: '365d',
+    immutable: true,
+    etag: false,
+    lastModified: false
+  })
+);
 // Dev: no-cache (luôn revalidate bằng ETag) — Prod: cache 7 ngày
 app.use(express.static(clientDir, { maxAge: isProd ? '7d' : 0, etag: true }));
 log.info(`Thư mục client: ${clientDir}`);
@@ -125,11 +176,19 @@ log.info(`Thư mục client: ${clientDir}`);
 const spaDir = path.join(__dirname, '..', 'spa');
 if (fs.existsSync(spaDir)) {
   // Page JS: no-cache (luôn revalidate bằng ETag, tự động bust khi file thay đổi)
-  app.use('/spa/js/pages', express.static(path.join(spaDir, 'js', 'pages'), {
-    maxAge: 0, etag: true, lastModified: true
-  }));
+  app.use(
+    '/spa/js/pages',
+    express.static(path.join(spaDir, 'js', 'pages'), {
+      maxAge: 0,
+      etag: true,
+      lastModified: true
+    })
+  );
   // Dev: no-cache — Prod: cache 7 ngày
-  app.use('/spa', express.static(spaDir, { maxAge: isProd ? '7d' : 0, etag: true }));
+  app.use(
+    '/spa',
+    express.static(spaDir, { maxAge: isProd ? '7d' : 0, etag: true })
+  );
   log.info(`Thư mục SPA: ${spaDir}`);
 }
 
@@ -137,10 +196,16 @@ if (fs.existsSync(spaDir)) {
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     log.warn(`API không tìm thấy: ${req.method} ${req.originalUrl}`);
-    return res.status(404).json({ code: -1, msg: 'Không tìm thấy đường dẫn API' });
+    return res
+      .status(404)
+      .json({ code: -1, msg: 'Không tìm thấy đường dẫn API' });
   }
   log.warn(`Không tìm thấy: ${req.method} ${req.originalUrl}`);
-  res.status(404).send('<!DOCTYPE html><html><head><meta charset="utf-8"><title>404</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h1>404</h1><p>Không tìm thấy trang</p><a href="/spa/login.html">Về trang đăng nhập</a></body></html>');
+  res
+    .status(404)
+    .send(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h1>404</h1><p>Không tìm thấy trang</p><a href="/spa/login.html">Về trang đăng nhập</a></body></html>'
+    );
 });
 
 // ── Global error handler ──
@@ -151,7 +216,10 @@ const { execSync } = require('child_process');
 
 function killPort(port) {
   try {
-    const result = execSync(`netstat -ano | findstr ":${port}" | findstr "LISTENING"`, { encoding: 'utf8' });
+    const result = execSync(
+      `netstat -ano | findstr ":${port}" | findstr "LISTENING"`,
+      { encoding: 'utf8' }
+    );
     const lines = result.trim().split('\n');
     const pids = new Set();
     for (const line of lines) {
@@ -160,7 +228,9 @@ function killPort(port) {
     }
     for (const pid of pids) {
       log.warn(`Tắt process đang chiếm port ${port} (PID: ${pid})`);
-      try { execSync(`taskkill /PID ${pid} /F`, { encoding: 'utf8' }); } catch {}
+      try {
+        execSync(`taskkill /PID ${pid} /F`, { encoding: 'utf8' });
+      } catch {}
     }
     if (pids.size > 0) log.ok(`Đã giải phóng port ${port}`);
   } catch {
@@ -186,7 +256,9 @@ try {
     loginWorker.on('message', (msg) => {
       if (msg.type === 'login_result') {
         const status = msg.success ? 'thành công' : `thất bại: ${msg.error}`;
-        log.info(`[LoginWorker] Agent #${msg.agentId} — ${status} (${msg.source})`);
+        log.info(
+          `[LoginWorker] Agent #${msg.agentId} — ${status} (${msg.source})`
+        );
       }
     });
     loginWorker.on('error', (err) => {
@@ -206,16 +278,27 @@ function shutdown() {
   process.exit(0);
 }
 
-process.on('SIGTERM', () => { log.info('Nhận SIGTERM — đang tắt...'); shutdown(); });
-process.on('SIGINT', () => { log.info('Nhận SIGINT — đang tắt...'); shutdown(); });
+process.on('SIGTERM', () => {
+  log.info('Nhận SIGTERM — đang tắt...');
+  shutdown();
+});
+process.on('SIGINT', () => {
+  log.info('Nhận SIGINT — đang tắt...');
+  shutdown();
+});
 
 // ── Uncaught Exception / Unhandled Rejection ──
 process.on('uncaughtException', (err) => {
-  log.error('UNCAUGHT EXCEPTION! Đang tắt server...', { error: err.message, stack: err.stack });
+  log.error('UNCAUGHT EXCEPTION! Đang tắt server...', {
+    error: err.message,
+    stack: err.stack
+  });
   shutdown();
 });
 process.on('unhandledRejection', (reason) => {
-  log.error('UNHANDLED REJECTION — sẽ tắt server sau 3s', { reason: String(reason) });
+  log.error('UNHANDLED REJECTION — sẽ tắt server sau 3s', {
+    reason: String(reason)
+  });
   setTimeout(() => shutdown(), 3000);
 });
 
@@ -224,8 +307,12 @@ app.listen(PORT, () => {
   log.ok(`Máy chủ Agent Hub đang chạy tại http://localhost:${PORT}`);
   log.info(`Thư mục log: ${LOG_DIR}`);
 
-  const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents').get().cnt;
-  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users').get().cnt;
+  const agentCount = db
+    .prepare('SELECT COUNT(*) as cnt FROM ee88_agents')
+    .get().cnt;
+  const userCount = db
+    .prepare('SELECT COUNT(*) as cnt FROM hub_users')
+    .get().cnt;
   log.info('Cấu hình', {
     cổng: PORT,
     agents: agentCount,

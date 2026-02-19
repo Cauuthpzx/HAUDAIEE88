@@ -50,6 +50,16 @@ async function fetchWithRelogin(agent, endpointKey, params) {
 async function fetchAllData(agents, endpointKey, params) {
   const fetchParams = { ...params, page: 1, limit: 500 };
 
+  // Extract dateKey từ params cho endpoints cần date_key
+  const dateParam = params.create_time || params.bet_time || params.date;
+  let dateKey = null;
+  if (dateParam) {
+    const parts = dateParam.split('|').map((s) => s.trim());
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      dateKey = parts[0] + '|' + parts[1];
+    }
+  }
+
   let allData = [];
   let totalData = null;
   let successCount = 0;
@@ -68,7 +78,7 @@ async function fetchAllData(agents, endpointKey, params) {
               endpointKey,
               data.data,
               data.total_data,
-              null
+              dateKey
             );
           }
         } catch (e) {
@@ -130,6 +140,18 @@ function scheduleRefresh(agents, endpointKey, params, refreshKey) {
     });
 }
 
+/**
+ * Kiểm tra date range có hoàn toàn trong quá khứ không (trước hôm nay)
+ */
+function isPastDateRange(params) {
+  const dateParam = params.create_time || params.bet_time || params.date;
+  if (!dateParam) return false;
+  const parts = dateParam.split('|').map((s) => s.trim());
+  if (parts.length !== 2 || !parts[1]) return false;
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return parts[1] < today;
+}
+
 // ═══════════════════════════════════════
 // ── Fan-out fetch (SQLite-first) ──
 // ═══════════════════════════════════════
@@ -146,20 +168,23 @@ async function fanoutFetch(agents, endpointKey, params) {
   const localResult = dataStore.queryLocal(agentIds, endpointKey, params);
 
   if (localResult && localResult.data.length > 0) {
-    const lastRefresh = lastRefreshAt.get(refreshKey);
-    const isRefreshing = refreshInProgress.get(refreshKey);
-    const isStale = !lastRefresh || Date.now() - lastRefresh > REFRESH_TTL;
+    // Ngày quá khứ = data đã chốt → trả ngay, không cần refresh
+    const isPastDate = isPastDateRange(params);
 
-    if (isStale && !isRefreshing) {
-      scheduleRefresh(agents, endpointKey, params, refreshKey);
+    let fromLocal = false;
+    if (!isPastDate) {
+      const lastRefresh = lastRefreshAt.get(refreshKey);
+      const isRefreshing = refreshInProgress.get(refreshKey);
+      const isStale = !lastRefresh || Date.now() - lastRefresh > REFRESH_TTL;
+
+      if (isStale && !isRefreshing) {
+        scheduleRefresh(agents, endpointKey, params, refreshKey);
+      }
+      fromLocal = !!(isRefreshing || isStale);
     }
 
-    // fromLocal: true → client polls for fresh data
-    // fromLocal: false → data is fresh, stop polling
-    const fromLocal = !!(isRefreshing || isStale);
-
     log.info(
-      `LOCAL ${fromLocal ? 'STALE' : 'FRESH'}: ${endpointKey} (${localResult.count} total, page ${params.page || 1})`
+      `LOCAL ${isPastDate ? 'CACHED' : fromLocal ? 'STALE' : 'FRESH'}: ${endpointKey} (${localResult.count} total, page ${params.page || 1})`
     );
 
     return {

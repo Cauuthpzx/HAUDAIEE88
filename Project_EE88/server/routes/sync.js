@@ -8,47 +8,65 @@ const log = createLogger('sync-routes');
 const router = express.Router();
 
 // ── SSE endpoint (auth via query param vì EventSource không set header được) ──
-router.get('/sync/progress', (req, res, next) => {
-  if (!req.headers.authorization && req.query.token) {
-    req.headers.authorization = 'Bearer ' + req.query.token;
+router.get(
+  '/sync/progress',
+  (req, res, next) => {
+    if (!req.headers.authorization && req.query.token) {
+      req.headers.authorization = 'Bearer ' + req.query.token;
+    }
+    next();
+  },
+  authMiddleware,
+  adminOnly,
+  (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+
+    // Gửi snapshot ngay lập tức
+    res.write(
+      'data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n'
+    );
+
+    function onProgress(data) {
+      try {
+        res.write('data: ' + JSON.stringify(data) + '\n\n');
+      } catch (e) {
+        cleanup();
+      }
+    }
+    cronSync.syncEmitter.on('progress', onProgress);
+
+    const hb = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+      } catch (e) {
+        cleanup();
+      }
+    }, 30000);
+
+    // Auto-close sau 15 phút (sync có thể mất 11 phút, client sẽ tự reconnect)
+    const maxAge = setTimeout(() => cleanup(), 15 * 60 * 1000);
+
+    let cleaned = false;
+    function cleanup() {
+      if (cleaned) return;
+      cleaned = true;
+      cronSync.syncEmitter.off('progress', onProgress);
+      clearInterval(hb);
+      clearTimeout(maxAge);
+      try {
+        res.end();
+      } catch (e) {}
+    }
+
+    req.on('close', cleanup);
+    res.on('error', cleanup);
   }
-  next();
-}, authMiddleware, adminOnly, (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  });
-
-  // Gửi snapshot ngay lập tức
-  res.write('data: ' + JSON.stringify(cronSync.getSyncProgressSnapshot()) + '\n\n');
-
-  function onProgress(data) {
-    try { res.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (e) { cleanup(); }
-  }
-  cronSync.syncEmitter.on('progress', onProgress);
-
-  const hb = setInterval(() => {
-    try { res.write(': heartbeat\n\n'); } catch (e) { cleanup(); }
-  }, 30000);
-
-  // Auto-close sau 15 phút (sync có thể mất 11 phút, client sẽ tự reconnect)
-  const maxAge = setTimeout(() => cleanup(), 15 * 60 * 1000);
-
-  let cleaned = false;
-  function cleanup() {
-    if (cleaned) return;
-    cleaned = true;
-    cronSync.syncEmitter.off('progress', onProgress);
-    clearInterval(hb);
-    clearTimeout(maxAge);
-    try { res.end(); } catch (e) {}
-  }
-
-  req.on('close', cleanup);
-  res.on('error', cleanup);
-});
+);
 
 // Tất cả routes còn lại cần auth + admin
 router.use(authMiddleware, adminOnly);
@@ -59,7 +77,9 @@ router.get('/sync/status', (req, res) => {
     const { getDb } = require('../database/init');
     const db = getDb();
 
-    const agents = db.prepare('SELECT id, label, status FROM ee88_agents ORDER BY id').all();
+    const agents = db
+      .prepare('SELECT id, label, status FROM ee88_agents ORDER BY id')
+      .all();
 
     // Bảng → endpoint mapping cho row count
     const EP_TABLES = {};
@@ -67,17 +87,44 @@ router.get('/sync/status', (req, res) => {
       EP_TABLES[ep] = mapping.table;
     }
 
-    const agentStats = agents.map(agent => {
+    const agentStats = agents.map((agent) => {
       let lockCount = 0;
-      try { lockCount = db.prepare('SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?').get(agent.id).cnt; } catch (e) {}
+      let lastSyncAt = null;
+      try {
+        lockCount = db
+          .prepare(
+            'SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?'
+          )
+          .get(agent.id).cnt;
+      } catch (e) {}
+      try {
+        lastSyncAt = db
+          .prepare(
+            'SELECT MAX(locked_at) as t FROM sync_day_locks WHERE agent_id = ?'
+          )
+          .get(agent.id).t;
+      } catch (e) {}
 
       // Row counts cho TẤT CẢ endpoints
       const rows = {};
       for (const [ep, table] of Object.entries(EP_TABLES)) {
-        try { rows[ep] = db.prepare(`SELECT COUNT(*) as cnt FROM ${table} WHERE agent_id = ?`).get(agent.id).cnt; } catch (e) { rows[ep] = 0; }
+        try {
+          rows[ep] = db
+            .prepare(`SELECT COUNT(*) as cnt FROM ${table} WHERE agent_id = ?`)
+            .get(agent.id).cnt;
+        } catch (e) {
+          rows[ep] = 0;
+        }
       }
 
-      return { id: agent.id, label: agent.label, status: agent.status, lockedDays: lockCount, rows };
+      return {
+        id: agent.id,
+        label: agent.label,
+        status: agent.status,
+        lockedDays: lockCount,
+        lastSyncAt,
+        rows
+      };
     });
 
     res.json({

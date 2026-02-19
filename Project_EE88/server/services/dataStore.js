@@ -544,6 +544,56 @@ function getEndpointList() {
 }
 
 // ═══════════════════════════════════════
+// ── Hydrate DB rows → API-compatible ──
+// ═══════════════════════════════════════
+
+/**
+ * Chuyển DB rows về đúng field names gốc của EE88 API:
+ * 1. Parse extra JSON → merge vào row
+ * 2. Reverse fieldMap (dbCol → apiField): balance → money, uid → id, ...
+ */
+function hydrateRows(rows, mapping) {
+  const fieldMap = mapping.fieldMap;
+  // Build reverse: { dbCol: apiField } — e.g. { balance: 'money', uid: 'id' }
+  let reverseMap = null;
+  if (fieldMap) {
+    reverseMap = {};
+    for (const [apiField, dbCol] of Object.entries(fieldMap)) {
+      reverseMap[dbCol] = apiField;
+    }
+  }
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    // 1. Merge extra JSON
+    if (row.extra) {
+      try {
+        const extra =
+          typeof row.extra === 'string' ? JSON.parse(row.extra) : row.extra;
+        for (const k in extra) {
+          if (row[k] === undefined) row[k] = extra[k];
+        }
+      } catch (e) {
+        /* ignore parse errors */
+      }
+      delete row.extra;
+    }
+
+    // 2. Reverse fieldMap: copy dbCol value to apiField name
+    if (reverseMap) {
+      for (const [dbCol, apiField] of Object.entries(reverseMap)) {
+        if (row[dbCol] !== undefined && row[apiField] === undefined) {
+          row[apiField] = row[dbCol];
+        }
+      }
+    }
+  }
+
+  return rows;
+}
+
+// ═══════════════════════════════════════
 // ── Local-first display query ──
 // ═══════════════════════════════════════
 
@@ -592,9 +642,10 @@ function queryLocal(agentIds, endpointKey, params) {
       const endDate = parts[1];
 
       if (mapping.needsDateKey) {
-        // report endpoints: date_key = "YYYY-MM-DD|YYYY-MM-DD"
-        where += ' AND date_key = ?';
-        queryParams.push(startDate + '|' + endDate);
+        // report endpoints: date_key lưu từng ngày "YYYY-MM-DD|YYYY-MM-DD"
+        // Query range: tìm tất cả ngày trong khoảng
+        where += ' AND date_key >= ? AND date_key <= ?';
+        queryParams.push(startDate + '|' + startDate, endDate + '|' + endDate);
       } else if (mapping.hasDate) {
         const dateCol = getDateColumn(endpointKey);
         if (dateCol) {
@@ -648,10 +699,19 @@ function queryLocal(agentIds, endpointKey, params) {
     if (dateParam && mapping.needsDateKey) {
       const parts = dateParam.split('|').map((s) => s.trim());
       if (parts.length === 2 && parts[0] && parts[1]) {
-        const dateKey = parts[0] + '|' + parts[1];
-        for (const agentId of agentIds) {
-          const t = queryTotals(endpointKey, agentId, dateKey);
-          if (t) {
+        const startKey = parts[0] + '|' + parts[0];
+        const endKey = parts[1] + '|' + parts[1];
+        const totalsRows = db
+          .prepare(
+            `SELECT total_json FROM data_totals
+           WHERE endpoint_key = ? AND agent_id IN (${placeholders})
+           AND date_key >= ? AND date_key <= ?`
+          )
+          .all(endpointKey, ...agentIds, startKey, endKey);
+
+        for (const row of totalsRows) {
+          try {
+            const t = JSON.parse(row.total_json);
             if (!totalData) {
               totalData = { ...t };
             } else {
@@ -661,12 +721,17 @@ function queryLocal(agentIds, endpointKey, params) {
                   totalData[k] = (parseFloat(totalData[k]) || 0) + v;
               }
             }
+          } catch (e) {
+            /* ignore */
           }
         }
       }
     }
 
-    return { data: rows, count: countRow.cnt, totalData };
+    // Post-process: merge extra JSON + reverse fieldMap → trả về đúng field names gốc của API
+    const processed = hydrateRows(rows, mapping);
+
+    return { data: processed, count: countRow.cnt, totalData };
   } catch (err) {
     log.error(`queryLocal [${endpointKey}] error: ${err.message}`);
     return null;
