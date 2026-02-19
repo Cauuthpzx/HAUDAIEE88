@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/default');
+const { getDb } = require('../database/init');
 const { createLogger } = require('../utils/logger');
 
 const log = createLogger('auth');
@@ -7,6 +8,7 @@ const log = createLogger('auth');
 /**
  * JWT Authentication middleware
  * Verify token từ header Authorization: Bearer <token>
+ * Verify token_version (logout all devices support)
  * Gán req.user = { id, username, role }
  */
 function authMiddleware(req, res, next) {
@@ -20,6 +22,16 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, config.jwt.secret);
+
+    // Verify token_version — nếu user đã logout all devices, token cũ bị reject
+    if (decoded.tv !== undefined) {
+      const db = getDb();
+      const user = db.prepare('SELECT token_version FROM hub_users WHERE id = ? AND status = 1').get(decoded.id);
+      if (!user || (user.token_version || 0) !== decoded.tv) {
+        return res.status(401).json({ code: -1, msg: 'Phiên đăng nhập đã bị thu hồi' });
+      }
+    }
+
     req.user = {
       id: decoded.id,
       username: decoded.username,

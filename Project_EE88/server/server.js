@@ -39,8 +39,10 @@ const db = getDb();
 log.ok('Database đã khởi tạo');
 
 // ── Security Middleware ──
+app.disable('x-powered-by');                  // Ẩn fingerprint Express
+app.set('trust proxy', 1);                    // IP chính xác qua reverse proxy
 app.use(helmet({
-  contentSecurityPolicy: false,       // Tắt CSP — Layui dùng inline scripts/styles
+  contentSecurityPolicy: false,               // Tắt CSP — Layui dùng inline scripts/styles
   crossOriginEmbedderPolicy: false
 }));
 
@@ -61,6 +63,13 @@ app.use('/api/auth/login', rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { code: -1, msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút' }
+}));
+
+// Strict rate limit cho admin sensitive operations
+app.use('/api/admin/agents/login', rateLimit({
+  windowMs: 15 * 60 * 1000, max: 20,
+  standardHeaders: true, legacyHeaders: false,
+  message: { code: -1, msg: 'Quá nhiều yêu cầu login agent, đợi 15 phút' }
 }));
 
 // Morgan: file log (skip health), dev console chỉ khi NODE_ENV !== production

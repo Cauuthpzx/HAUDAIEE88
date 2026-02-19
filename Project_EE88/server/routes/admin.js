@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
+const validator = require('validator');
 const { getDb } = require('../database/init');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { loginAgent, isSolverReady } = require('../services/loginService');
@@ -228,10 +229,21 @@ router.get('/agents', (req, res) => {
 
 // POST /api/admin/agents — Thêm agent mới
 router.post('/agents', async (req, res) => {
-  const { label, base_url, ee88_username, ee88_password } = req.body;
+  let { label, base_url, ee88_username, ee88_password } = req.body;
 
   if (!label || !base_url || !ee88_username || !ee88_password) {
     return res.status(400).json({ code: -1, msg: 'Thiếu thông tin (label, base_url, username, password)' });
+  }
+
+  // Input validation
+  label = validator.trim(label);
+  base_url = validator.trim(base_url);
+  ee88_username = validator.trim(ee88_username);
+  if (!validator.isLength(label, { min: 1, max: 100 })) {
+    return res.status(400).json({ code: -1, msg: 'Label phải từ 1-100 ký tự' });
+  }
+  if (!validator.isURL(base_url, { require_protocol: true })) {
+    return res.status(400).json({ code: -1, msg: 'URL không hợp lệ' });
   }
 
   const db = getDb();
@@ -517,15 +529,24 @@ router.get('/users', (req, res) => {
 
 // POST /api/admin/users — Thêm user
 router.post('/users', (req, res) => {
-  const { username, password, display_name, role, agent_ids } = req.body;
+  let { username, password, display_name, role, agent_ids } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ code: -1, msg: 'Thiếu tên đăng nhập hoặc mật khẩu' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ code: -1, msg: 'Mật khẩu phải ít nhất 6 ký tự' });
+  // Input validation + sanitization
+  username = validator.trim(username);
+  if (!validator.isLength(username, { min: 2, max: 50 }) || !validator.isAlphanumeric(username, 'en-US', { ignore: '_-.' })) {
+    return res.status(400).json({ code: -1, msg: 'Tên đăng nhập 2-50 ký tự, chỉ gồm chữ, số, _, -, .' });
   }
+  if (!validator.isLength(password, { min: 6, max: 128 })) {
+    return res.status(400).json({ code: -1, msg: 'Mật khẩu phải từ 6-128 ký tự' });
+  }
+  if (role && !['admin', 'user'].includes(role)) {
+    return res.status(400).json({ code: -1, msg: 'Role không hợp lệ' });
+  }
+  if (display_name) display_name = validator.trim(validator.escape(display_name));
 
   const db = getDb();
 

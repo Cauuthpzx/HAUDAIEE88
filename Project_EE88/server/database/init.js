@@ -70,6 +70,13 @@ function getDb() {
     log.info('Migrate: thêm cột user_agent');
   }
 
+  // Migrate: token_version cho hub_users (logout all devices)
+  const userCols = db.prepare("PRAGMA table_info(hub_users)").all().map(c => c.name);
+  if (!userCols.includes('token_version')) {
+    db.exec("ALTER TABLE hub_users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
+    log.info('Migrate: thêm cột token_version');
+  }
+
   // Migrate: bảng nhật ký hoạt động
   db.exec(`
     CREATE TABLE IF NOT EXISTS hub_activity_log (
