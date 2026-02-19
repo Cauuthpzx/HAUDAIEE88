@@ -287,6 +287,7 @@
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
         HubLang.applyDOM();
+        document.title = HubLang.t('betTitle');
         var table = layui.table;
         var form = layui.form;
         var laydate = layui.laydate;

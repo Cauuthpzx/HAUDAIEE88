@@ -83,13 +83,15 @@
           class="layui-btn layui-btn-xs layui-btn-normal"
           lay-event="sync"
         >
-          <i class="hi hi-arrows-rotate"></i> Đồng bộ
+          <i class="hi hi-arrows-rotate"></i>
+          <span data-i18n="syncBtn">Đồng bộ</span>
         </button>
         <button
           class="layui-btn layui-btn-xs layui-btn-danger"
           lay-event="clear"
         >
-          <i class="hi hi-trash-can"></i> Xoá khoá
+          <i class="hi hi-trash-can"></i>
+          <span data-i18n="clearLocksBtn">Xoá khoá</span>
         </button>
       </div>
       {{# } }}
@@ -98,19 +100,19 @@
     <!-- Stat Cards -->
     <div class="stat-cards" id="statsArea">
       <div class="stat-card">
-        <div class="label">Tổng đại lý</div>
+        <div class="label" data-i18n="totalAgents">Tổng đại lý</div>
         <div class="value blue" id="statTotalAgents">&mdash;</div>
       </div>
       <div class="stat-card">
-        <div class="label">Hoạt động</div>
+        <div class="label" data-i18n="active">Hoạt động</div>
         <div class="value green" id="statActiveAgents">&mdash;</div>
       </div>
       <div class="stat-card">
-        <div class="label">Đã đồng bộ đủ</div>
+        <div class="label" data-i18n="fullySynced">Đã đồng bộ đủ</div>
         <div class="value orange" id="statFullySynced">&mdash;</div>
       </div>
       <div class="stat-card">
-        <div class="label">Trạng thái</div>
+        <div class="label" data-i18n="status">Trạng thái</div>
         <div class="value" id="statSyncState" style="font-size: 14px">
           &mdash;
         </div>
@@ -123,7 +125,7 @@
         <div class="layui-card">
           <div class="layui-card-header">
             <fieldset class="layui-elem-field">
-              <legend>Đồng bộ dữ liệu</legend>
+              <legend data-i18n="syncDataTitle">Đồng bộ dữ liệu</legend>
             </fieldset>
             <form
               class="layui-form layui-form-sm"
@@ -136,17 +138,19 @@
               "
             >
               <select name="agent_id" id="filterAgent" style="width: 150px">
-                <option value="">Tất cả — Đại lý</option>
+                <option value="" data-i18n="all">Tất cả — Đại lý</option>
               </select>
               <select name="endpoint" id="filterEndpoint" style="width: 180px">
-                <option value="">Tất cả — Endpoint</option>
+                <option value="" data-i18n="all">Tất cả — Endpoint</option>
               </select>
               <select name="status" style="width: 140px">
-                <option value="">Tất cả — Trạng thái</option>
-                <option value="done">Hoàn tất</option>
-                <option value="syncing">Đang chạy</option>
-                <option value="idle">Chưa đồng bộ</option>
-                <option value="error">Lỗi</option>
+                <option value="" data-i18n="all">Tất cả — Trạng thái</option>
+                <option value="done" data-i18n="completed">Hoàn tất</option>
+                <option value="syncing" data-i18n="syncRunning">
+                  Đang chạy
+                </option>
+                <option value="idle" data-i18n="notSynced">Chưa đồng bộ</option>
+                <option value="error" data-i18n="error">Lỗi</option>
               </select>
               <button
                 type="button"
@@ -154,14 +158,15 @@
                 lay-submit
                 lay-filter="doSearch"
               >
-                <i class="layui-icon layui-icon-search"></i> Tìm kiếm
+                <i class="layui-icon layui-icon-search"></i>
+                <span data-i18n="search">Tìm kiếm</span>
               </button>
               <button
                 type="reset"
                 class="layui-btn layui-btn-xs layui-btn-primary"
                 id="btnReset"
               >
-                Đặt lại
+                <span data-i18n="reset">Đặt lại</span>
               </button>
             </form>
           </div>
@@ -182,6 +187,8 @@
     <script>
       layui.use(['treeTable', 'form', 'layer'], function () {
         HubLang.init();
+        HubLang.applyDOM();
+        document.title = HubLang.t('syncStatusTitle');
         var treeTable = layui.treeTable;
         var form = layui.form;
         var layer = layui.layer;
@@ -203,17 +210,33 @@
         // ═══════════════════════════════════════
 
         var STATIC_EPS = [
-          { key: 'members', name: 'Danh sách hội viên', isDate: false },
-          { key: 'invites', name: 'Mã mời', isDate: false },
-          { key: 'bet-orders', name: 'Đơn cược bên thứ 3', isDate: false },
-          { key: 'deposits', name: 'Nạp / Rút tiền', isDate: true },
-          { key: 'withdrawals', name: 'Lịch sử rút tiền', isDate: true },
-          { key: 'lottery-bets', name: 'Đơn cược xổ số', isDate: true },
-          { key: 'report-lottery', name: 'Báo cáo xổ số', isDate: true },
-          { key: 'report-funds', name: 'Sao kê giao dịch', isDate: true },
+          { key: 'members', name: HubLang.t('epMembers'), isDate: false },
+          { key: 'invites', name: HubLang.t('epInvites'), isDate: false },
+          { key: 'bet-orders', name: HubLang.t('epBetOrders'), isDate: false },
+          { key: 'deposits', name: HubLang.t('epDeposits'), isDate: true },
+          {
+            key: 'withdrawals',
+            name: HubLang.t('epWithdrawals'),
+            isDate: true
+          },
+          {
+            key: 'lottery-bets',
+            name: HubLang.t('epLotteryBets'),
+            isDate: true
+          },
+          {
+            key: 'report-lottery',
+            name: HubLang.t('epReportLottery'),
+            isDate: true
+          },
+          {
+            key: 'report-funds',
+            name: HubLang.t('epReportFunds'),
+            isDate: true
+          },
           {
             key: 'report-third',
-            name: 'Báo cáo nhà cung cấp game',
+            name: HubLang.t('epReportThird'),
             isDate: true
           }
         ];
@@ -384,10 +407,12 @@
         var barToolbarHtml =
           '<div class="layui-btn-group">' +
           '<button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="syncAll">' +
-          '<i class="hi hi-arrows-rotate"></i> Đồng bộ tất cả' +
+          '<i class="hi hi-arrows-rotate"></i> ' +
+          HubLang.t('syncAllBtn') +
           '</button>' +
           '<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="clearSelected">' +
-          '<i class="hi hi-trash-can"></i> Xoá khoá đã chọn' +
+          '<i class="hi hi-trash-can"></i> ' +
+          HubLang.t('clearSelectedBtn') +
           '</button>' +
           '</div><span id="syncingIndicator"></span>';
 
@@ -411,7 +436,7 @@
                   { type: 'checkbox', width: 50 },
                   {
                     field: 'name',
-                    title: 'Đại lý / Loại dữ liệu',
+                    title: HubLang.t('agentDataType'),
                     minWidth: 150,
                     templet: function (d) {
                       if (d.isAgent) {
@@ -434,34 +459,66 @@
                     }
                   },
                   {
-                    title: 'Trạng thái',
+                    title: HubLang.t('status'),
                     width: 100,
                     align: 'center',
                     templet: function (d) {
                       if (d.isAgent) {
                         if (d.syncing)
-                          return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
+                          return (
+                            '<span style="color:#1e9fff;font-weight:600;">' +
+                            HubLang.t('syncRunning') +
+                            '</span>'
+                          );
                         if (d.syncStatus === 'done')
-                          return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
+                          return (
+                            '<span style="color:#16b777;font-weight:600;">' +
+                            HubLang.t('completed') +
+                            '</span>'
+                          );
                         if (d.syncStatus === 'error')
-                          return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
+                          return (
+                            '<span style="color:#ff5722;font-weight:600;">' +
+                            HubLang.t('error') +
+                            '</span>'
+                          );
                         return d.agentStatus === 1
-                          ? '<span style="color:#16b777;font-weight:600;">Hoạt động</span>'
-                          : '<span style="color:#ff5722;font-weight:600;">Khoá</span>';
+                          ? '<span style="color:#16b777;font-weight:600;">' +
+                              HubLang.t('active') +
+                              '</span>'
+                          : '<span style="color:#ff5722;font-weight:600;">' +
+                              HubLang.t('locked') +
+                              '</span>';
                       }
                       if (d.epStatus === 'done')
-                        return '<span style="color:#16b777;font-weight:600;">Hoàn tất</span>';
+                        return (
+                          '<span style="color:#16b777;font-weight:600;">' +
+                          HubLang.t('completed') +
+                          '</span>'
+                        );
                       if (d.epStatus === 'error')
-                        return '<span style="color:#ff5722;font-weight:600;">Lỗi</span>';
+                        return (
+                          '<span style="color:#ff5722;font-weight:600;">' +
+                          HubLang.t('error') +
+                          '</span>'
+                        );
                       if (d.epStatus === 'syncing')
-                        return '<span style="color:#1e9fff;font-weight:600;">Đang chạy</span>';
+                        return (
+                          '<span style="color:#1e9fff;font-weight:600;">' +
+                          HubLang.t('syncRunning') +
+                          '</span>'
+                        );
                       if (d.epStatus === 'pending')
-                        return '<span style="color:#999;">Chờ</span>';
+                        return (
+                          '<span style="color:#999;">' +
+                          HubLang.t('pending') +
+                          '</span>'
+                        );
                       return '<span style="color:#666;">\u2014</span>';
                     }
                   },
                   {
-                    title: 'Tiến trình',
+                    title: HubLang.t('syncProgress'),
                     minWidth: 160,
                     templet: function (d) {
                       var completed, total, color;
@@ -549,7 +606,7 @@
                     }
                   },
                   {
-                    title: 'Dòng dữ liệu',
+                    title: HubLang.t('dataRows'),
                     width: 90,
                     align: 'right',
                     templet: function (d) {
@@ -575,7 +632,7 @@
                     }
                   },
                   {
-                    title: 'Ngày khoá',
+                    title: HubLang.t('lockedDaysCol'),
                     width: 80,
                     align: 'center',
                     templet: function (d) {
@@ -593,7 +650,7 @@
                     }
                   },
                   {
-                    title: 'Thời gian',
+                    title: HubLang.t('time'),
                     width: 130,
                     align: 'center',
                     templet: function (d) {
@@ -617,7 +674,7 @@
                     }
                   },
                   {
-                    title: 'Thao tác',
+                    title: HubLang.t('actions'),
                     width: 160,
                     align: 'center',
                     toolbar: '#toolbarTpl'
@@ -730,14 +787,18 @@
         function updateSyncState(isSyncing) {
           var stateEl = document.getElementById('statSyncState');
           if (stateEl) {
-            stateEl.textContent = isSyncing ? 'Đang chạy' : 'Sẵn sàng';
+            stateEl.textContent = isSyncing
+              ? HubLang.t('syncRunning')
+              : HubLang.t('ready');
             stateEl.style.color = isSyncing ? '#ff4d4f' : '#16b777';
           }
           var ind = document.getElementById('syncingIndicator');
           if (ind) {
             ind.innerHTML = isSyncing
               ? '<span class="layui-btn layui-btn-xs" style="background:#1e9fff;border-color:#1e9fff;cursor:default;margin-left:10px;">' +
-                '<i class="hi hi-arrows-rotate syncing-spin"></i> Đang đồng bộ...</span>'
+                '<i class="hi hi-arrows-rotate syncing-spin"></i> ' +
+                HubLang.t('syncingIndicator') +
+                '</span>'
               : '';
           }
         }
@@ -750,7 +811,7 @@
         treeTable.on('toolbar(syncTree)', function (obj) {
           if (obj.event === 'syncAll') {
             layer.confirm(
-              'Đồng bộ tất cả agents?',
+              HubLang.t('confirmSyncAll'),
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
@@ -759,16 +820,16 @@
                   .then(function (res) {
                     layer.close(loadIdx);
                     if (res.code === 0) {
-                      layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
+                      layer.msg(HubLang.t('syncStarted'), { icon: 1 });
                       // Kết nối SSE ngay lập tức để nhận progress
                       setTimeout(connectSSE, 500);
                     } else {
-                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                      layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
                     }
                   })
                   .catch(function () {
                     layer.close(loadIdx);
-                    layer.msg('Lỗi kết nối', { icon: 2 });
+                    layer.msg(HubLang.t('connectionError'), { icon: 2 });
                   });
               }
             );
@@ -781,11 +842,16 @@
               });
             }
             if (selectedIds.length === 0) {
-              layer.msg('Chưa chọn tài khoản nào', { icon: 0 });
+              layer.msg(HubLang.t('noSelection'), { icon: 0 });
               return;
             }
             layer.confirm(
-              'Xoá khoá ngày của ' + selectedIds.length + ' đại lý đã chọn?',
+              HubLang.t('confirmClearSelectedLocks') +
+                ' ' +
+                selectedIds.length +
+                ' ' +
+                HubLang.t('selectedAgents') +
+                '?',
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
@@ -798,12 +864,12 @@
                 Promise.all(promises)
                   .then(function () {
                     layer.close(loadIdx);
-                    layer.msg('Đã xoá', { icon: 1 });
+                    layer.msg(HubLang.t('deleted'), { icon: 1 });
                     loadAgents();
                   })
                   .catch(function () {
                     layer.close(loadIdx);
-                    layer.msg('Lỗi kết nối', { icon: 2 });
+                    layer.msg(HubLang.t('connectionError'), { icon: 2 });
                   });
               }
             );
@@ -817,28 +883,28 @@
 
           if (obj.event === 'sync') {
             layer.confirm(
-              'Đồng bộ "' + d.name + '"?',
+              HubLang.t('confirmSyncAgent') + ' "' + d.name + '"?',
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
                 HubAPI.adminRequest('sync/run', 'POST', { agent_id: d.agentId })
                   .then(function (res) {
                     if (res.code === 0) {
-                      layer.msg('Đã bắt đầu đồng bộ', { icon: 1 });
+                      layer.msg(HubLang.t('syncStarted'), { icon: 1 });
                       // Kết nối SSE ngay lập tức
                       setTimeout(connectSSE, 500);
                     } else {
-                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                      layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
                     }
                   })
                   .catch(function () {
-                    layer.msg('Lỗi kết nối', { icon: 2 });
+                    layer.msg(HubLang.t('connectionError'), { icon: 2 });
                   });
               }
             );
           } else if (obj.event === 'clear') {
             layer.confirm(
-              'Xoá tất cả khoá ngày của "' + d.name + '"?',
+              HubLang.t('confirmClearAgentLocks') + ' "' + d.name + '"?',
               { icon: 3 },
               function (idx) {
                 layer.close(idx);
@@ -847,14 +913,14 @@
                 })
                   .then(function (res) {
                     if (res.code === 0) {
-                      layer.msg(res.msg || 'Đã xoá', { icon: 1 });
+                      layer.msg(res.msg || HubLang.t('deleted'), { icon: 1 });
                       loadAgents();
                     } else {
-                      layer.msg(res.msg || 'Lỗi', { icon: 2 });
+                      layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
                     }
                   })
                   .catch(function () {
-                    layer.msg('Lỗi kết nối', { icon: 2 });
+                    layer.msg(HubLang.t('connectionError'), { icon: 2 });
                   });
               }
             );

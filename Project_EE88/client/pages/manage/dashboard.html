@@ -1,366 +1,650 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="/lib/layui/css/layui.css">
-  <link rel="stylesheet" href="/css/hub-icons.css">
-  <style>
-    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
 
-    /* ── Dashboard ── */
-    .db-range-bar { padding: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .db-kpi-row { display: flex; gap: 12px; padding: 0 15px 15px; flex-wrap: wrap; }
-    .db-kpi-card {
-      flex: 1; min-width: 155px; background: #fff; border-radius: 8px;
-      padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
-      display: flex; align-items: center; gap: 14px;
-      transition: box-shadow 0.2s, transform 0.2s;
-      border-left: 3px solid transparent;
-    }
-    .db-kpi-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
-      transform: translateY(-1px);
-    }
-    .db-kpi-icon {
-      width: 44px; height: 44px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; color: #fff; flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    .db-kpi-info { flex: 1; min-width: 0; }
-    .db-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
-    .db-kpi-label { font-size: 12px; color: #999; margin-top: 2px; }
-    .db-kpi-sub { font-size: 11px; color: #bbb; margin-top: 3px; }
+      /* ── Dashboard ── */
+      .db-range-bar {
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .db-kpi-row {
+        display: flex;
+        gap: 12px;
+        padding: 0 15px 15px;
+        flex-wrap: wrap;
+      }
+      .db-kpi-card {
+        flex: 1;
+        min-width: 155px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition:
+          box-shadow 0.2s,
+          transform 0.2s;
+        border-left: 3px solid transparent;
+      }
+      .db-kpi-card:hover {
+        box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 0 0 1px rgba(0, 0, 0, 0.04);
+        transform: translateY(-1px);
+      }
+      .db-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .db-kpi-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .db-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .db-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+      .db-kpi-sub {
+        font-size: 11px;
+        color: #bbb;
+        margin-top: 3px;
+      }
 
-    .db-charts-row { display: flex; gap: 15px; padding: 0 15px 15px; flex-wrap: wrap; }
-    .db-chart-box {
-      background: #fff; border-radius: 8px; padding: 15px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
-    }
-    .db-chart-title { font-size: 13px; color: #555; font-weight: 600; margin-bottom: 10px; }
+      .db-charts-row {
+        display: flex;
+        gap: 15px;
+        padding: 0 15px 15px;
+        flex-wrap: wrap;
+      }
+      .db-chart-box {
+        background: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+      .db-chart-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
 
-    .db-agent-area { padding: 0 15px 15px; }
-    .db-agent-area .layui-card {
-      margin: 0; border-radius: 8px; border: none; overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
-    }
-    .db-agent-area .layui-card-header {
-      font-weight: 600; color: #555;
-      border-bottom: 1px solid #f0f0f0;
-    }
+      .db-agent-area {
+        padding: 0 15px 15px;
+      }
+      .db-agent-area .layui-card {
+        margin: 0;
+        border-radius: 8px;
+        border: none;
+        overflow: hidden;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+      .db-agent-area .layui-card-header {
+        font-weight: 600;
+        color: #555;
+        border-bottom: 1px solid #f0f0f0;
+      }
 
-    .db-no-data { text-align: center; padding: 100px 0; color: #ccc; font-size: 13px; }
-    .db-error { text-align: center; padding: 40px 0; color: #ff5722; font-size: 13px; }
+      .db-no-data {
+        text-align: center;
+        padding: 100px 0;
+        color: #ccc;
+        font-size: 13px;
+      }
+      .db-error {
+        text-align: center;
+        padding: 40px 0;
+        color: #ff5722;
+        font-size: 13px;
+      }
 
-    /* KPI accent borders */
-    .db-kpi-card[data-accent="blue"]   { border-left-color: #1e9fff; }
-    .db-kpi-card[data-accent="green"]  { border-left-color: #16b777; }
-    .db-kpi-card[data-accent="yellow"] { border-left-color: #ffb800; }
-    .db-kpi-card[data-accent="red"]    { border-left-color: #ff5722; }
-    .db-kpi-card[data-accent="purple"] { border-left-color: #7c3aed; }
+      /* KPI accent borders */
+      .db-kpi-card[data-accent='blue'] {
+        border-left-color: #1e9fff;
+      }
+      .db-kpi-card[data-accent='green'] {
+        border-left-color: #16b777;
+      }
+      .db-kpi-card[data-accent='yellow'] {
+        border-left-color: #ffb800;
+      }
+      .db-kpi-card[data-accent='red'] {
+        border-left-color: #ff5722;
+      }
+      .db-kpi-card[data-accent='purple'] {
+        border-left-color: #7c3aed;
+      }
 
-    @media (max-width: 1200px) { .db-kpi-card { min-width: 135px; } }
-    @media (max-width: 768px) {
-      .db-kpi-card { min-width: calc(50% - 8px); }
-      .db-charts-row { flex-direction: column; }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Range selector -->
-  <div class="db-range-bar">
-    <span style="font-size:13px;color:#999;" data-i18n="dbDateRange">Khoảng thời gian:</span>
-    <div class="layui-btn-group">
-      <button class="layui-btn layui-btn-sm db-range" data-range="today" data-i18n="today">Hôm nay</button>
-      <button class="layui-btn layui-btn-sm layui-btn-primary db-range" data-range="7d" data-i18n="dbLast7Days">7 ngày</button>
-      <button class="layui-btn layui-btn-sm layui-btn-primary db-range" data-range="30d" data-i18n="dbLast30Days">30 ngày</button>
+      @media (max-width: 1200px) {
+        .db-kpi-card {
+          min-width: 135px;
+        }
+      }
+      @media (max-width: 768px) {
+        .db-kpi-card {
+          min-width: calc(50% - 8px);
+        }
+        .db-charts-row {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Range selector -->
+    <div class="db-range-bar">
+      <span style="font-size: 13px; color: #999" data-i18n="dbDateRange"
+        >Khoảng thời gian:</span
+      >
+      <div class="layui-btn-group">
+        <button
+          class="layui-btn layui-btn-sm db-range"
+          data-range="today"
+          data-i18n="today"
+        >
+          Hôm nay
+        </button>
+        <button
+          class="layui-btn layui-btn-sm layui-btn-primary db-range"
+          data-range="7d"
+          data-i18n="dbLast7Days"
+        >
+          7 ngày
+        </button>
+        <button
+          class="layui-btn layui-btn-sm layui-btn-primary db-range"
+          data-range="30d"
+          data-i18n="dbLast30Days"
+        >
+          30 ngày
+        </button>
+      </div>
+      <span id="dateLabel" style="font-size: 12px; color: #666"></span>
     </div>
-    <span id="dateLabel" style="font-size:12px;color:#666;"></span>
-  </div>
 
-  <!-- KPI Cards -->
-  <div class="db-kpi-row">
-    <div class="db-kpi-card" data-accent="blue">
-      <div class="db-kpi-icon" style="background:#1e9fff;"><i class="hi hi-users"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_totalMembers">-</div>
-        <div class="db-kpi-label" data-i18n="dbTotalMembers">Tổng hội viên</div>
+    <!-- KPI Cards -->
+    <div class="db-kpi-row">
+      <div class="db-kpi-card" data-accent="blue">
+        <div class="db-kpi-icon" style="background: #1e9fff">
+          <i class="hi hi-users"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_totalMembers">-</div>
+          <div class="db-kpi-label" data-i18n="dbTotalMembers">
+            Tổng hội viên
+          </div>
+        </div>
+      </div>
+      <div class="db-kpi-card" data-accent="green">
+        <div class="db-kpi-icon" style="background: #16b777">
+          <i class="hi hi-circle-plus"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_newMembers">-</div>
+          <div class="db-kpi-label" data-i18n="dbNewMembers">Hội viên mới</div>
+        </div>
+      </div>
+      <div class="db-kpi-card" data-accent="yellow">
+        <div class="db-kpi-icon" style="background: #ffb800">
+          <i class="hi hi-circle-check"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_activeMembers">-</div>
+          <div class="db-kpi-label" data-i18n="dbActiveMembers">
+            Đang hoạt động
+          </div>
+        </div>
+      </div>
+      <div class="db-kpi-card" data-accent="green">
+        <div class="db-kpi-icon" style="background: #16b777">
+          <i class="hi hi-o hi-o-credit-card"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_depositTotal">-</div>
+          <div class="db-kpi-label" data-i18n="dbDepositTotal">Tổng nạp</div>
+          <div class="db-kpi-sub" id="kpi_depositSub"></div>
+        </div>
+      </div>
+      <div class="db-kpi-card" data-accent="red">
+        <div class="db-kpi-icon" style="background: #ff5722">
+          <i class="hi hi-o hi-o-money-bill-1"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_withdrawTotal">-</div>
+          <div class="db-kpi-label" data-i18n="dbWithdrawTotal">Tổng rút</div>
+          <div class="db-kpi-sub" id="kpi_withdrawSub"></div>
+        </div>
+      </div>
+      <div class="db-kpi-card" data-accent="purple">
+        <div class="db-kpi-icon" style="background: #7c3aed">
+          <i class="hi hi-chart-bar"></i>
+        </div>
+        <div class="db-kpi-info">
+          <div class="db-kpi-value" id="kpi_netWinLoss">-</div>
+          <div class="db-kpi-label" data-i18n="dbNetWinLoss">
+            Thắng / Thua ròng
+          </div>
+        </div>
       </div>
     </div>
-    <div class="db-kpi-card" data-accent="green">
-      <div class="db-kpi-icon" style="background:#16b777;"><i class="hi hi-circle-plus"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_newMembers">-</div>
-        <div class="db-kpi-label" data-i18n="dbNewMembers">Hội viên mới</div>
+
+    <!-- Charts -->
+    <div class="db-charts-row">
+      <div class="db-chart-box" style="flex: 2; min-width: 300px">
+        <div class="db-chart-title" data-i18n="dbDepositWithdrawTrend">
+          Xu hướng Nạp / Rút
+        </div>
+        <div id="chartBar" style="height: 300px"></div>
+      </div>
+      <div class="db-chart-box" style="flex: 1; min-width: 250px">
+        <div class="db-chart-title" data-i18n="dbWinLossBreakdown">
+          Phân bố Thắng / Thua
+        </div>
+        <div id="chartPie" style="height: 300px"></div>
       </div>
     </div>
-    <div class="db-kpi-card" data-accent="yellow">
-      <div class="db-kpi-icon" style="background:#ffb800;"><i class="hi hi-circle-check"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_activeMembers">-</div>
-        <div class="db-kpi-label" data-i18n="dbActiveMembers">Đang hoạt động</div>
+
+    <!-- Per-agent table (admin only) -->
+    <div class="db-agent-area" id="agentTableArea" style="display: none">
+      <div class="layui-card">
+        <div class="layui-card-header" data-i18n="dbPerAgent">
+          Chi tiết theo đại lý
+        </div>
+        <div class="layui-card-body">
+          <table id="agentTable" lay-filter="agentTable"></table>
+        </div>
       </div>
     </div>
-    <div class="db-kpi-card" data-accent="green">
-      <div class="db-kpi-icon" style="background:#16b777;"><i class="hi hi-o hi-o-credit-card"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_depositTotal">-</div>
-        <div class="db-kpi-label" data-i18n="dbDepositTotal">Tổng nạp</div>
-        <div class="db-kpi-sub" id="kpi_depositSub"></div>
-      </div>
-    </div>
-    <div class="db-kpi-card" data-accent="red">
-      <div class="db-kpi-icon" style="background:#ff5722;"><i class="hi hi-o hi-o-money-bill-1"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_withdrawTotal">-</div>
-        <div class="db-kpi-label" data-i18n="dbWithdrawTotal">Tổng rút</div>
-        <div class="db-kpi-sub" id="kpi_withdrawSub"></div>
-      </div>
-    </div>
-    <div class="db-kpi-card" data-accent="purple">
-      <div class="db-kpi-icon" style="background:#7c3aed;"><i class="hi hi-chart-bar"></i></div>
-      <div class="db-kpi-info">
-        <div class="db-kpi-value" id="kpi_netWinLoss">-</div>
-        <div class="db-kpi-label" data-i18n="dbNetWinLoss">Thắng / Thua ròng</div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Charts -->
-  <div class="db-charts-row">
-    <div class="db-chart-box" style="flex:2;min-width:300px;">
-      <div class="db-chart-title" data-i18n="dbDepositWithdrawTrend">Xu hướng Nạp / Rút</div>
-      <div id="chartBar" style="height:300px;"></div>
-    </div>
-    <div class="db-chart-box" style="flex:1;min-width:250px;">
-      <div class="db-chart-title" data-i18n="dbWinLossBreakdown">Phân bố Thắng / Thua</div>
-      <div id="chartPie" style="height:300px;"></div>
-    </div>
-  </div>
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('dashboard');
 
-  <!-- Per-agent table (admin only) -->
-  <div class="db-agent-area" id="agentTableArea" style="display:none;">
-    <div class="layui-card">
-      <div class="layui-card-header" data-i18n="dbPerAgent">Chi tiết theo đại lý</div>
-      <div class="layui-card-body"><table id="agentTable" lay-filter="agentTable"></table></div>
-    </div>
-  </div>
+      var currentRange = 'today';
+      var barChart = null,
+        pieChart = null;
 
-  <script src="/lib/layui/layui.js"></script>
-  <script src="/js/hub-api.js"></script>
-  <script src="/js/hub-lang.js"></script>
-  <script>
-    HubAPI.requireAuth();
-    HubLang.init();
-    HubLang.applyDOM();
+      layui.use(['table'], function () {
+        var $ = layui.$;
 
-    var currentRange = 'today';
-    var barChart = null, pieChart = null;
+        // Range buttons
+        $('.db-range').on('click', function () {
+          currentRange = $(this).data('range');
+          $('.db-range').addClass('layui-btn-primary');
+          $(this).removeClass('layui-btn-primary');
+          loadDashboard();
+        });
 
-    layui.use(['table'], function () {
-      var $ = layui.$;
-
-      // Range buttons
-      $('.db-range').on('click', function () {
-        currentRange = $(this).data('range');
-        $('.db-range').addClass('layui-btn-primary');
-        $(this).removeClass('layui-btn-primary');
         loadDashboard();
-      });
 
-      loadDashboard();
+        function loadDashboard() {
+          // Loading state
+          $(
+            '#kpi_totalMembers, #kpi_newMembers, #kpi_activeMembers, #kpi_depositTotal, #kpi_withdrawTotal, #kpi_netWinLoss'
+          ).text('...');
 
-      function loadDashboard() {
-        // Loading state
-        $('#kpi_totalMembers, #kpi_newMembers, #kpi_activeMembers, #kpi_depositTotal, #kpi_withdrawTotal, #kpi_netWinLoss').text('...');
+          HubAPI.dashboardGet('stats?range=' + currentRange)
+            .then(function (res) {
+              if (res.code !== 0) {
+                showError(res.msg || HubLang.t('error'));
+                return;
+              }
+              var d = res.data;
 
-        HubAPI.dashboardGet('stats?range=' + currentRange).then(function (res) {
-          if (res.code !== 0) {
-            showError(res.msg || 'Unknown error');
-            return;
-          }
-          var d = res.data;
+              $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
 
-          $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
+              // KPIs
+              $('#kpi_totalMembers').text(fmtNum(d.members.total));
+              $('#kpi_newMembers').text(fmtNum(d.members.new));
+              $('#kpi_activeMembers').text(fmtNum(d.members.active));
+              $('#kpi_depositTotal').text(fmtMoney(d.deposits.amount));
+              $('#kpi_withdrawTotal').text(fmtMoney(d.withdrawals.amount));
 
-          // KPIs
-          $('#kpi_totalMembers').text(fmtNum(d.members.total));
-          $('#kpi_newMembers').text(fmtNum(d.members.new));
-          $('#kpi_activeMembers').text(fmtNum(d.members.active));
-          $('#kpi_depositTotal').text(fmtMoney(d.deposits.amount));
-          $('#kpi_withdrawTotal').text(fmtMoney(d.withdrawals.amount));
+              // Sub-info (count)
+              $('#kpi_depositSub').text(
+                fmtNum(d.deposits.count) + ' ' + HubLang.t('dbOrders')
+              );
+              $('#kpi_withdrawSub').text(
+                fmtNum(d.withdrawals.count) + ' ' + HubLang.t('dbOrders')
+              );
 
-          // Sub-info (count)
-          $('#kpi_depositSub').text(fmtNum(d.deposits.count) + ' ' + HubLang.t('dbOrders'));
-          $('#kpi_withdrawSub').text(fmtNum(d.withdrawals.count) + ' ' + HubLang.t('dbOrders'));
+              var netWL =
+                (d.winLoss.lottery.winLose || 0) +
+                (d.winLoss.thirdParty.winLose || 0);
+              $('#kpi_netWinLoss')
+                .text(fmtMoney(netWL))
+                .css('color', netWL >= 0 ? '#16b777' : '#ff5722');
 
-          var netWL = (d.winLoss.lottery.winLose || 0) + (d.winLoss.thirdParty.winLose || 0);
-          $('#kpi_netWinLoss').text(fmtMoney(netWL)).css('color', netWL >= 0 ? '#16b777' : '#ff5722');
+              // Charts
+              loadEcharts(function () {
+                renderBarChart(d);
+                renderPieChart(d);
+              });
 
-          // Charts
-          loadEcharts(function () {
-            renderBarChart(d);
-            renderPieChart(d);
-          });
+              // Admin: agent table
+              if (d.perAgent && d.perAgent.length > 0) {
+                $('#agentTableArea').show();
+                layui.table.render({
+                  elem: '#agentTable',
+                  data: d.perAgent,
+                  text: { none: HubLang.t('noData') },
+                  page: false,
+                  cols: [
+                    [
+                      { field: 'label', title: HubLang.t('agent'), width: 120 },
+                      {
+                        field: 'members',
+                        title: HubLang.t('dbTotalMembers'),
+                        width: 100,
+                        align: 'right',
+                        templet: function (row) {
+                          return fmtNum(row.members);
+                        }
+                      },
+                      {
+                        field: 'deposit',
+                        title: HubLang.t('dbDepositTotal'),
+                        width: 130,
+                        align: 'right',
+                        templet: function (row) {
+                          return (
+                            '<span style="color:#16b777">' +
+                            fmtMoney(row.deposit) +
+                            '</span>'
+                          );
+                        }
+                      },
+                      {
+                        field: 'withdrawal',
+                        title: HubLang.t('dbWithdrawTotal'),
+                        width: 130,
+                        align: 'right',
+                        templet: function (row) {
+                          return (
+                            '<span style="color:#ff5722">' +
+                            fmtMoney(row.withdrawal) +
+                            '</span>'
+                          );
+                        }
+                      },
+                      {
+                        field: 'lotteryWL',
+                        title: HubLang.t('dbLotteryWL'),
+                        width: 130,
+                        align: 'right',
+                        templet: function (row) {
+                          var v = row.lotteryWL || 0;
+                          return (
+                            '<span style="color:' +
+                            (v >= 0 ? '#16b777' : '#ff5722') +
+                            '">' +
+                            fmtMoney(v) +
+                            '</span>'
+                          );
+                        }
+                      },
+                      {
+                        field: 'thirdWL',
+                        title: HubLang.t('dbThirdPartyWL'),
+                        width: 130,
+                        align: 'right',
+                        templet: function (row) {
+                          var v = row.thirdWL || 0;
+                          return (
+                            '<span style="color:' +
+                            (v >= 0 ? '#16b777' : '#ff5722') +
+                            '">' +
+                            fmtMoney(v) +
+                            '</span>'
+                          );
+                        }
+                      },
+                      {
+                        field: 'net',
+                        title: HubLang.t('dbNet'),
+                        minWidth: 120,
+                        align: 'right',
+                        templet: function (row) {
+                          var net = (row.deposit || 0) - (row.withdrawal || 0);
+                          return (
+                            '<span style="color:' +
+                            (net >= 0 ? '#16b777' : '#ff5722') +
+                            '">' +
+                            fmtMoney(net) +
+                            '</span>'
+                          );
+                        }
+                      }
+                    ]
+                  ]
+                });
+              }
+            })
+            .catch(function (err) {
+              console.error('[Dashboard] Load error:', err);
+              showError(err.message);
+            });
+        }
 
-          // Admin: agent table
-          if (d.perAgent && d.perAgent.length > 0) {
-            $('#agentTableArea').show();
-            layui.table.render({
-              elem: '#agentTable',
-              data: d.perAgent,
-              text: { none: HubLang.t('noData') },
-              page: false,
-              cols: [[
-                { field: 'label', title: HubLang.t('agent'), width: 120 },
-                { field: 'members', title: HubLang.t('dbTotalMembers'), width: 100, align: 'right',
-                  templet: function (row) { return fmtNum(row.members); } },
-                { field: 'deposit', title: HubLang.t('dbDepositTotal'), width: 130, align: 'right',
-                  templet: function (row) { return '<span style="color:#16b777">' + fmtMoney(row.deposit) + '</span>'; } },
-                { field: 'withdrawal', title: HubLang.t('dbWithdrawTotal'), width: 130, align: 'right',
-                  templet: function (row) { return '<span style="color:#ff5722">' + fmtMoney(row.withdrawal) + '</span>'; } },
-                { field: 'lotteryWL', title: HubLang.t('dbLotteryWL'), width: 130, align: 'right',
-                  templet: function (row) {
-                    var v = row.lotteryWL || 0;
-                    return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
-                  } },
-                { field: 'thirdWL', title: HubLang.t('dbThirdPartyWL'), width: 130, align: 'right',
-                  templet: function (row) {
-                    var v = row.thirdWL || 0;
-                    return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
-                  } },
-                { field: 'net', title: HubLang.t('dbNet'), minWidth: 120, align: 'right',
-                  templet: function (row) {
-                    var net = (row.deposit || 0) - (row.withdrawal || 0);
-                    return '<span style="color:' + (net >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(net) + '</span>';
+        function renderBarChart(d) {
+          var el = document.getElementById('chartBar');
+          if (!el) return;
+          if (d.dailyTrend && d.dailyTrend.length > 0) {
+            if (barChart) barChart.dispose();
+            barChart = echarts.init(el);
+            barChart.setOption({
+              tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                  var s = params[0].axisValue + '<br/>';
+                  for (var i = 0; i < params.length; i++) {
+                    s +=
+                      params[i].marker +
+                      ' ' +
+                      params[i].seriesName +
+                      ': <b>' +
+                      fmtMoney(params[i].value) +
+                      '</b><br/>';
                   }
+                  return s;
                 }
-              ]]
+              },
+              legend: {
+                data: [HubLang.t('deposit'), HubLang.t('withdraw')],
+                textStyle: { color: '#999' },
+                bottom: 0
+              },
+              grid: {
+                left: '3%',
+                right: '4%',
+                top: 30,
+                bottom: 35,
+                containLabel: true
+              },
+              xAxis: {
+                type: 'category',
+                data: d.dailyTrend.map(function (t) {
+                  return t.date_key.substring(5);
+                }),
+                axisLabel: { color: '#999', fontSize: 11 }
+              },
+              yAxis: {
+                type: 'value',
+                axisLabel: {
+                  color: '#999',
+                  fontSize: 11,
+                  formatter: function (v) {
+                    return v >= 1000000
+                      ? (v / 1000000).toFixed(1) + 'M'
+                      : v >= 1000
+                        ? (v / 1000).toFixed(0) + 'K'
+                        : v;
+                  }
+                },
+                splitLine: { lineStyle: { color: '#f0f0f0' } }
+              },
+              color: ['#16b777', '#ff5722'],
+              series: [
+                {
+                  name: HubLang.t('deposit'),
+                  type: 'bar',
+                  barMaxWidth: 20,
+                  data: d.dailyTrend.map(function (t) {
+                    return t.deposit;
+                  }),
+                  itemStyle: { borderRadius: [3, 3, 0, 0] }
+                },
+                {
+                  name: HubLang.t('withdraw'),
+                  type: 'bar',
+                  barMaxWidth: 20,
+                  data: d.dailyTrend.map(function (t) {
+                    return t.withdrawal;
+                  }),
+                  itemStyle: { borderRadius: [3, 3, 0, 0] }
+                }
+              ]
+            });
+          } else {
+            el.innerHTML =
+              '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
+          }
+        }
+
+        function renderPieChart(d) {
+          var el = document.getElementById('chartPie');
+          if (!el) return;
+          var lotteryWL = d.winLoss.lottery.winLose || 0;
+          var thirdWL = d.winLoss.thirdParty.winLose || 0;
+          if (lotteryWL === 0 && thirdWL === 0) {
+            el.innerHTML =
+              '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
+          } else {
+            if (pieChart) pieChart.dispose();
+            pieChart = echarts.init(el);
+            pieChart.setOption({
+              tooltip: {
+                trigger: 'item',
+                formatter: function (p) {
+                  return (
+                    p.name +
+                    ': <b>' +
+                    fmtMoney(p.value) +
+                    '</b> (' +
+                    p.percent +
+                    '%)'
+                  );
+                }
+              },
+              legend: { bottom: 0, textStyle: { color: '#999', fontSize: 11 } },
+              color: ['#ffb800', '#1e9fff'],
+              series: [
+                {
+                  type: 'pie',
+                  radius: ['40%', '70%'],
+                  center: ['50%', '45%'],
+                  label: { show: false },
+                  emphasis: { label: { show: true, fontWeight: 'bold' } },
+                  data: [
+                    {
+                      value: Math.abs(lotteryWL),
+                      name: HubLang.t('dbLotteryWL')
+                    },
+                    {
+                      value: Math.abs(thirdWL),
+                      name: HubLang.t('dbThirdPartyWL')
+                    }
+                  ]
+                }
+              ]
             });
           }
-        }).catch(function (err) {
-          console.error('[Dashboard] Load error:', err);
-          showError(err.message);
+        }
+
+        // Resize charts on window resize
+        $(window).on('resize', function () {
+          if (barChart) barChart.resize();
+          if (pieChart) pieChart.resize();
+        });
+      });
+
+      function showError(msg) {
+        var barEl = document.getElementById('chartBar');
+        if (barEl)
+          barEl.innerHTML =
+            '<div class="db-error">' + HubLang.t('dbError') + '</div>';
+        var pieEl = document.getElementById('chartPie');
+        if (pieEl)
+          pieEl.innerHTML =
+            '<div class="db-error">' + HubLang.t('dbError') + '</div>';
+      }
+
+      function fmtNum(n) {
+        return (n || 0).toLocaleString();
+      }
+      function fmtMoney(n) {
+        n = n || 0;
+        return n.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2
         });
       }
 
-      function renderBarChart(d) {
-        var el = document.getElementById('chartBar');
-        if (!el) return;
-        if (d.dailyTrend && d.dailyTrend.length > 0) {
-          if (barChart) barChart.dispose();
-          barChart = echarts.init(el);
-          barChart.setOption({
-            tooltip: {
-              trigger: 'axis',
-              formatter: function (params) {
-                var s = params[0].axisValue + '<br/>';
-                for (var i = 0; i < params.length; i++) {
-                  s += params[i].marker + ' ' + params[i].seriesName + ': <b>' + fmtMoney(params[i].value) + '</b><br/>';
-                }
-                return s;
-              }
-            },
-            legend: { data: [HubLang.t('deposit'), HubLang.t('withdraw')], textStyle: { color: '#999' }, bottom: 0 },
-            grid: { left: '3%', right: '4%', top: 30, bottom: 35, containLabel: true },
-            xAxis: {
-              type: 'category',
-              data: d.dailyTrend.map(function (t) { return t.date_key.substring(5); }),
-              axisLabel: { color: '#999', fontSize: 11 }
-            },
-            yAxis: {
-              type: 'value',
-              axisLabel: {
-                color: '#999', fontSize: 11,
-                formatter: function (v) { return v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v; }
-              },
-              splitLine: { lineStyle: { color: '#f0f0f0' } }
-            },
-            color: ['#16b777', '#ff5722'],
-            series: [
-              {
-                name: HubLang.t('deposit'), type: 'bar', barMaxWidth: 20,
-                data: d.dailyTrend.map(function (t) { return t.deposit; }),
-                itemStyle: { borderRadius: [3, 3, 0, 0] }
-              },
-              {
-                name: HubLang.t('withdraw'), type: 'bar', barMaxWidth: 20,
-                data: d.dailyTrend.map(function (t) { return t.withdrawal; }),
-                itemStyle: { borderRadius: [3, 3, 0, 0] }
-              }
-            ]
-          });
-        } else {
-          el.innerHTML = '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
-        }
+      var _echartsReady = false;
+      function loadEcharts(cb) {
+        if (typeof echarts !== 'undefined') return cb();
+        if (_echartsReady) return;
+        _echartsReady = true;
+        var s = document.createElement('script');
+        s.src = '/lib/echarts/echarts.min.js';
+        s.onload = cb;
+        s.onerror = function () {
+          showError('ECharts load failed');
+        };
+        document.body.appendChild(s);
       }
-
-      function renderPieChart(d) {
-        var el = document.getElementById('chartPie');
-        if (!el) return;
-        var lotteryWL = d.winLoss.lottery.winLose || 0;
-        var thirdWL = d.winLoss.thirdParty.winLose || 0;
-        if (lotteryWL === 0 && thirdWL === 0) {
-          el.innerHTML = '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
-        } else {
-          if (pieChart) pieChart.dispose();
-          pieChart = echarts.init(el);
-          pieChart.setOption({
-            tooltip: {
-              trigger: 'item',
-              formatter: function (p) { return p.name + ': <b>' + fmtMoney(p.value) + '</b> (' + p.percent + '%)'; }
-            },
-            legend: { bottom: 0, textStyle: { color: '#999', fontSize: 11 } },
-            color: ['#ffb800', '#1e9fff'],
-            series: [{
-              type: 'pie',
-              radius: ['40%', '70%'],
-              center: ['50%', '45%'],
-              label: { show: false },
-              emphasis: { label: { show: true, fontWeight: 'bold' } },
-              data: [
-                { value: Math.abs(lotteryWL), name: HubLang.t('dbLotteryWL') },
-                { value: Math.abs(thirdWL), name: HubLang.t('dbThirdPartyWL') }
-              ]
-            }]
-          });
-        }
-      }
-
-      // Resize charts on window resize
-      $(window).on('resize', function () {
-        if (barChart) barChart.resize();
-        if (pieChart) pieChart.resize();
-      });
-    });
-
-    function showError(msg) {
-      var barEl = document.getElementById('chartBar');
-      if (barEl) barEl.innerHTML = '<div class="db-error">' + HubLang.t('dbError') + '</div>';
-      var pieEl = document.getElementById('chartPie');
-      if (pieEl) pieEl.innerHTML = '<div class="db-error">' + HubLang.t('dbError') + '</div>';
-    }
-
-    function fmtNum(n) { return (n || 0).toLocaleString(); }
-    function fmtMoney(n) {
-      n = n || 0;
-      return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    }
-
-    var _echartsReady = false;
-    function loadEcharts(cb) {
-      if (typeof echarts !== 'undefined') return cb();
-      if (_echartsReady) return;
-      _echartsReady = true;
-      var s = document.createElement('script');
-      s.src = '/lib/echarts/echarts.min.js';
-      s.onload = cb;
-      s.onerror = function () { showError('ECharts load failed'); };
-      document.body.appendChild(s);
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

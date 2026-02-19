@@ -1,338 +1,505 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quản lý Agents EE88</title>
-  <link rel="stylesheet" href="/lib/layui/css/layui.css">
-  <style>
-    body { margin: 0; padding: 0; background: #f2f2f2; font-family: sans-serif; }
-    .layui-card { margin: 15px; }
-    .status-active { color: #16b777; font-weight: 600; }
-    .status-inactive { color: #ff5722; font-weight: 600; }
-    .solver-status { margin-left: 10px; }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quản lý Agents EE88</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+      }
+      .status-active {
+        color: #16b777;
+        font-weight: 600;
+      }
+      .status-inactive {
+        color: #ff5722;
+        font-weight: 600;
+      }
+      .solver-status {
+        margin-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Toolbar -->
+    <script type="text/html" id="toolbarTpl">
+      <div class="layui-btn-group">
+        <button class="layui-btn layui-btn-xs" lay-event="addAgent">
+          <i class="layui-icon layui-icon-addition"></i>
+          <span data-i18n="addAgentMgmt">Thêm Agent</span>
+        </button>
+        <button
+          class="layui-btn layui-btn-xs layui-btn-normal"
+          lay-event="checkAll"
+        >
+          <i class="layui-icon layui-icon-refresh"></i>
+          <span data-i18n="checkAll">Kiểm tra tất cả</span>
+        </button>
+      </div>
+      <span id="solverStatus"></span>
+    </script>
 
-  <!-- Toolbar -->
-  <script type="text/html" id="toolbarTpl">
-    <div class="layui-btn-group">
-      <button class="layui-btn layui-btn-xs" lay-event="addAgent">
-        <i class="layui-icon layui-icon-addition"></i> <span data-i18n="addAgentMgmt">Thêm Agent</span>
+    <!-- Row actions -->
+    <script type="text/html" id="rowActionTpl">
+      <button class="layui-btn layui-btn-xs" lay-event="edit">
+        <span data-i18n="edit">Sửa</span>
       </button>
-      <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="checkAll">
-        <i class="layui-icon layui-icon-refresh"></i> <span data-i18n="checkAll">Kiểm tra tất cả</span>
+      <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="check">
+        <span data-i18n="check">Kiểm tra</span>
       </button>
-    </div>
-    <span id="solverStatus"></span>
-  </script>
+      {{# if(d.has_credentials){ }}
+      <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="login">
+        <span data-i18n="login">Login</span>
+      </button>
+      {{# } }}
+      <button
+        class="layui-btn layui-btn-xs layui-btn-danger"
+        lay-event="delete"
+      >
+        <span data-i18n="delete">Xoá</span>
+      </button>
+    </script>
 
-  <!-- Row actions -->
-  <script type="text/html" id="rowActionTpl">
-    <button class="layui-btn layui-btn-xs" lay-event="edit"><span data-i18n="edit">Sửa</span></button>
-    <button class="layui-btn layui-btn-xs layui-btn-normal" lay-event="check"><span data-i18n="check">Kiểm tra</span></button>
-    {{# if(d.has_credentials){ }}
-    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="login"><span data-i18n="login">Login</span></button>
-    {{# } }}
-    <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete"><span data-i18n="delete">Xoá</span></button>
-  </script>
-
-  <!-- Status template -->
-  <script type="text/html" id="statusTpl">
-    {{# if(d.status === 1){ }}
+    <!-- Status template -->
+    <script type="text/html" id="statusTpl">
+      {{# if(d.status === 1){ }}
       <span class="status-active" data-i18n="active">Hoạt động</span>
-    {{# } else { }}
+      {{# } else { }}
       <span class="status-inactive" data-i18n="stopped">Ngừng</span>
-    {{# } }}
-  </script>
+      {{# } }}
+    </script>
 
-  <!-- Credentials template -->
-  <script type="text/html" id="credTpl">
-    {{# if(d.has_credentials){ }}
-      <span style="color:#16b777;"><i class="layui-icon layui-icon-ok-circle"></i> {{ d.ee88_username }}</span>
-    {{# } else { }}
-      <span style="color:#999;" data-i18n="ee88NotConfigured">Chưa cấu hình</span>
-    {{# } }}
-  </script>
+    <!-- Credentials template -->
+    <script type="text/html" id="credTpl">
+      {{# if(d.has_credentials){ }}
+      <span style="color:#16b777;"
+        ><i class="layui-icon layui-icon-ok-circle"></i> {{ d.ee88_username
+        }}</span
+      >
+      {{# } else { }}
+      <span style="color:#999;" data-i18n="ee88NotConfigured"
+        >Chưa cấu hình</span
+      >
+      {{# } }}
+    </script>
 
-  <div class="layui-row">
-    <div class="layui-col-md12">
-      <div class="layui-card">
-        <div class="layui-card-header">
-          <fieldset class="layui-elem-field">
-            <legend data-i18n="manageAgentsTitle">Quản lý tài khoản Agent EE88</legend>
-          </fieldset>
-        </div>
-        <div class="layui-card-body">
-          <table id="dataTable" lay-filter="dataTable"></table>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="manageAgentsTitle">
+                Quản lý tài khoản Agent EE88
+              </legend>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <table id="dataTable" lay-filter="dataTable"></table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="/lib/layui/layui.js"></script>
-  <script src="/js/hub-lang.js"></script>
-  <script src="/js/hub-api.js"></script>
-  <script>
-    layui.use(['table', 'form', 'layer'], function () {
-      HubLang.init();
-      var table = layui.table;
-      var form = layui.form;
-      var layer = layui.layer;
-      var $ = layui.$;
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-api.js"></script>
+    <script>
+      layui.use(['table', 'form', 'layer'], function () {
+        HubLang.init();
+        HubLang.applyDOM();
+        document.title = HubLang.t('manageAgentsTitle');
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
 
-      // Kiểm tra solver status
-      function checkSolverStatus() {
-        HubAPI.adminGet('solver-status').then(function (res) {
-          var el = document.getElementById('solverStatus');
-          if (!el) return;
-          if (res.code === 0 && res.data && res.data.running) {
-            el.innerHTML = '<span class="layui-btn layui-btn-xs solver-status" style="background:#16b777;border-color:#16b777;">' + HubLang.t('solverOn') + '</span>';
-          } else {
-            el.innerHTML = '<span class="layui-btn layui-btn-xs layui-btn-danger solver-status">' + HubLang.t('solverOff') + '</span>';
-          }
-        }).catch(function () {});
-      }
-
-      function loadAgents() {
-        var loadIdx = layer.load();
-        HubAPI.adminGet('agents').then(function (res) {
-          layer.close(loadIdx);
-          if (res.code === 0) {
-            table.render({
-              elem: '#dataTable',
-              toolbar: '#toolbarTpl',
-              defaultToolbar: ['filter'],
-              data: res.data,
-              text: { none: HubLang.t('noAgents') },
-              cols: [[
-                { field: 'id', title: 'ID', width: 60 },
-                { field: 'label', title: HubLang.t('agentLabel'), width: 130 },
-                { title: HubLang.t('ee88Account'), width: 150, templet: '#credTpl' },
-                { field: 'base_url', title: 'URL', width: 220 },
-                { field: 'status', title: HubLang.t('status'), width: 100, templet: '#statusTpl' },
-                { field: 'user_count', title: 'Users', width: 70 },
-                { field: 'last_login', title: HubLang.t('lastLoginCol'), width: 150 },
-                { field: 'last_check', title: HubLang.t('lastCheck'), width: 150 },
-                { fixed: 'right', title: HubLang.t('actions'), width: 260, toolbar: '#rowActionTpl' }
-              ]]
-            });
-            // Check solver sau khi table render (toolbar đã vào DOM)
-            checkSolverStatus();
-            HubLang.applyDOM();
-          } else {
-            layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
-          }
-        }).catch(function () {
-          layer.close(loadIdx);
-          layer.msg(HubLang.t('connectionError'), { icon: 2 });
-        });
-      }
-
-      loadAgents();
-
-      // Toolbar events
-      table.on('toolbar(dataTable)', function (obj) {
-        if (obj.event === 'addAgent') {
-          openAgentForm();
-        } else if (obj.event === 'checkAll') {
-          checkAllAgents();
+        // Kiểm tra solver status
+        function checkSolverStatus() {
+          HubAPI.adminGet('solver-status')
+            .then(function (res) {
+              var el = document.getElementById('solverStatus');
+              if (!el) return;
+              if (res.code === 0 && res.data && res.data.running) {
+                el.innerHTML =
+                  '<span class="layui-btn layui-btn-xs solver-status" style="background:#16b777;border-color:#16b777;">' +
+                  HubLang.t('solverOn') +
+                  '</span>';
+              } else {
+                el.innerHTML =
+                  '<span class="layui-btn layui-btn-xs layui-btn-danger solver-status">' +
+                  HubLang.t('solverOff') +
+                  '</span>';
+              }
+            })
+            .catch(function () {});
         }
-      });
 
-      // Row events
-      table.on('tool(dataTable)', function (obj) {
-        var d = obj.data;
-        switch (obj.event) {
-          case 'edit':
-            openAgentForm(d);
-            break;
-          case 'check':
-            checkAgent(d.id);
-            break;
-          case 'login':
-            loginAgent(d);
-            break;
-          case 'delete':
-            layer.confirm(HubLang.t('confirmDeleteAgent') + d.label + '"?', { icon: 3 }, function (idx) {
-              layer.close(idx);
-              var loadIdx = layer.load();
-              HubAPI.adminRequest('agents/' + d.id, 'DELETE').then(function (res) {
+        function loadAgents() {
+          var loadIdx = layer.load();
+          HubAPI.adminGet('agents')
+            .then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                table.render({
+                  elem: '#dataTable',
+                  toolbar: '#toolbarTpl',
+                  defaultToolbar: ['filter'],
+                  data: res.data,
+                  text: { none: HubLang.t('noAgents') },
+                  cols: [
+                    [
+                      { field: 'id', title: 'ID', width: 60 },
+                      {
+                        field: 'label',
+                        title: HubLang.t('agentLabel'),
+                        width: 130
+                      },
+                      {
+                        title: HubLang.t('ee88Account'),
+                        width: 150,
+                        templet: '#credTpl'
+                      },
+                      { field: 'base_url', title: 'URL', width: 220 },
+                      {
+                        field: 'status',
+                        title: HubLang.t('status'),
+                        width: 100,
+                        templet: '#statusTpl'
+                      },
+                      {
+                        field: 'user_count',
+                        title: HubLang.t('users'),
+                        width: 70
+                      },
+                      {
+                        field: 'last_login',
+                        title: HubLang.t('lastLoginCol'),
+                        width: 150
+                      },
+                      {
+                        field: 'last_check',
+                        title: HubLang.t('lastCheck'),
+                        width: 150
+                      },
+                      {
+                        fixed: 'right',
+                        title: HubLang.t('actions'),
+                        width: 260,
+                        toolbar: '#rowActionTpl'
+                      }
+                    ]
+                  ]
+                });
+                // Check solver sau khi table render (toolbar đã vào DOM)
+                checkSolverStatus();
+                HubLang.applyDOM();
+              } else {
+                layer.msg(res.msg || HubLang.t('error'), { icon: 2 });
+              }
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
+        }
+
+        loadAgents();
+
+        // Toolbar events
+        table.on('toolbar(dataTable)', function (obj) {
+          if (obj.event === 'addAgent') {
+            openAgentForm();
+          } else if (obj.event === 'checkAll') {
+            checkAllAgents();
+          }
+        });
+
+        // Row events
+        table.on('tool(dataTable)', function (obj) {
+          var d = obj.data;
+          switch (obj.event) {
+            case 'edit':
+              openAgentForm(d);
+              break;
+            case 'check':
+              checkAgent(d.id);
+              break;
+            case 'login':
+              loginAgent(d);
+              break;
+            case 'delete':
+              layer.confirm(
+                HubLang.t('confirmDeleteAgent') + d.label + '"?',
+                { icon: 3 },
+                function (idx) {
+                  layer.close(idx);
+                  var loadIdx = layer.load();
+                  HubAPI.adminRequest('agents/' + d.id, 'DELETE')
+                    .then(function (res) {
+                      layer.close(loadIdx);
+                      if (res.code === 0) {
+                        layer.msg(HubLang.t('deleted'), { icon: 1 });
+                        loadAgents();
+                      } else {
+                        layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
+                      }
+                    })
+                    .catch(function () {
+                      layer.close(loadIdx);
+                      layer.msg(HubLang.t('connectionError'), { icon: 2 });
+                    });
+                }
+              );
+              break;
+          }
+        });
+
+        // Form thêm/sửa agent
+        function openAgentForm(data) {
+          var isEdit = !!data;
+          var title = isEdit
+            ? HubLang.t('editAgentTitle') + data.label
+            : HubLang.t('addNewAgentMgmt');
+
+          var html =
+            '<form class="layui-form" lay-filter="agentForm" style="padding:15px 30px 0 0;">' +
+            '<div class="layui-form-item">' +
+            '<label class="layui-form-label">' +
+            HubLang.t('agentLabel') +
+            '</label>' +
+            '<div class="layui-input-block">' +
+            '<input type="text" name="label" value="' +
+            (isEdit ? data.label || '' : '') +
+            '" placeholder="' +
+            HubLang.t('agentExample') +
+            '" class="layui-input" lay-verify="required">' +
+            '</div></div>' +
+            '<div class="layui-form-item">' +
+            '<label class="layui-form-label">' +
+            HubLang.t('ee88Username') +
+            '</label>' +
+            '<div class="layui-input-block">' +
+            '<input type="text" name="ee88_username" value="' +
+            (isEdit ? data.ee88_username || '' : '') +
+            '" placeholder="' +
+            HubLang.t('ee88Username') +
+            '" class="layui-input" lay-verify="required" autocomplete="off">' +
+            '</div></div>' +
+            '<div class="layui-form-item">' +
+            '<label class="layui-form-label">' +
+            HubLang.t('ee88Password') +
+            '</label>' +
+            '<div class="layui-input-block">' +
+            '<input type="password" name="ee88_password" value="" placeholder="' +
+            (isEdit && data.has_credentials
+              ? HubLang.t('keepEmpty')
+              : HubLang.t('ee88Password')) +
+            '" class="layui-input"' +
+            (isEdit ? '' : ' lay-verify="required"') +
+            ' autocomplete="new-password">' +
+            '</div></div>' +
+            '<div class="layui-form-item">' +
+            '<label class="layui-form-label">' +
+            HubLang.t('baseUrlLabel') +
+            '</label>' +
+            '<div class="layui-input-block">' +
+            '<input type="text" name="base_url" value="' +
+            (isEdit ? data.base_url || '' : 'https://a2u4k.ee88dly.com') +
+            '" placeholder="https://xxx.ee88dly.com" class="layui-input" lay-verify="required">' +
+            '</div></div>';
+
+          if (isEdit) {
+            html +=
+              '<div class="layui-form-item">' +
+              '<label class="layui-form-label">' +
+              HubLang.t('status') +
+              '</label>' +
+              '<div class="layui-input-block">' +
+              '<select name="status">' +
+              '<option value="1"' +
+              (data.status === 1 ? ' selected' : '') +
+              '>' +
+              HubLang.t('active') +
+              '</option>' +
+              '<option value="0"' +
+              (data.status === 0 ? ' selected' : '') +
+              '>' +
+              HubLang.t('stopped') +
+              '</option>' +
+              '</select>' +
+              '</div></div>';
+          }
+
+          html +=
+            '<div class="layui-form-item">' +
+            '<div class="layui-input-block">' +
+            '<button type="button" class="layui-btn" lay-submit lay-filter="submitAgent">' +
+            HubLang.t('confirm') +
+            '</button>' +
+            '<button type="button" class="layui-btn layui-btn-primary" id="cancelAgentBtn">' +
+            HubLang.t('cancel') +
+            '</button>' +
+            '</div></div></form>';
+
+          var layerIdx = layer.open({
+            type: 1,
+            title: title,
+            area: ['550px', 'auto'],
+            content: html,
+            success: function () {
+              form.render();
+              $('#cancelAgentBtn').on('click', function () {
+                layer.close(layerIdx);
+              });
+            }
+          });
+
+          form.on('submit(submitAgent)', function (formData) {
+            var body = {
+              label: formData.field.label,
+              base_url: formData.field.base_url,
+              ee88_username: formData.field.ee88_username
+            };
+            if (formData.field.ee88_password) {
+              body.ee88_password = formData.field.ee88_password;
+            }
+            if (isEdit) {
+              body.status = parseInt(formData.field.status);
+            }
+
+            var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
+            var url = isEdit ? 'agents/' + data.id : 'agents';
+            var method = isEdit ? 'PUT' : 'POST';
+
+            HubAPI.adminRequest(url, method, body)
+              .then(function (res) {
                 layer.close(loadIdx);
                 if (res.code === 0) {
-                  layer.msg(HubLang.t('deleted'), { icon: 1 });
+                  layer.close(layerIdx);
+                  layer.msg(
+                    res.msg ||
+                      (isEdit
+                        ? HubLang.t('updated')
+                        : HubLang.t('mgmtAgentAdded')),
+                    { icon: 1, time: 3000 }
+                  );
                   loadAgents();
                 } else {
                   layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
                 }
-              }).catch(function () {
+              })
+              .catch(function () {
                 layer.close(loadIdx);
                 layer.msg(HubLang.t('connectionError'), { icon: 2 });
               });
+            return false;
+          });
+        }
+
+        // Kiểm tra 1 agent
+        function checkAgent(id) {
+          var loadIdx = layer.load();
+          HubAPI.adminRequest('agents/' + id + '/check', 'POST')
+            .then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                layer.msg(HubLang.t('agentOk'), { icon: 1 });
+              } else {
+                layer.msg(res.msg || HubLang.t('agentProblem'), { icon: 2 });
+              }
+              loadAgents();
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
             });
-            break;
+        }
+
+        // Auto-login 1 agent
+        function loginAgent(d) {
+          layer.confirm(
+            HubLang.t('loginConfirmMsg') +
+              d.label +
+              '"?<br><small>' +
+              HubLang.t('loginProcessHint') +
+              '</small>',
+            { icon: 3 },
+            function (idx) {
+              layer.close(idx);
+              var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
+              HubAPI.adminRequest('agents/' + d.id + '/login', 'POST')
+                .then(function (res) {
+                  layer.close(loadIdx);
+                  if (res.code === 0) {
+                    layer.msg(res.msg || HubLang.t('agentLoginSuccess'), {
+                      icon: 1
+                    });
+                  } else {
+                    layer.msg(res.msg || HubLang.t('agentLoginFailed'), {
+                      icon: 2
+                    });
+                  }
+                  loadAgents();
+                })
+                .catch(function () {
+                  layer.close(loadIdx);
+                  layer.msg(HubLang.t('connectionError'), { icon: 2 });
+                });
+            }
+          );
+        }
+
+        // Kiểm tra tất cả agents
+        function checkAllAgents() {
+          var loadIdx = layer.load();
+          HubAPI.adminGet('agents')
+            .then(function (res) {
+              if (res.code !== 0 || !res.data) {
+                layer.close(loadIdx);
+                return layer.msg(HubLang.t('error'), { icon: 2 });
+              }
+              var agents = res.data;
+              var checked = 0;
+              var results = [];
+
+              agents.forEach(function (agent) {
+                HubAPI.adminRequest('agents/' + agent.id + '/check', 'POST')
+                  .then(function (r) {
+                    results.push({ label: agent.label, ok: r.code === 0 });
+                  })
+                  .catch(function () {
+                    results.push({ label: agent.label, ok: false });
+                  })
+                  .finally(function () {
+                    checked++;
+                    if (checked === agents.length) {
+                      layer.close(loadIdx);
+                      var ok = results.filter(function (r) {
+                        return r.ok;
+                      }).length;
+                      layer.msg(
+                        ok + '/' + agents.length + HubLang.t('agentsWorking'),
+                        { icon: ok === agents.length ? 1 : 0 }
+                      );
+                      loadAgents();
+                    }
+                  });
+              });
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
         }
       });
-
-      // Form thêm/sửa agent
-      function openAgentForm(data) {
-        var isEdit = !!data;
-        var title = isEdit ? HubLang.t('editAgentTitle') + data.label : HubLang.t('addNewAgentMgmt');
-
-        var html = '<form class="layui-form" lay-filter="agentForm" style="padding:15px 30px 0 0;">'
-          + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">' + HubLang.t('agentLabel') + '</label>'
-          + '<div class="layui-input-block">'
-          + '<input type="text" name="label" value="' + (isEdit ? (data.label || '') : '') + '" placeholder="' + HubLang.t('agentExample') + '" class="layui-input" lay-verify="required">'
-          + '</div></div>'
-          + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">' + HubLang.t('ee88Username') + '</label>'
-          + '<div class="layui-input-block">'
-          + '<input type="text" name="ee88_username" value="' + (isEdit ? (data.ee88_username || '') : '') + '" placeholder="' + HubLang.t('ee88Username') + '" class="layui-input" lay-verify="required" autocomplete="off">'
-          + '</div></div>'
-          + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">' + HubLang.t('ee88Password') + '</label>'
-          + '<div class="layui-input-block">'
-          + '<input type="password" name="ee88_password" value="" placeholder="' + (isEdit && data.has_credentials ? HubLang.t('keepEmpty') : HubLang.t('ee88Password')) + '" class="layui-input"' + (isEdit ? '' : ' lay-verify="required"') + ' autocomplete="new-password">'
-          + '</div></div>'
-          + '<div class="layui-form-item">'
-          + '<label class="layui-form-label">' + HubLang.t('baseUrlLabel') + '</label>'
-          + '<div class="layui-input-block">'
-          + '<input type="text" name="base_url" value="' + (isEdit ? (data.base_url || '') : 'https://a2u4k.ee88dly.com') + '" placeholder="https://xxx.ee88dly.com" class="layui-input" lay-verify="required">'
-          + '</div></div>';
-
-        if (isEdit) {
-          html += '<div class="layui-form-item">'
-            + '<label class="layui-form-label">' + HubLang.t('status') + '</label>'
-            + '<div class="layui-input-block">'
-            + '<select name="status">'
-            + '<option value="1"' + (data.status === 1 ? ' selected' : '') + '>' + HubLang.t('active') + '</option>'
-            + '<option value="0"' + (data.status === 0 ? ' selected' : '') + '>' + HubLang.t('stopped') + '</option>'
-            + '</select>'
-            + '</div></div>';
-        }
-
-        html += '<div class="layui-form-item">'
-          + '<div class="layui-input-block">'
-          + '<button type="button" class="layui-btn" lay-submit lay-filter="submitAgent">' + HubLang.t('confirm') + '</button>'
-          + '<button type="button" class="layui-btn layui-btn-primary" id="cancelAgentBtn">' + HubLang.t('cancel') + '</button>'
-          + '</div></div></form>';
-
-        var layerIdx = layer.open({
-          type: 1, title: title,
-          area: ['550px', 'auto'],
-          content: html,
-          success: function () {
-            form.render();
-            $('#cancelAgentBtn').on('click', function () { layer.close(layerIdx); });
-          }
-        });
-
-        form.on('submit(submitAgent)', function (formData) {
-          var body = {
-            label: formData.field.label,
-            base_url: formData.field.base_url,
-            ee88_username: formData.field.ee88_username
-          };
-          if (formData.field.ee88_password) {
-            body.ee88_password = formData.field.ee88_password;
-          }
-          if (isEdit) {
-            body.status = parseInt(formData.field.status);
-          }
-
-          var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
-          var url = isEdit ? 'agents/' + data.id : 'agents';
-          var method = isEdit ? 'PUT' : 'POST';
-
-          HubAPI.adminRequest(url, method, body).then(function (res) {
-            layer.close(loadIdx);
-            if (res.code === 0) {
-              layer.close(layerIdx);
-              layer.msg(res.msg || (isEdit ? HubLang.t('updated') : HubLang.t('mgmtAgentAdded')), { icon: 1, time: 3000 });
-              loadAgents();
-            } else {
-              layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
-            }
-          }).catch(function () {
-            layer.close(loadIdx);
-            layer.msg(HubLang.t('connectionError'), { icon: 2 });
-          });
-          return false;
-        });
-      }
-
-      // Kiểm tra 1 agent
-      function checkAgent(id) {
-        var loadIdx = layer.load();
-        HubAPI.adminRequest('agents/' + id + '/check', 'POST').then(function (res) {
-          layer.close(loadIdx);
-          if (res.code === 0) {
-            layer.msg(HubLang.t('agentOk'), { icon: 1 });
-          } else {
-            layer.msg(res.msg || HubLang.t('agentProblem'), { icon: 2 });
-          }
-          loadAgents();
-        }).catch(function () {
-          layer.close(loadIdx);
-          layer.msg(HubLang.t('connectionError'), { icon: 2 });
-        });
-      }
-
-      // Auto-login 1 agent
-      function loginAgent(d) {
-        layer.confirm(HubLang.t('loginConfirmMsg') + d.label + '"?<br><small>' + HubLang.t('loginProcessHint') + '</small>', { icon: 3 }, function (idx) {
-          layer.close(idx);
-          var loadIdx = layer.load(2, { shade: [0.3, '#000'] });
-          HubAPI.adminRequest('agents/' + d.id + '/login', 'POST').then(function (res) {
-            layer.close(loadIdx);
-            if (res.code === 0) {
-              layer.msg(res.msg || HubLang.t('agentLoginSuccess'), { icon: 1 });
-            } else {
-              layer.msg(res.msg || HubLang.t('agentLoginFailed'), { icon: 2 });
-            }
-            loadAgents();
-          }).catch(function () {
-            layer.close(loadIdx);
-            layer.msg(HubLang.t('connectionError'), { icon: 2 });
-          });
-        });
-      }
-
-      // Kiểm tra tất cả agents
-      function checkAllAgents() {
-        var loadIdx = layer.load();
-        HubAPI.adminGet('agents').then(function (res) {
-          if (res.code !== 0 || !res.data) {
-            layer.close(loadIdx);
-            return layer.msg(HubLang.t('error'), { icon: 2 });
-          }
-          var agents = res.data;
-          var checked = 0;
-          var results = [];
-
-          agents.forEach(function (agent) {
-            HubAPI.adminRequest('agents/' + agent.id + '/check', 'POST').then(function (r) {
-              results.push({ label: agent.label, ok: r.code === 0 });
-            }).catch(function () {
-              results.push({ label: agent.label, ok: false });
-            }).finally(function () {
-              checked++;
-              if (checked === agents.length) {
-                layer.close(loadIdx);
-                var ok = results.filter(function (r) { return r.ok; }).length;
-                layer.msg(ok + '/' + agents.length + HubLang.t('agentsWorking'), { icon: ok === agents.length ? 1 : 0 });
-                loadAgents();
-              }
-            });
-          });
-        }).catch(function () {
-          layer.close(loadIdx);
-          layer.msg(HubLang.t('connectionError'), { icon: 2 });
-        });
-      }
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

@@ -145,6 +145,7 @@
       HubAPI.requireAuth();
       HubLang.init();
       HubLang.applyDOM();
+      document.title = HubLang.t('activityLogTitle');
 
       layui.use(['table', 'form'], function () {
         var table = layui.table;
