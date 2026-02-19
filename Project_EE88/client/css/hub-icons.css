@@ -66,6 +66,7 @@
 .hi-circle-plus::before { content: "\f055"; }
 .hi-circle-check::before { content: "\f058"; }
 .hi-fire::before { content: "\f06d"; }
+.hi-fire-flame-curved::before { content: "\f7e4"; }
 .hi-trash-can::before { content: "\f2ed"; }
 .hi-lock::before { content: "\f023"; }
 .hi-eye::before { content: "\f06e"; }

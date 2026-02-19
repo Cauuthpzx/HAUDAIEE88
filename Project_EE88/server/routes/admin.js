@@ -4,6 +4,7 @@ const axios = require('axios');
 const { getDb } = require('../database/init');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { loginAgent, isSolverReady } = require('../services/loginService');
+const { getOCRWorker } = require('../services/captchaSolver');
 const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
@@ -79,9 +80,12 @@ router.get('/dashboard/stats', (req, res) => {
 
   const getData = db.transaction(() => {
     const agents = db.prepare(`
-      SELECT id, label, status, base_url, last_login, last_check,
-        (SELECT COUNT(*) FROM user_agent_permissions WHERE agent_id = ee88_agents.id) as user_count
-      FROM ee88_agents ORDER BY id
+      SELECT a.id, a.label, a.status, a.base_url, a.last_login, a.last_check,
+        COALESCE(p.cnt, 0) as user_count
+      FROM ee88_agents a
+      LEFT JOIN (SELECT agent_id, COUNT(*) as cnt FROM user_agent_permissions GROUP BY agent_id) p
+        ON p.agent_id = a.id
+      ORDER BY a.id
     `).all();
 
     const recentActivity = db.prepare(`
@@ -158,9 +162,8 @@ router.get('/activity-log', (req, res) => {
 // Phải đăng ký TRƯỚC routes có :id
 router.post('/agents/login-all', async (req, res) => {
   const db = getDb();
-  const solverReady = await isSolverReady();
-  if (!solverReady) {
-    return res.json({ code: -1, msg: 'Python captcha solver chưa chạy' });
+  if (!isSolverReady()) {
+    return res.json({ code: -1, msg: 'OCR engine chưa sẵn sàng, vui lòng đợi khởi tạo' });
   }
 
   const agents = db.prepare(`
@@ -203,8 +206,10 @@ router.get('/agents', (req, res) => {
   const db = getDb();
   const agents = db.prepare(`
     SELECT a.*,
-      (SELECT COUNT(*) FROM user_agent_permissions WHERE agent_id = a.id) as user_count
+      COALESCE(p.cnt, 0) as user_count
     FROM ee88_agents a
+    LEFT JOIN (SELECT agent_id, COUNT(*) as cnt FROM user_agent_permissions GROUP BY agent_id) p
+      ON p.agent_id = a.id
     ORDER BY a.id
   `).all();
 
@@ -388,9 +393,8 @@ router.post('/agents/:id/login', async (req, res) => {
     return res.json({ code: -1, msg: 'Chưa cấu hình username/password EE88 cho agent này' });
   }
 
-  const solverReady = await isSolverReady();
-  if (!solverReady) {
-    return res.json({ code: -1, msg: 'Python captcha solver chưa chạy (port 5000)' });
+  if (!isSolverReady()) {
+    return res.json({ code: -1, msg: 'OCR engine chưa sẵn sàng, vui lòng đợi khởi tạo' });
   }
 
   log.info(`[${req.user.username}] Yêu cầu login agent #${id}: ${agent.label}`);
@@ -429,10 +433,9 @@ router.get('/agents/:id/login-history', (req, res) => {
   res.json({ code: 0, data: rows });
 });
 
-// GET /api/admin/solver-status — Kiểm tra Python solver service
-router.get('/solver-status', async (req, res) => {
-  const ready = await isSolverReady();
-  res.json({ code: 0, data: { running: ready } });
+// GET /api/admin/solver-status — Kiểm tra OCR solver (Tesseract.js)
+router.get('/solver-status', (req, res) => {
+  res.json({ code: 0, data: { running: isSolverReady(), engine: 'tesseract.js' } });
 });
 
 // ═══════════════════════════════════════

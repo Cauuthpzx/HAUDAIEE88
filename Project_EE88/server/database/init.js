@@ -37,6 +37,10 @@ function getDb() {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  db.pragma('cache_size = -32000');   // 32MB cache (default 2MB)
+  db.pragma('temp_store = MEMORY');   // Sort/temp in RAM
+  db.pragma('mmap_size = 30000000'); // 30MB memory-mapped I/O
+  db.pragma('synchronous = NORMAL'); // Faster writes, WAL ensures safety
 
   if (isNew) {
     log.info('Tạo database mới...');

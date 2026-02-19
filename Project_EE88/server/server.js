@@ -103,6 +103,10 @@ app.get('/api/health', (req, res) => {
 
 // ── Phục vụ file tĩnh từ client/ ──
 const clientDir = path.join(__dirname, '..', 'client');
+// Lib files: cache 1 năm + immutable (không bao giờ revalidate)
+app.use('/lib', express.static(path.join(clientDir, 'lib'), {
+  maxAge: '365d', immutable: true, etag: false, lastModified: false
+}));
 app.use(express.static(clientDir, { maxAge: '7d', etag: true }));
 log.info(`Thư mục client: ${clientDir}`);
 
@@ -132,7 +136,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Auto kill port trước khi listen ──
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 
 function killPort(port) {
   try {
@@ -155,79 +159,10 @@ function killPort(port) {
 
 killPort(PORT);
 
-// ── Python Captcha Solver (chạy kèm server) ──
-const SOLVER_PORT = parseInt(process.env.SOLVER_PORT) || 5000;
-let solverProcess = null;
-
-function startSolver() {
-  // Tìm solver.py: thử captcha/ kế bên server/, hoặc ../../captcha/
-  const candidates = [
-    path.join(__dirname, '..', 'captcha', 'solver.py'),
-    path.join(__dirname, '..', '..', 'captcha', 'solver.py')
-  ];
-  let solverPath = null;
-  for (const p of candidates) {
-    if (fs.existsSync(p)) { solverPath = p; break; }
-  }
-
-  if (!solverPath) {
-    log.warn('Không tìm thấy captcha/solver.py — bỏ qua auto-login');
-    return;
-  }
-
-  // Kill port cũ nếu có
-  killPort(SOLVER_PORT);
-
-  // Tìm Python (thử python, python3)
-  let pythonCmd = 'python';
-  try {
-    execSync('python --version', { stdio: 'pipe' });
-  } catch {
-    try {
-      execSync('python3 --version', { stdio: 'pipe' });
-      pythonCmd = 'python3';
-    } catch {
-      log.warn('Không tìm thấy Python — captcha solver không khởi động');
-      return;
-    }
-  }
-
-  log.info(`Khởi động Captcha Solver: ${pythonCmd} ${solverPath} ${SOLVER_PORT}`);
-  solverProcess = spawn(pythonCmd, [solverPath, String(SOLVER_PORT)], {
-    cwd: path.dirname(solverPath),
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-
-  const solverLog = createLogger('solver');
-
-  solverProcess.stdout.on('data', (data) => {
-    const lines = data.toString().trim().split('\n');
-    lines.forEach(line => { if (line) solverLog.info(line); });
-  });
-
-  solverProcess.stderr.on('data', (data) => {
-    const lines = data.toString().trim().split('\n');
-    lines.forEach(line => {
-      // Flask ghi log ra stderr, không phải lỗi thực sự
-      if (line && !line.includes('WARNING') && !line.includes('Press CTRL'))
-        solverLog.info(line);
-    });
-  });
-
-  solverProcess.on('exit', (code) => {
-    if (code !== null && code !== 0) {
-      solverLog.error(`Solver thoát với code ${code}`);
-    }
-    solverProcess = null;
-  });
-
-  solverProcess.on('error', (err) => {
-    solverLog.error(`Solver lỗi: ${err.message}`);
-    solverProcess = null;
-  });
-}
-
-startSolver();
+// ── JS Captcha Solver (Tesseract.js OCR — warm up lúc start) ──
+const { initSolver } = require('./services/loginService');
+const { terminateOCR } = require('./services/captchaSolver');
+initSolver();
 
 // ── Login Worker Thread ──
 const { Worker } = require('worker_threads');
@@ -255,11 +190,7 @@ try {
 // ── Graceful shutdown ──
 function shutdown() {
   if (loginWorker) loginWorker.postMessage({ type: 'shutdown' });
-  if (solverProcess) {
-    log.info('Tắt Captcha Solver...');
-    solverProcess.kill();
-    solverProcess = null;
-  }
+  terminateOCR().catch(() => {});
   closeDb();
   process.exit(0);
 }

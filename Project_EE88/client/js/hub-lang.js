@@ -14,9 +14,9 @@ var HubLang = (function () {
   var DEFAULT_LANG = 'vi';
 
   var LANGS = {
-    vi:      { label: 'Tiếng Việt', short: 'VN', flag: '/images/vn.gif' },
-    en:      { label: 'English',    short: 'EN', flag: '/images/uk.gif' },
-    'zh-CN': { label: '中文',       short: 'CN', flag: '/images/china.gif' }
+    vi:      { label: 'Tiếng Việt', short: 'VN', flag: '/images/vn.svg' },
+    en:      { label: 'English',    short: 'EN', flag: '/images/uk.svg' },
+    'zh-CN': { label: '中文',       short: 'CN', flag: '/images/china.svg' }
   };
 
   // ── App-specific messages ──
@@ -347,8 +347,8 @@ var HubLang = (function () {
 
       // ── manageAgents.html ──
       'manageAgentsTitle': 'Quản lý tài khoản Agent EE88',
-      'solverOn': 'Solver: BẬT',
-      'solverOff': 'Solver: TẮT',
+      'solverOn': 'OCR: BẬT',
+      'solverOff': 'OCR: TẮT',
       'baseUrlLabel': 'Base URL',
       'addAgentMgmt': 'Thêm Agent',
       'checkAll': 'Kiểm tra tất cả',
@@ -837,8 +837,8 @@ var HubLang = (function () {
 
       // ── manageAgents.html ──
       'manageAgentsTitle': 'Manage EE88 Agent Accounts',
-      'solverOn': 'Solver: ON',
-      'solverOff': 'Solver: OFF',
+      'solverOn': 'OCR: ON',
+      'solverOff': 'OCR: OFF',
       'baseUrlLabel': 'Base URL',
       'addAgentMgmt': 'Add Agent',
       'checkAll': 'Check all',
@@ -1327,8 +1327,8 @@ var HubLang = (function () {
 
       // ── manageAgents.html ──
       'manageAgentsTitle': '管理EE88代理账户',
-      'solverOn': 'Solver: 开启',
-      'solverOff': 'Solver: 关闭',
+      'solverOn': 'OCR: 开启',
+      'solverOff': 'OCR: 关闭',
       'baseUrlLabel': 'Base URL',
       'addAgentMgmt': '添加代理',
       'checkAll': '检查全部',

@@ -54,9 +54,8 @@ async function checkAgentSession(agent) {
  * Health check tất cả agents, auto-login nếu cần
  */
 async function healthCheckAll() {
-  const solverReady = await isSolverReady();
-  if (!solverReady) {
-    log.warn('Health check: Python solver chưa chạy, bỏ qua');
+  if (!isSolverReady()) {
+    log.warn('Health check: OCR engine chưa sẵn sàng, bỏ qua');
     return;
   }
 

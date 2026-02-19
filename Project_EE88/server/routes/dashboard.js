@@ -50,22 +50,13 @@ router.get('/stats', (req, res) => {
     const endTime = todayStr + ' 23:59:59';
 
     const getData = db.transaction(() => {
-      // 1. Tổng hội viên
-      const totalMembers = db.prepare(
-        `SELECT COUNT(*) as cnt FROM data_members WHERE agent_id IN (${ph})`
-      ).get(...agentIds).cnt;
-
-      // 2. Hội viên mới (registered trong range)
-      const newMembers = db.prepare(
-        `SELECT COUNT(*) as cnt FROM data_members
-         WHERE agent_id IN (${ph}) AND register_time >= ? AND register_time <= ?`
-      ).get(...agentIds, startTime, endTime).cnt;
-
-      // 3. Đang hoạt động (logged in trong range)
-      const activeMembers = db.prepare(
-        `SELECT COUNT(*) as cnt FROM data_members
-         WHERE agent_id IN (${ph}) AND last_login_time >= ? AND last_login_time <= ?`
-      ).get(...agentIds, startTime, endTime).cnt;
+      // 1-3. Members: gộp 3 queries thành 1
+      const members = db.prepare(
+        `SELECT COUNT(*) as total,
+                SUM(CASE WHEN register_time >= ? AND register_time <= ? THEN 1 ELSE 0 END) as new_cnt,
+                SUM(CASE WHEN last_login_time >= ? AND last_login_time <= ? THEN 1 ELSE 0 END) as active_cnt
+         FROM data_members WHERE agent_id IN (${ph})`
+      ).get(startTime, endTime, startTime, endTime, ...agentIds);
 
       // 4. Nạp tiền (completed deposits)
       const deposits = db.prepare(
@@ -109,35 +100,44 @@ router.get('/stats', (req, res) => {
          GROUP BY date_key ORDER BY date_key`
       ).all(...agentIds, startStr, todayStr);
 
-      // 9. First-deposit members (nạp lần đầu trong range)
+      // 9. First-deposit members: LEFT JOIN thay NOT IN (nhanh hơn)
       const firstDeposit = db.prepare(
-        `SELECT COUNT(DISTINCT uid) as cnt FROM data_deposits
-         WHERE agent_id IN (${ph}) AND status = 1 AND create_time >= ? AND create_time <= ?
-         AND uid NOT IN (
-           SELECT DISTINCT uid FROM data_deposits
-           WHERE agent_id IN (${ph}) AND status = 1 AND create_time < ?
-         )`
-      ).get(...agentIds, startTime, endTime, ...agentIds, startTime).cnt;
+        `SELECT COUNT(DISTINCT d1.uid) as cnt
+         FROM data_deposits d1
+         LEFT JOIN data_deposits d2
+           ON d2.agent_id IN (${ph}) AND d2.uid = d1.uid AND d2.status = 1 AND d2.create_time < ?
+         WHERE d1.agent_id IN (${ph}) AND d1.status = 1
+           AND d1.create_time >= ? AND d1.create_time <= ?
+           AND d2.uid IS NULL`
+      ).get(...agentIds, startTime, ...agentIds, startTime, endTime).cnt;
 
-      // 10. Per-agent breakdown (admin only) — with win/loss
+      // 10. Per-agent breakdown (admin only) — LEFT JOIN thay subqueries
       let perAgent = null;
       if (isAdmin) {
         perAgent = db.prepare(
           `SELECT a.id, a.label,
-                  (SELECT COUNT(*) FROM data_members WHERE agent_id = a.id) as members,
-                  (SELECT COALESCE(SUM(deposit_amount), 0) FROM data_report_funds
-                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as deposit,
-                  (SELECT COALESCE(SUM(withdrawal_amount), 0) FROM data_report_funds
-                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as withdrawal,
-                  (SELECT COALESCE(SUM(win_lose), 0) FROM data_report_lottery
-                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as lotteryWL,
-                  (SELECT COALESCE(SUM(win_lose), 0) FROM data_bet_orders
-                    WHERE agent_id = a.id AND bet_time >= ? AND bet_time <= ?) as thirdWL
-           FROM ee88_agents a WHERE a.id IN (${ph}) ORDER BY a.id`
-        ).all(startStr, todayStr, startStr, todayStr, startStr, todayStr, startTime, endTime, ...agentIds);
+                  COALESCE(m.cnt, 0) as members,
+                  COALESCE(f.dep, 0) as deposit,
+                  COALESCE(f.wdr, 0) as withdrawal,
+                  COALESCE(l.wl, 0) as lotteryWL,
+                  COALESCE(b.wl, 0) as thirdWL
+           FROM ee88_agents a
+           LEFT JOIN (SELECT agent_id, COUNT(*) as cnt FROM data_members GROUP BY agent_id) m
+             ON m.agent_id = a.id
+           LEFT JOIN (SELECT agent_id, SUM(deposit_amount) as dep, SUM(withdrawal_amount) as wdr
+                      FROM data_report_funds WHERE date_key >= ? AND date_key <= ?
+                      GROUP BY agent_id) f ON f.agent_id = a.id
+           LEFT JOIN (SELECT agent_id, SUM(win_lose) as wl
+                      FROM data_report_lottery WHERE date_key >= ? AND date_key <= ?
+                      GROUP BY agent_id) l ON l.agent_id = a.id
+           LEFT JOIN (SELECT agent_id, SUM(win_lose) as wl
+                      FROM data_bet_orders WHERE bet_time >= ? AND bet_time <= ?
+                      GROUP BY agent_id) b ON b.agent_id = a.id
+           WHERE a.id IN (${ph}) ORDER BY a.id`
+        ).all(startStr, todayStr, startStr, todayStr, startTime, endTime, ...agentIds);
       }
 
-      return { totalMembers, newMembers, activeMembers, firstDeposit,
+      return { members, firstDeposit,
                deposits, withdrawals, betOrders, lottery, dailyTrend, perAgent };
     });
 
@@ -149,7 +149,7 @@ router.get('/stats', (req, res) => {
         range,
         startDate: startStr,
         endDate: todayStr,
-        members: { total: d.totalMembers, new: d.newMembers, active: d.activeMembers, firstDeposit: d.firstDeposit },
+        members: { total: d.members.total, new: d.members.new_cnt, active: d.members.active_cnt, firstDeposit: d.firstDeposit },
         deposits: { count: d.deposits.cnt, amount: d.deposits.total },
         withdrawals: { count: d.withdrawals.cnt, amount: d.withdrawals.total },
         winLoss: {
