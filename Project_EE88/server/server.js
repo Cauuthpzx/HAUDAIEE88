@@ -155,9 +155,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ── Phục vụ file tĩnh từ client/ ──
+// ── LiveReload (dev only) ──
 const clientDir = path.join(__dirname, '..', 'client');
 const isProd = process.env.NODE_ENV === 'production';
+if (!isProd) {
+  const livereload = require('livereload');
+  const connectLR = require('connect-livereload');
+  const lrServer = livereload.createServer({
+    exts: ['html', 'css', 'js'],
+    delay: 200
+  });
+  lrServer.watch(clientDir);
+  app.use(connectLR());
+  log.ok('LiveReload đã bật (dev mode)');
+}
+
+// ── Phục vụ file tĩnh từ client/ ──
 // Lib files: cache 1 năm + immutable (không bao giờ revalidate)
 app.use(
   '/lib',
@@ -172,26 +185,6 @@ app.use(
 app.use(express.static(clientDir, { maxAge: isProd ? '7d' : 0, etag: true }));
 log.info(`Thư mục client: ${clientDir}`);
 
-// ── Phục vụ SPA từ spa/ (truy cập qua /spa/) ──
-const spaDir = path.join(__dirname, '..', 'spa');
-if (fs.existsSync(spaDir)) {
-  // Page JS: no-cache (luôn revalidate bằng ETag, tự động bust khi file thay đổi)
-  app.use(
-    '/spa/js/pages',
-    express.static(path.join(spaDir, 'js', 'pages'), {
-      maxAge: 0,
-      etag: true,
-      lastModified: true
-    })
-  );
-  // Dev: no-cache — Prod: cache 7 ngày
-  app.use(
-    '/spa',
-    express.static(spaDir, { maxAge: isProd ? '7d' : 0, etag: true })
-  );
-  log.info(`Thư mục SPA: ${spaDir}`);
-}
-
 // ── 404 ──
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
@@ -204,7 +197,7 @@ app.use((req, res) => {
   res
     .status(404)
     .send(
-      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h1>404</h1><p>Không tìm thấy trang</p><a href="/spa/login.html">Về trang đăng nhập</a></body></html>'
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h1>404</h1><p>Không tìm thấy trang</p><a href="/pages/login.html">Về trang đăng nhập</a></body></html>'
     );
 });
 
