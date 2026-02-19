@@ -9,7 +9,7 @@ const { getOCRWorker } = require('../services/captchaSolver');
 const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
-const { encrypt, encryptResponse } = require('../utils/crypto');
+const { encrypt } = require('../utils/crypto');
 const { clearPermCache } = require('../middleware/permission');
 
 const adminEmitter = require('../services/adminEvents');
@@ -36,19 +36,12 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
     res.write(': connected\n\n');
-    var ek = req.user.ek;
 
     function onEvent(data) {
       try {
         var json = JSON.stringify(data);
-        if (ek) {
-          try {
-            json = JSON.stringify({ _enc: encryptResponse(json, ek) });
-          } catch (e) {
-            /* fallback */
-          }
-        }
-        res.write('data: ' + json + '\n\n');
+        var encoded = Buffer.from(json).toString('base64');
+        res.write('data: ' + JSON.stringify({ _enc: encoded }) + '\n\n');
       } catch (e) {
         cleanup();
       }

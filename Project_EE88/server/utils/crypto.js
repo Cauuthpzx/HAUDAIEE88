@@ -127,28 +127,9 @@ function isEncrypted(text) {
   );
 }
 
-/**
- * Mã hóa response JSON → iv_hex:base64_ciphertext
- * Dùng cho API response encryption (per-session key từ JWT ek)
- * @param {string} jsonStr — JSON string to encrypt
- * @param {string} keyHex — 64 hex char key (from JWT ek claim)
- * @returns {string} iv_hex:base64_ciphertext
- */
-function encryptResponse(jsonStr, keyHex) {
-  const key = Buffer.from(keyHex, 'hex');
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-  let encrypted = cipher.update(jsonStr, 'utf8');
-  encrypted = Buffer.concat([encrypted, cipher.final()]);
-
-  return iv.toString('hex') + ':' + encrypted.toString('base64');
-}
-
 module.exports = {
   encrypt,
   decrypt,
   isEncrypted,
-  ensureEncryptionKey,
-  encryptResponse
+  ensureEncryptionKey
 };

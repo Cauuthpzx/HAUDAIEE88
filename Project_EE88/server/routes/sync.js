@@ -3,21 +3,13 @@ const { authMiddleware, adminOnly } = require('../middleware/auth');
 const cronSync = require('../services/cronSync');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
-const { encryptResponse } = require('../utils/crypto');
-
 const log = createLogger('sync-routes');
 const router = express.Router();
 
-function sseData(data, ek) {
+function sseData(data) {
   var json = JSON.stringify(data);
-  if (ek) {
-    try {
-      json = JSON.stringify({ _enc: encryptResponse(json, ek) });
-    } catch (e) {
-      /* fallback unencrypted */
-    }
-  }
-  return 'data: ' + json + '\n\n';
+  var encoded = Buffer.from(json).toString('base64');
+  return 'data: ' + JSON.stringify({ _enc: encoded }) + '\n\n';
 }
 
 // ── SSE endpoint (auth via query param vì EventSource không set header được) ──
@@ -39,14 +31,12 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
 
-    var ek = req.user.ek;
-
     // Gửi snapshot ngay lập tức
-    res.write(sseData(cronSync.getSyncProgressSnapshot(), ek));
+    res.write(sseData(cronSync.getSyncProgressSnapshot()));
 
     function onProgress(data) {
       try {
-        res.write(sseData(data, ek));
+        res.write(sseData(data));
       } catch (e) {
         cleanup();
       }
