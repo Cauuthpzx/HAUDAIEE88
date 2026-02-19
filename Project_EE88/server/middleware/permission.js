@@ -5,7 +5,7 @@ const log = createLogger('permission');
 
 // ── In-memory permission cache (tránh query DB mỗi request) ──
 const permCache = new Map();
-const PERM_TTL = 5 * 60 * 1000; // 5 phút
+const PERM_TTL = 15 * 60 * 1000; // 15 phút
 
 function getCachedPerm(userId, role) {
   var key = role + ':' + userId;

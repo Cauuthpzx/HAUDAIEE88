@@ -54,3 +54,100 @@
 
 /* Solver status (manageAgents) */
 .hub-page .solver-status { margin-left: 10px; }
+
+/* ── Dashboard ── */
+.db-range-bar {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.db-kpi-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 15px 15px;
+  flex-wrap: wrap;
+}
+.db-kpi-card {
+  flex: 1;
+  min-width: 155px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-left: 3px solid transparent;
+}
+.db-kpi-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
+}
+.db-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.db-kpi-info { flex: 1; min-width: 0; }
+.db-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.db-kpi-label { font-size: 12px; color: #999; margin-top: 2px; }
+.db-kpi-sub { font-size: 11px; color: #bbb; margin-top: 3px; }
+
+.db-charts-row {
+  display: flex;
+  gap: 15px;
+  padding: 0 15px 15px;
+  flex-wrap: wrap;
+}
+.db-chart-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+}
+.db-chart-title { font-size: 13px; color: #555; font-weight: 600; margin-bottom: 10px; }
+
+.db-agent-area { padding: 0 15px 15px; }
+.db-agent-area .layui-card {
+  margin: 0;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+  border: none;
+  overflow: hidden;
+}
+.db-agent-area .layui-card-header {
+  font-weight: 600;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.db-loading { text-align: center; padding: 40px 0; color: #999; font-size: 13px; }
+.db-error { text-align: center; padding: 40px 0; color: #ff5722; font-size: 13px; }
+.db-error .layui-btn { margin-top: 10px; }
+
+.db-no-data { text-align: center; padding: 100px 0; color: #ccc; font-size: 13px; }
+
+/* KPI accent borders — matched to icon color */
+.db-kpi-card[data-accent="blue"]   { border-left-color: #1e9fff; }
+.db-kpi-card[data-accent="green"]  { border-left-color: #16b777; }
+.db-kpi-card[data-accent="yellow"] { border-left-color: #ffb800; }
+.db-kpi-card[data-accent="red"]    { border-left-color: #ff5722; }
+.db-kpi-card[data-accent="purple"] { border-left-color: #7c3aed; }
+
+@media (max-width: 1200px) {
+  .db-kpi-card { min-width: 135px; }
+}
+@media (max-width: 768px) {
+  .db-kpi-card { min-width: calc(50% - 8px); }
+  .db-charts-row { flex-direction: column; }
+}

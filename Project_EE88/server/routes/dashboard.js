@@ -12,7 +12,7 @@ router.use(authMiddleware, permissionMiddleware);
 
 // ── Per-user cache: Map<"userId:range", { data, ts }> ──
 const cache = new Map();
-const CACHE_TTL = 60 * 1000;
+const CACHE_TTL = 3 * 60 * 1000; // 3 phút
 const MAX_CACHE = 200;
 
 // GET /api/dashboard/stats?range=today|7d|30d
@@ -64,8 +64,8 @@ router.get('/stats', (req, res) => {
       // 3. Đang hoạt động (logged in trong range)
       const activeMembers = db.prepare(
         `SELECT COUNT(*) as cnt FROM data_members
-         WHERE agent_id IN (${ph}) AND last_login_time >= ?`
-      ).get(...agentIds, startTime).cnt;
+         WHERE agent_id IN (${ph}) AND last_login_time >= ? AND last_login_time <= ?`
+      ).get(...agentIds, startTime, endTime).cnt;
 
       // 4. Nạp tiền (completed deposits)
       const deposits = db.prepare(
@@ -109,7 +109,17 @@ router.get('/stats', (req, res) => {
          GROUP BY date_key ORDER BY date_key`
       ).all(...agentIds, startStr, todayStr);
 
-      // 9. Per-agent breakdown (admin only)
+      // 9. First-deposit members (nạp lần đầu trong range)
+      const firstDeposit = db.prepare(
+        `SELECT COUNT(DISTINCT uid) as cnt FROM data_deposits
+         WHERE agent_id IN (${ph}) AND status = 1 AND create_time >= ? AND create_time <= ?
+         AND uid NOT IN (
+           SELECT DISTINCT uid FROM data_deposits
+           WHERE agent_id IN (${ph}) AND status = 1 AND create_time < ?
+         )`
+      ).get(...agentIds, startTime, endTime, ...agentIds, startTime).cnt;
+
+      // 10. Per-agent breakdown (admin only) — with win/loss
       let perAgent = null;
       if (isAdmin) {
         perAgent = db.prepare(
@@ -118,13 +128,17 @@ router.get('/stats', (req, res) => {
                   (SELECT COALESCE(SUM(deposit_amount), 0) FROM data_report_funds
                     WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as deposit,
                   (SELECT COALESCE(SUM(withdrawal_amount), 0) FROM data_report_funds
-                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as withdrawal
+                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as withdrawal,
+                  (SELECT COALESCE(SUM(win_lose), 0) FROM data_report_lottery
+                    WHERE agent_id = a.id AND date_key >= ? AND date_key <= ?) as lotteryWL,
+                  (SELECT COALESCE(SUM(win_lose), 0) FROM data_bet_orders
+                    WHERE agent_id = a.id AND bet_time >= ? AND bet_time <= ?) as thirdWL
            FROM ee88_agents a WHERE a.id IN (${ph}) ORDER BY a.id`
-        ).all(startStr, todayStr, startStr, todayStr, ...agentIds);
+        ).all(startStr, todayStr, startStr, todayStr, startStr, todayStr, startTime, endTime, ...agentIds);
       }
 
-      return { totalMembers, newMembers, activeMembers, deposits, withdrawals,
-               betOrders, lottery, dailyTrend, perAgent };
+      return { totalMembers, newMembers, activeMembers, firstDeposit,
+               deposits, withdrawals, betOrders, lottery, dailyTrend, perAgent };
     });
 
     const d = getData();
@@ -135,7 +149,7 @@ router.get('/stats', (req, res) => {
         range,
         startDate: startStr,
         endDate: todayStr,
-        members: { total: d.totalMembers, new: d.newMembers, active: d.activeMembers },
+        members: { total: d.totalMembers, new: d.newMembers, active: d.activeMembers, firstDeposit: d.firstDeposit },
         deposits: { count: d.deposits.cnt, amount: d.deposits.total },
         withdrawals: { count: d.withdrawals.cnt, amount: d.withdrawals.total },
         winLoss: {

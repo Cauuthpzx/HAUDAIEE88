@@ -324,3 +324,9 @@ CREATE TABLE IF NOT EXISTS data_totals (
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_data_totals_lookup ON data_totals(agent_id, endpoint_key, date_key);
+
+-- Compound indexes cho tối ưu truy vấn theo agent + thời gian
+CREATE INDEX IF NOT EXISTS idx_deposits_agent_time ON data_deposits(agent_id, create_time DESC);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_agent_time ON data_withdrawals(agent_id, create_time DESC);
+CREATE INDEX IF NOT EXISTS idx_bet_orders_agent_time ON data_bet_orders(agent_id, bet_time DESC);
+CREATE INDEX IF NOT EXISTS idx_lottery_bets_agent_time ON data_lottery_bets(agent_id, create_time DESC);

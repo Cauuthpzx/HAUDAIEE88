@@ -66,7 +66,7 @@ router.use(authMiddleware, adminOnly);
 // ── Dashboard stats cache (60s TTL) ──
 let dashCache = null;
 let dashCacheTime = 0;
-const DASH_TTL = 60 * 1000;
+const DASH_TTL = 5 * 60 * 1000; // 5 phút
 
 // GET /api/admin/dashboard/stats — Aggregated data cho dashboard
 router.get('/dashboard/stats', (req, res) => {

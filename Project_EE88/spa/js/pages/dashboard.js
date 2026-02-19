@@ -1,21 +1,25 @@
 (function () {
-  var lineChart = null, pieChart = null;
+  var barChart = null, pieChart = null;
   var echartsLoaded = false;
   var currentRange = 'today';
+
+  // ── KPI config ──
+  var KPI_CARDS = [
+    { id: 'db_totalMembers',  i18n: 'dbTotalMembers',  icon: 'hi hi-users',             bg: '#1e9fff', accent: 'blue' },
+    { id: 'db_newMembers',    i18n: 'dbNewMembers',    icon: 'hi hi-circle-plus',        bg: '#16b777', accent: 'green' },
+    { id: 'db_activeMembers', i18n: 'dbActiveMembers', icon: 'hi hi-circle-check',       bg: '#ffb800', accent: 'yellow' },
+    { id: 'db_depositTotal',  i18n: 'dbDepositTotal',  icon: 'hi hi-o hi-o-credit-card', bg: '#16b777', accent: 'green', hasSub: true },
+    { id: 'db_withdrawTotal', i18n: 'dbWithdrawTotal',  icon: 'hi hi-o hi-o-money-bill-1', bg: '#ff5722', accent: 'red', hasSub: true },
+    { id: 'db_netWinLoss',    i18n: 'dbNetWinLoss',    icon: 'hi hi-chart-bar',          bg: '#7c3aed', accent: 'purple' }
+  ];
 
   SpaPages.dashboard = {
     getHTML: function () {
       var user = HubAPI.getUser();
       var isAdmin = user && user.role === 'admin';
 
-      return '<div class="layui-row"><div class="layui-col-md12"><div class="layui-card">'
-        + '<div class="layui-card-header">'
-        + '<fieldset class="layui-elem-field layui-field-title">'
-        + '<legend data-i18n="dashboard">' + HubLang.t('dashboard') + '</legend>'
-        + '<div class="layui-field-box">'
-
-        // Date range buttons
-        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap;">'
+      // Range bar
+      var html = '<div class="db-range-bar">'
         + '<span style="font-size:13px;color:#999;" data-i18n="dbDateRange">' + HubLang.t('dbDateRange') + ':</span>'
         + '<div class="layui-btn-group">'
         + '<button class="layui-btn layui-btn-sm db-range-btn" data-range="today" data-i18n="today">' + HubLang.t('today') + '</button>'
@@ -23,77 +27,61 @@
         + '<button class="layui-btn layui-btn-sm layui-btn-primary db-range-btn" data-range="30d" data-i18n="dbLast30Days">' + HubLang.t('dbLast30Days') + '</button>'
         + '</div>'
         + '<span id="db_dateLabel" style="font-size:12px;color:#666;"></span>'
-        + '</div>'
+        + '</div>';
 
-        // KPI Cards
-        + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
-        + kpiCard('db_totalMembers', 'dbTotalMembers', '#1e9fff')
-        + kpiCard('db_newMembers', 'dbNewMembers', '#16b777')
-        + kpiCard('db_activeMembers', 'dbActiveMembers', '#ffb800')
-        + kpiCard('db_depositTotal', 'dbDepositTotal', '#16b777')
-        + kpiCard('db_withdrawTotal', 'dbWithdrawTotal', '#ff5722')
-        + kpiCard('db_netWinLoss', 'dbNetWinLoss', '#1e9fff')
-        + '</div>'
+      // KPI cards
+      html += '<div class="db-kpi-row">';
+      for (var i = 0; i < KPI_CARDS.length; i++) {
+        var c = KPI_CARDS[i];
+        html += '<div class="db-kpi-card" data-accent="' + c.accent + '">'
+          + '<div class="db-kpi-icon" style="background:' + c.bg + ';"><i class="' + c.icon + '"></i></div>'
+          + '<div class="db-kpi-info">'
+          + '<div class="db-kpi-value" id="' + c.id + '">-</div>'
+          + '<div class="db-kpi-label" data-i18n="' + c.i18n + '">' + HubLang.t(c.i18n) + '</div>'
+          + (c.hasSub ? '<div class="db-kpi-sub" id="' + c.id + '_sub"></div>' : '')
+          + '</div></div>';
+      }
+      html += '</div>';
 
-        + '</div></fieldset></div>'
-
-        // Card Body: Charts
-        + '<div class="layui-card-body">'
-        + '<div class="layui-row layui-col-space15">'
-        + '<div class="layui-col-md8">'
-        + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbDepositWithdrawTrend">'
-          + HubLang.t('dbDepositWithdrawTrend') + '</div>'
-        + '<div id="db_lineChart" style="height:300px;"></div>'
+      // Charts
+      html += '<div class="db-charts-row">'
+        + '<div class="db-chart-box" style="flex:2;min-width:300px;">'
+        + '<div class="db-chart-title" data-i18n="dbDepositWithdrawTrend">' + HubLang.t('dbDepositWithdrawTrend') + '</div>'
+        + '<div id="db_barChart" style="height:300px;"></div>'
         + '</div>'
-        + '<div class="layui-col-md4">'
-        + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbWinLossBreakdown">'
-          + HubLang.t('dbWinLossBreakdown') + '</div>'
+        + '<div class="db-chart-box" style="flex:1;min-width:250px;">'
+        + '<div class="db-chart-title" data-i18n="dbWinLossBreakdown">' + HubLang.t('dbWinLossBreakdown') + '</div>'
         + '<div id="db_pieChart" style="height:300px;"></div>'
         + '</div>'
-        + '</div>'
+        + '</div>';
 
-        // Per-agent table (admin only)
-        + (isAdmin
-          ? '<div style="margin-top:15px;">'
-            + '<div style="font-size:13px;color:#999;margin-bottom:8px;" data-i18n="dbPerAgent">'
-              + HubLang.t('dbPerAgent') + '</div>'
-            + '<table id="db_agentTable"></table>'
-            + '</div>'
-          : '')
+      // Per-agent table (admin only)
+      if (isAdmin) {
+        html += '<div class="db-agent-area">'
+          + '<div class="layui-card"><div class="layui-card-header" data-i18n="dbPerAgent">'
+          + HubLang.t('dbPerAgent') + '</div>'
+          + '<div class="layui-card-body"><table id="db_agentTable" lay-filter="db_agentTable"></table></div>'
+          + '</div></div>';
+      }
 
-        + '</div>'
-        + '</div></div></div>';
+      return html;
     },
 
     init: function (container) {
-      // Highlight active range button
-      function setActiveRange(range) {
-        currentRange = range;
-        var btns = container.querySelectorAll('.db-range-btn');
-        for (var i = 0; i < btns.length; i++) {
-          if (btns[i].getAttribute('data-range') === range) {
-            btns[i].className = btns[i].className.replace(' layui-btn-primary', '');
-          } else if (btns[i].className.indexOf('layui-btn-primary') === -1) {
-            btns[i].className += ' layui-btn-primary';
-          }
-        }
-      }
-
-      // Range button click
+      // Range buttons
       var btns = container.querySelectorAll('.db-range-btn');
       for (var i = 0; i < btns.length; i++) {
         btns[i].addEventListener('click', function () {
-          setActiveRange(this.getAttribute('data-range'));
+          setActiveRange(this.getAttribute('data-range'), container);
           loadData(container);
         });
       }
-
-      setActiveRange('today');
+      setActiveRange('today', container);
       loadData(container);
     },
 
     destroy: function () {
-      if (lineChart) { lineChart.dispose(); lineChart = null; }
+      if (barChart) { barChart.dispose(); barChart = null; }
       if (pieChart) { pieChart.dispose(); pieChart = null; }
       window.removeEventListener('resize', resizeCharts);
     },
@@ -106,29 +94,51 @@
     }
   };
 
-  function kpiCard(id, i18nKey, color) {
-    return '<div style="flex:1;min-width:130px;background:rgba(255,255,255,0.05);border-radius:4px;padding:12px 16px;text-align:center;">'
-      + '<div style="font-size:24px;font-weight:700;color:' + color + ';" id="' + id + '">-</div>'
-      + '<div style="font-size:12px;color:#999;margin-top:4px;" data-i18n="' + i18nKey + '">' + HubLang.t(i18nKey) + '</div>'
-      + '</div>';
+  // ── Helpers ──
+
+  function setActiveRange(range, container) {
+    currentRange = range;
+    var btns = container.querySelectorAll('.db-range-btn');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].getAttribute('data-range') === range) {
+        btns[i].className = btns[i].className.replace(' layui-btn-primary', '');
+      } else if (btns[i].className.indexOf('layui-btn-primary') === -1) {
+        btns[i].className += ' layui-btn-primary';
+      }
+    }
   }
 
   function loadData(container) {
+    // Loading state on KPI values
+    for (var i = 0; i < KPI_CARDS.length; i++) {
+      setText(container, KPI_CARDS[i].id, '...');
+    }
+
     HubAPI.dashboardGet('stats?range=' + currentRange).then(function (res) {
-      if (res.code !== 0) return;
+      if (res.code !== 0) {
+        showError(container, res.msg || 'Unknown error');
+        return;
+      }
       var d = res.data;
 
-      // Update date label
+      // Date label
       var label = container.querySelector('#db_dateLabel');
       if (label) label.textContent = d.startDate + ' → ' + d.endDate;
 
-      // Update KPIs
+      // KPI values
       setText(container, 'db_totalMembers', fmtNum(d.members.total));
       setText(container, 'db_newMembers', fmtNum(d.members.new));
       setText(container, 'db_activeMembers', fmtNum(d.members.active));
       setText(container, 'db_depositTotal', fmtMoney(d.deposits.amount));
       setText(container, 'db_withdrawTotal', fmtMoney(d.withdrawals.amount));
 
+      // Deposit/withdrawal sub-info (count)
+      var depSub = container.querySelector('#db_depositTotal_sub');
+      if (depSub) depSub.textContent = fmtNum(d.deposits.count) + ' ' + HubLang.t('dbOrders');
+      var wdSub = container.querySelector('#db_withdrawTotal_sub');
+      if (wdSub) wdSub.textContent = fmtNum(d.withdrawals.count) + ' ' + HubLang.t('dbOrders');
+
+      // Net win/loss (color-coded)
       var netWL = (d.winLoss.lottery.winLose || 0) + (d.winLoss.thirdParty.winLose || 0);
       var el = container.querySelector('#db_netWinLoss');
       if (el) {
@@ -136,37 +146,28 @@
         el.style.color = netWL >= 0 ? '#16b777' : '#ff5722';
       }
 
-      // Render charts
+      // Charts
       renderCharts(d, container);
 
       // Admin: per-agent table
       if (d.perAgent && d.perAgent.length > 0) {
-        layui.table.render({
-          elem: '#db_agentTable',
-          data: d.perAgent,
-          text: { none: HubLang.t('noData') },
-          page: false,
-          cols: [[
-            { field: 'label', title: HubLang.t('agent'), width: 150 },
-            { field: 'members', title: HubLang.t('dbTotalMembers'), width: 120, align: 'right' },
-            { field: 'deposit', title: HubLang.t('dbDepositTotal'), width: 150, align: 'right',
-              templet: function (row) { return fmtMoney(row.deposit); } },
-            { field: 'withdrawal', title: HubLang.t('dbWithdrawTotal'), width: 150, align: 'right',
-              templet: function (row) { return fmtMoney(row.withdrawal); } },
-            { field: 'net', title: HubLang.t('dbNetWinLoss'), minWidth: 120, align: 'right',
-              templet: function (row) {
-                var net = (row.deposit || 0) - (row.withdrawal || 0);
-                var color = net >= 0 ? '#16b777' : '#ff5722';
-                return '<span style="color:' + color + '">' + fmtMoney(net) + '</span>';
-              }
-            }
-          ]]
-        });
+        renderAgentTable(d, container);
       }
     }).catch(function (err) {
       console.error('[Dashboard] Load error:', err);
+      showError(container, err.message);
     });
   }
+
+  function showError(container, msg) {
+    // Show error in chart areas
+    var barEl = container.querySelector('#db_barChart');
+    if (barEl) barEl.innerHTML = '<div class="db-error">' + HubLang.t('dbError') + '</div>';
+    var pieEl = container.querySelector('#db_pieChart');
+    if (pieEl) pieEl.innerHTML = '<div class="db-error">' + HubLang.t('dbError') + '</div>';
+  }
+
+  // ── Charts ──
 
   function renderCharts(d, container) {
     if (typeof echarts === 'undefined') {
@@ -175,6 +176,7 @@
       var script = document.createElement('script');
       script.src = '/lib/echarts/echarts.min.js';
       script.onload = function () { doRenderCharts(d, container); };
+      script.onerror = function () { showError(container, 'ECharts load failed'); };
       document.body.appendChild(script);
     } else {
       doRenderCharts(d, container);
@@ -183,43 +185,77 @@
 
   function doRenderCharts(d, container) {
     // Bar chart: daily deposit vs withdrawal trend
-    var lineEl = container.querySelector('#db_lineChart');
-    if (lineEl && d.dailyTrend && d.dailyTrend.length > 0) {
-      if (lineChart) lineChart.dispose();
-      lineChart = echarts.init(lineEl);
-      lineChart.setOption({
-        tooltip: { trigger: 'axis' },
-        legend: { data: [HubLang.t('deposit'), HubLang.t('withdraw')], textStyle: { color: '#999' } },
-        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-        xAxis: { type: 'category', data: d.dailyTrend.map(function (t) { return t.date_key; }) },
-        yAxis: { type: 'value' },
+    var barEl = container.querySelector('#db_barChart');
+    if (barEl && d.dailyTrend && d.dailyTrend.length > 0) {
+      if (barChart) barChart.dispose();
+      barChart = echarts.init(barEl);
+      barChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter: function (params) {
+            var s = params[0].axisValue + '<br/>';
+            for (var i = 0; i < params.length; i++) {
+              s += params[i].marker + ' ' + params[i].seriesName + ': <b>' + fmtMoney(params[i].value) + '</b><br/>';
+            }
+            return s;
+          }
+        },
+        legend: { data: [HubLang.t('deposit'), HubLang.t('withdraw')], textStyle: { color: '#999' }, bottom: 0 },
+        grid: { left: '3%', right: '4%', top: 30, bottom: 35, containLabel: true },
+        xAxis: {
+          type: 'category',
+          data: d.dailyTrend.map(function (t) { return t.date_key.substring(5); }),
+          axisLabel: { color: '#999', fontSize: 11 }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: {
+            color: '#999', fontSize: 11,
+            formatter: function (v) { return v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v; }
+          },
+          splitLine: { lineStyle: { color: '#f0f0f0' } }
+        },
         color: ['#16b777', '#ff5722'],
         series: [
-          { name: HubLang.t('deposit'), type: 'bar', data: d.dailyTrend.map(function (t) { return t.deposit; }) },
-          { name: HubLang.t('withdraw'), type: 'bar', data: d.dailyTrend.map(function (t) { return t.withdrawal; }) }
+          {
+            name: HubLang.t('deposit'), type: 'bar', barMaxWidth: 20,
+            data: d.dailyTrend.map(function (t) { return t.deposit; }),
+            itemStyle: { borderRadius: [3, 3, 0, 0] }
+          },
+          {
+            name: HubLang.t('withdraw'), type: 'bar', barMaxWidth: 20,
+            data: d.dailyTrend.map(function (t) { return t.withdrawal; }),
+            itemStyle: { borderRadius: [3, 3, 0, 0] }
+          }
         ]
       });
-    } else if (lineEl) {
-      lineEl.innerHTML = '<div style="text-align:center;padding:120px 0;color:#999;">' + HubLang.t('noData') + '</div>';
+    } else if (barEl) {
+      barEl.innerHTML = '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
     }
 
-    // Pie chart: win/loss breakdown (lottery vs 3rd party)
+    // Pie chart: win/loss breakdown
     var pieEl = container.querySelector('#db_pieChart');
     if (pieEl) {
       var lotteryWL = d.winLoss.lottery.winLose || 0;
       var thirdWL = d.winLoss.thirdParty.winLose || 0;
       if (lotteryWL === 0 && thirdWL === 0) {
-        pieEl.innerHTML = '<div style="text-align:center;padding:120px 0;color:#999;">' + HubLang.t('noData') + '</div>';
+        pieEl.innerHTML = '<div class="db-no-data">' + HubLang.t('noData') + '</div>';
       } else {
         if (pieChart) pieChart.dispose();
         pieChart = echarts.init(pieEl);
         pieChart.setOption({
-          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+          tooltip: {
+            trigger: 'item',
+            formatter: function (p) { return p.name + ': <b>' + fmtMoney(p.value) + '</b> (' + p.percent + '%)'; }
+          },
+          legend: { bottom: 0, textStyle: { color: '#999', fontSize: 11 } },
           color: ['#ffb800', '#1e9fff'],
           series: [{
             type: 'pie',
             radius: ['40%', '70%'],
-            label: { formatter: '{b}: {c}', color: '#999' },
+            center: ['50%', '45%'],
+            label: { show: false },
+            emphasis: { label: { show: true, fontWeight: 'bold' } },
             data: [
               { value: Math.abs(lotteryWL), name: HubLang.t('dbLotteryWL') },
               { value: Math.abs(thirdWL), name: HubLang.t('dbThirdPartyWL') }
@@ -234,9 +270,47 @@
   }
 
   function resizeCharts() {
-    if (lineChart) lineChart.resize();
+    if (barChart) barChart.resize();
     if (pieChart) pieChart.resize();
   }
+
+  // ── Per-agent table ──
+
+  function renderAgentTable(d, container) {
+    layui.table.render({
+      elem: '#db_agentTable',
+      data: d.perAgent,
+      text: { none: HubLang.t('noData') },
+      page: false,
+      cols: [[
+        { field: 'label', title: HubLang.t('agent'), width: 120 },
+        { field: 'members', title: HubLang.t('dbTotalMembers'), width: 100, align: 'right',
+          templet: function (row) { return fmtNum(row.members); } },
+        { field: 'deposit', title: HubLang.t('dbDepositTotal'), width: 130, align: 'right',
+          templet: function (row) { return '<span style="color:#16b777">' + fmtMoney(row.deposit) + '</span>'; } },
+        { field: 'withdrawal', title: HubLang.t('dbWithdrawTotal'), width: 130, align: 'right',
+          templet: function (row) { return '<span style="color:#ff5722">' + fmtMoney(row.withdrawal) + '</span>'; } },
+        { field: 'lotteryWL', title: HubLang.t('dbLotteryWL'), width: 130, align: 'right',
+          templet: function (row) {
+            var v = row.lotteryWL || 0;
+            return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
+          } },
+        { field: 'thirdWL', title: HubLang.t('dbThirdPartyWL'), width: 130, align: 'right',
+          templet: function (row) {
+            var v = row.thirdWL || 0;
+            return '<span style="color:' + (v >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(v) + '</span>';
+          } },
+        { field: 'net', title: HubLang.t('dbNet'), minWidth: 120, align: 'right',
+          templet: function (row) {
+            var net = (row.deposit || 0) - (row.withdrawal || 0);
+            return '<span style="color:' + (net >= 0 ? '#16b777' : '#ff5722') + '">' + fmtMoney(net) + '</span>';
+          }
+        }
+      ]]
+    });
+  }
+
+  // ── Format helpers ──
 
   function setText(container, id, text) {
     var el = container.querySelector('#' + id);

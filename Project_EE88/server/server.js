@@ -63,13 +63,19 @@ app.use('/api/auth/login', rateLimit({
   message: { code: -1, msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút' }
 }));
 
-// Morgan: console dùng format 'dev', file dùng format 'combined'
-app.use(morgan('dev'));
+// Morgan: file log (skip health), dev console chỉ khi NODE_ENV !== production
+const skipHealth = (req) => req.path === '/api/health';
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev', { skip: skipHealth }));
+}
 app.use(morgan('[:date[iso]] :method :url :status :res[content-length] - :response-time ms ":user-agent"', {
-  stream: accessLogStream
+  stream: accessLogStream, skip: skipHealth
 }));
 
 app.use(express.json({ limit: config.security.bodyLimit }));
+
+// ── Nén response (gzip) — PHẢI đặt trước routes + static ──
+app.use(compression({ threshold: 1024 }));
 
 // ── Routes ──
 // Auth: không cần JWT
@@ -89,19 +95,11 @@ app.use('/api/admin', syncRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
-  const agentCount = db.prepare('SELECT COUNT(*) as cnt FROM ee88_agents WHERE status = 1').get().cnt;
-  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM hub_users WHERE status = 1').get().cnt;
-  log.ok('Kiểm tra sức khoẻ: OK');
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    agents: agentCount,
-    users: userCount
-  });
+  const stats = db.prepare(
+    'SELECT (SELECT COUNT(*) FROM ee88_agents WHERE status = 1) as agents, (SELECT COUNT(*) FROM hub_users WHERE status = 1) as users'
+  ).get();
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), agents: stats.agents, users: stats.users });
 });
-
-// ── Nén response (gzip) ──
-app.use(compression({ threshold: 1024 }));
 
 // ── Phục vụ file tĩnh từ client/ ──
 const clientDir = path.join(__dirname, '..', 'client');

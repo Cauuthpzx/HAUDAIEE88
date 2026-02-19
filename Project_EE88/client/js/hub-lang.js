@@ -436,6 +436,14 @@ var HubLang = (function () {
       'dbLotteryWL': 'Xổ số',
       'dbThirdPartyWL': 'Bên thứ 3',
       'dbPerAgent': 'Chi tiết theo đại lý',
+      'dbFirstDeposit': 'Nạp lần đầu',
+      'dbOrders': 'lệnh',
+      'dbBetAmount': 'Tổng cược',
+      'dbPrize': 'Tổng thưởng',
+      'dbLoading': 'Đang tải...',
+      'dbError': 'Lỗi tải dữ liệu',
+      'dbRetry': 'Thử lại',
+      'dbNet': 'Ròng',
 
       // ── Activity Log ──
       'activityLog': 'Nhật ký',
@@ -918,6 +926,14 @@ var HubLang = (function () {
       'dbLotteryWL': 'Lottery',
       'dbThirdPartyWL': '3rd Party',
       'dbPerAgent': 'Per Agent Breakdown',
+      'dbFirstDeposit': 'First Deposit',
+      'dbOrders': 'orders',
+      'dbBetAmount': 'Total Bet',
+      'dbPrize': 'Total Prize',
+      'dbLoading': 'Loading...',
+      'dbError': 'Failed to load data',
+      'dbRetry': 'Retry',
+      'dbNet': 'Net',
 
       // ── Activity Log ──
       'activityLog': 'Activity Log',
@@ -1400,6 +1416,14 @@ var HubLang = (function () {
       'dbLotteryWL': '彩票',
       'dbThirdPartyWL': '第三方',
       'dbPerAgent': '代理明细',
+      'dbFirstDeposit': '首充',
+      'dbOrders': '笔',
+      'dbBetAmount': '总投注',
+      'dbPrize': '总奖金',
+      'dbLoading': '加载中...',
+      'dbError': '加载数据失败',
+      'dbRetry': '重试',
+      'dbNet': '净额',
 
       // ── Activity Log ──
       'activityLog': '活动日志',
