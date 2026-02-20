@@ -14,10 +14,25 @@
       }
       .layui-card {
         margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
       }
       .layui-card-header {
         padding-bottom: 0;
         border-bottom: none;
+      }
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
       }
       .layui-field-box .layui-inline {
         margin-bottom: 8px;
@@ -510,7 +525,35 @@
         });
 
         form.on('submit(doSearch)', function (data) {
-          table.reload('dataTable', { where: data.field, page: { curr: 1 } });
+          var where = {
+            create_time: data.field.create_time,
+            username: data.field.username,
+            serial_no: data.field.serial_no
+          };
+          // Convert ID → name cho các dropdown (DB lưu name, không lưu ID)
+          if (data.field.lottery_id) {
+            where.lottery_name = $('select[name="lottery_id"] option:selected')
+              .text()
+              .trim();
+          }
+          if (data.field.play_type_id) {
+            where.play_type_name = $(
+              'select[name="play_type_id"] option:selected'
+            )
+              .text()
+              .trim();
+          }
+          if (data.field.play_id) {
+            where.play_name = $('select[name="play_id"] option:selected')
+              .text()
+              .trim();
+          }
+          if (data.field.status) {
+            where.status_text = $('select[name="status"] option:selected')
+              .text()
+              .trim();
+          }
+          table.reload('dataTable', { where: where, page: { curr: 1 } });
           return false;
         });
 

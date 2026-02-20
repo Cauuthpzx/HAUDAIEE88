@@ -40,6 +40,7 @@ var HubLang = (function () {
       // ── Sidebar ──
       memberMgmt: 'Quản lí hội viên',
       members: 'Hội viên',
+      generalFeatures: 'Tính năng chung',
       referralCode: 'Mã giới thiệu',
       reports: 'Báo cáo',
       lotteryReport: 'BC xổ số',
@@ -567,6 +568,7 @@ var HubLang = (function () {
       // ── Sidebar ──
       memberMgmt: 'Member Management',
       members: 'Members',
+      generalFeatures: 'General Features',
       referralCode: 'Referral Code',
       reports: 'Reports',
       lotteryReport: 'Lottery Report',
@@ -1093,6 +1095,7 @@ var HubLang = (function () {
       // ── Sidebar ──
       memberMgmt: '会员管理',
       members: '会员',
+      generalFeatures: '常用功能',
       referralCode: '邀请码',
       reports: '报表',
       lotteryReport: '彩票报表',

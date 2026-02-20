@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tính năng chung</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+
+      /* ── Shadow test styles ── */
+
+      /* Main card */
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      /* Fieldset (filter area) */
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+
+      /* Table */
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+
+      /* Form panel */
+      .demo-form-panel {
+        background: #fff;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      /* Toolbar */
+      .demo-toolbar {
+        background: #fff;
+        padding: 10px 15px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      /* Stat card */
+      .demo-stat-card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        text-align: center;
+      }
+      .demo-stat-card h3 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        color: #333;
+      }
+      .demo-stat-card p {
+        margin: 0;
+        font-size: 13px;
+        color: #999;
+      }
+
+      /* Section labels */
+      .demo-section {
+        margin: 20px 0 8px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #666;
+      }
+      .demo-section:first-child {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-card">
+      <div class="layui-card-header" data-i18n="generalFeatures">
+        Tính năng chung
+      </div>
+      <div class="layui-card-body">
+        <!-- ── 1. Fieldset (filter area) ── -->
+        <div class="demo-section">1. Fieldset (filter area)</div>
+        <fieldset class="layui-elem-field">
+          <legend>Filter demo</legend>
+          <div class="layui-field-box">
+            <div class="layui-inline">
+              <label>Filter</label>
+              <div class="layui-input-inline" style="width: 200px">
+                <input
+                  type="text"
+                  placeholder="..."
+                  class="layui-input"
+                  readonly
+                />
+              </div>
+            </div>
+            <div class="layui-inline">
+              <button type="button" class="layui-btn layui-btn-sm">
+                <i class="layui-icon layui-icon-search"></i> Search
+              </button>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ── 2. Table ── -->
+        <div class="demo-section">2. Table</div>
+        <table id="demoTable" lay-filter="demoTable"></table>
+
+        <!-- ── 3. Stat cards ── -->
+        <div class="demo-section">3. Stat cards</div>
+        <div class="layui-row layui-col-space15">
+          <div class="layui-col-xs6 layui-col-md3">
+            <div class="demo-stat-card">
+              <h3>1,234</h3>
+              <p>Total A</p>
+            </div>
+          </div>
+          <div class="layui-col-xs6 layui-col-md3">
+            <div class="demo-stat-card">
+              <h3>567</h3>
+              <p>Total B</p>
+            </div>
+          </div>
+          <div class="layui-col-xs6 layui-col-md3">
+            <div class="demo-stat-card">
+              <h3>89</h3>
+              <p>Total C</p>
+            </div>
+          </div>
+          <div class="layui-col-xs6 layui-col-md3">
+            <div class="demo-stat-card">
+              <h3>42</h3>
+              <p>Total D</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 4. Toolbar ── -->
+        <div class="demo-section">4. Toolbar</div>
+        <div class="demo-toolbar">
+          <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-sm">
+              <i class="layui-icon layui-icon-addition"></i> Add
+            </button>
+            <button type="button" class="layui-btn layui-btn-sm">
+              <i class="layui-icon layui-icon-export"></i> Export
+            </button>
+            <button
+              type="button"
+              class="layui-btn layui-btn-sm layui-btn-danger"
+            >
+              <i class="layui-icon layui-icon-delete"></i> Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- ── 5. Form panel ── -->
+        <div class="demo-section">5. Form panel</div>
+        <div class="demo-form-panel">
+          <form class="layui-form">
+            <div class="layui-form-item">
+              <label class="layui-form-label">Username</label>
+              <div class="layui-input-block">
+                <input type="text" class="layui-input" placeholder="..." />
+              </div>
+            </div>
+            <div class="layui-form-item">
+              <label class="layui-form-label">Select</label>
+              <div class="layui-input-block">
+                <select>
+                  <option value="">Option A</option>
+                  <option value="">Option B</option>
+                </select>
+              </div>
+            </div>
+            <div class="layui-form-item">
+              <div class="layui-input-block">
+                <button type="button" class="layui-btn">Submit</button>
+                <button type="reset" class="layui-btn layui-btn-primary">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script>
+      layui.use(['table', 'form'], function () {
+        var table = layui.table;
+
+        table.render({
+          elem: '#demoTable',
+          cols: [
+            [
+              { field: 'id', title: 'ID', width: 80 },
+              { field: 'name', title: 'Name', width: 200 },
+              { field: 'value', title: 'Value' }
+            ]
+          ],
+          data: [
+            { id: 1, name: 'Item A', value: '100' },
+            { id: 2, name: 'Item B', value: '200' },
+            { id: 3, name: 'Item C', value: '300' }
+          ],
+          page: false,
+          limit: 10
+        });
+
+        HubLang.apply();
+      });
+    </script>
+  </body>
+</html>
