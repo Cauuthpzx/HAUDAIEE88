@@ -869,13 +869,23 @@
             return row.find('td:eq(' + idx + ') .layui-table-cell');
           }
 
+          // Cột name: Layui treeTable thêm icon expand (.layui-table-tree-flexIcon)
+          // bên cạnh .layui-table-tree-item. Chỉ update nội dung trong tree-item
+          // để giữ nguyên icon expand/collapse
           var nameCell = cellAt(1);
+          if (nameCell.length) {
+            var treeItem = nameCell.find('.layui-table-tree-item');
+            if (treeItem.length) {
+              treeItem.html(colTemplets.name(d));
+            }
+          }
+
+          // Các cột khác: không có tree icon, update trực tiếp
           var statusCell = cellAt(2);
           var progressCell = cellAt(3);
           var dataRowsCell = cellAt(4);
           var timeCell = cellAt(6);
 
-          if (nameCell.length) nameCell.html(colTemplets.name(d));
           if (statusCell.length) statusCell.html(colTemplets.status(d));
           if (progressCell.length)
             progressCell.html(colTemplets.syncProgress(d));
@@ -1209,7 +1219,11 @@
               }
 
               updateSyncState(d.syncing);
-              renderTree();
+              // Khi SSE đang active (snap có data) → không reloadData
+              // để tránh mất expand state; SSE sẽ cập nhật qua updateTreeCells
+              if (!snap) {
+                renderTree();
+              }
             })
             .catch(function (err) {
               console.warn('loadAgents lỗi:', err.message);

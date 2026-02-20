@@ -22,6 +22,8 @@ router.get(
   authMiddleware,
   adminOnly,
   (req, res) => {
+    // Tắt compression cho SSE — compression middleware buffer res.write()
+    // khiến data không bao giờ đến client cho đến khi res.end()
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -29,27 +31,28 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
 
-    // Gửi snapshot ngay lập tức (chỉ khi có data — tránh client disconnect sớm)
-    var initialSnap = cronSync.getSyncProgressSnapshot();
-    if (initialSnap.agents && initialSnap.agents.length > 0) {
-      res.write(sseData(initialSnap));
-    }
-
-    function onProgress(data) {
+    function sseWrite(chunk) {
       try {
-        res.write(sseData(data));
+        res.write(chunk);
+        if (typeof res.flush === 'function') res.flush();
       } catch (e) {
         cleanup();
       }
+    }
+
+    // Gửi snapshot ngay lập tức (chỉ khi có data — tránh client disconnect sớm)
+    var initialSnap = cronSync.getSyncProgressSnapshot();
+    if (initialSnap.agents && initialSnap.agents.length > 0) {
+      sseWrite(sseData(initialSnap));
+    }
+
+    function onProgress(data) {
+      sseWrite(sseData(data));
     }
     cronSync.syncEmitter.on('progress', onProgress);
 
     const hb = setInterval(() => {
-      try {
-        res.write(': heartbeat\n\n');
-      } catch (e) {
-        cleanup();
-      }
+      sseWrite(': heartbeat\n\n');
     }, 30000);
 
     // Auto-close sau 15 phút (sync có thể mất 11 phút, client sẽ tự reconnect)
