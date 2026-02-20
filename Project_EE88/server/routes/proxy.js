@@ -11,6 +11,16 @@ const router = express.Router();
 // Tất cả data routes cần JWT + permission
 router.use(authMiddleware, permissionMiddleware);
 
+// GET /api/data/agents — danh sách agents của user (cho filter)
+router.get('/agents', (req, res) => {
+  res.json({
+    code: 0,
+    data: req.agents.map(function (a) {
+      return { id: a.id, label: a.label, ee88_username: a.ee88_username };
+    })
+  });
+});
+
 // GET /api/data/:endpoint  (dynamic — fan-out tới N agents)
 router.get('/:endpoint', async (req, res) => {
   const endpointKey = req.params.endpoint;
@@ -18,7 +28,9 @@ router.get('/:endpoint', async (req, res) => {
   // Validate endpoint
   if (!ENDPOINTS[endpointKey]) {
     log.warn(`Endpoint không hợp lệ: ${endpointKey}`);
-    return res.status(404).json({ code: -1, msg: `Endpoint không tồn tại: ${endpointKey}` });
+    return res
+      .status(404)
+      .json({ code: -1, msg: `Endpoint không tồn tại: ${endpointKey}` });
   }
 
   const startTime = Date.now();
@@ -28,7 +40,16 @@ router.get('/:endpoint', async (req, res) => {
   });
 
   try {
-    const data = await fanoutFetch(req.agents, endpointKey, req.query);
+    // Lọc agents theo agent_ids nếu có
+    let agents = req.agents;
+    if (req.query.agent_ids) {
+      const ids = req.query.agent_ids.split(',').map(Number).filter(Boolean);
+      if (ids.length > 0) {
+        agents = agents.filter((a) => ids.indexOf(a.id) !== -1);
+      }
+    }
+
+    const data = await fanoutFetch(agents, endpointKey, req.query);
     const duration = Date.now() - startTime;
 
     log.ok(`[${req.user.username}] /${endpointKey} — ${duration}ms`, {

@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chất lượng khách hàng</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-table-cell {
+        text-align: left;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .layui-field-box .layui-inline label {
+        font-size: 13px;
+        margin-right: 5px;
+      }
+      .placeholder-msg {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+        font-size: 15px;
+      }
+      .placeholder-msg i {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 15px;
+        color: #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-form layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="customerQuality">Chất lượng khách hàng</legend>
+              <div class="layui-field-box">
+                <form class="layui-form" lay-filter="searchForm">
+                  <div class="layui-inline">
+                    <label data-i18n="time">Thời gian</label>：
+                    <div style="width: 220px" class="layui-input-inline">
+                      <input
+                        type="text"
+                        name="date_range"
+                        id="dateRange"
+                        placeholder="Chọn khoảng thời gian"
+                        data-i18n="dateStartEnd"
+                        data-i18n-attr="placeholder"
+                        class="layui-input"
+                        readonly
+                        autocomplete="off"
+                      />
+                    </div>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="button"
+                      class="layui-btn"
+                      lay-submit
+                      lay-filter="doSearch"
+                    >
+                      <i class="layui-icon layui-icon-search"></i>
+                      <span data-i18n="search">Tìm kiếm</span>
+                    </button>
+                  </div>
+                  <div class="layui-inline">
+                    <button
+                      type="reset"
+                      class="layui-btn layui-btn-primary"
+                      id="btnReset"
+                    >
+                      <i class="layui-icon layui-icon-refresh"></i>
+                      <span data-i18n="reset">Đặt lại</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <div class="placeholder-msg">
+              <i class="layui-icon layui-icon-user"></i>
+              <span data-i18n="customerQuality">Chất lượng khách hàng</span> —
+              Coming soon
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script>
+      layui.use(['form', 'laydate'], function () {
+        HubLang.init();
+        HubLang.applyDOM();
+        document.title = HubLang.t('customerQuality');
+        var form = layui.form;
+        var laydate = layui.laydate;
+
+        var _td = new Date(),
+          _todayStr =
+            _td.getFullYear() +
+            '-' +
+            String(_td.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(_td.getDate()).padStart(2, '0');
+        laydate.render({
+          elem: '#dateRange',
+          type: 'date',
+          range: '|',
+          rangeLinked: true,
+          value: _todayStr + ' | ' + _todayStr
+        });
+
+        document
+          .getElementById('btnReset')
+          .addEventListener('click', function () {
+            setTimeout(function () {
+              document.getElementById('dateRange').value =
+                _todayStr + ' | ' + _todayStr;
+            }, 50);
+          });
+      });
+    </script>
+  </body>
+</html>

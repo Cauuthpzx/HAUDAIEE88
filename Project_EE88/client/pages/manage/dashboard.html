@@ -212,17 +212,31 @@
                     </button>
                     <button
                       class="layui-btn layui-btn-sm layui-btn-primary db-range"
-                      data-range="7d"
-                      data-i18n="dbLast7Days"
+                      data-range="yesterday"
+                      data-i18n="yesterday"
                     >
-                      7 ngày
+                      Hôm qua
                     </button>
                     <button
                       class="layui-btn layui-btn-sm layui-btn-primary db-range"
-                      data-range="30d"
-                      data-i18n="dbLast30Days"
+                      data-range="thisWeek"
+                      data-i18n="thisWeek"
                     >
-                      30 ngày
+                      Tuần này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary db-range"
+                      data-range="thisMonth"
+                      data-i18n="thisMonth"
+                    >
+                      Tháng này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary db-range"
+                      data-range="lastMonth"
+                      data-i18n="lastMonth"
+                    >
+                      Tháng trước
                     </button>
                   </div>
                   <div class="layui-input-inline" style="width: 220px">
@@ -337,7 +351,7 @@
             <!-- Per-agent table (admin only) -->
             <div id="agentTableArea" style="display: none">
               <div class="db-agent-title" data-i18n="dbPerAgent">
-                Chi tiết theo đại lý
+                Chi tiết theo Đại lý
               </div>
               <table id="agentTable" lay-filter="agentTable"></table>
             </div>
@@ -350,22 +364,60 @@
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-lang.js"></script>
+
     <script>
       HubAPI.requireAuth();
       HubLang.init();
       HubLang.applyDOM();
       document.title = HubLang.t('dashboard');
 
-      var currentRange = 'today';
       var customStart = null,
         customEnd = null;
       var barChart = null,
         pieChart = null;
 
+      function fmtDate(d) {
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+
+      function calcRange(range) {
+        var now = new Date();
+        var todayStr = fmtDate(now);
+        if (range === 'today') return { start: todayStr, end: todayStr };
+        if (range === 'yesterday') {
+          var yd = new Date(now);
+          yd.setDate(yd.getDate() - 1);
+          var s = fmtDate(yd);
+          return { start: s, end: s };
+        }
+        if (range === 'thisWeek') {
+          var ws = new Date(now);
+          var dow = ws.getDay();
+          dow = dow === 0 ? 6 : dow - 1;
+          ws.setDate(ws.getDate() - dow);
+          return { start: fmtDate(ws), end: todayStr };
+        }
+        if (range === 'thisMonth') {
+          var ms = new Date(now.getFullYear(), now.getMonth(), 1);
+          return { start: fmtDate(ms), end: todayStr };
+        }
+        if (range === 'lastMonth') {
+          var lms = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          var lme = new Date(now.getFullYear(), now.getMonth(), 0);
+          return { start: fmtDate(lms), end: fmtDate(lme) };
+        }
+        return { start: todayStr, end: todayStr };
+      }
+
       layui.use(['table', 'laydate'], function () {
         var $ = layui.$;
         var laydate = layui.laydate;
-
         // Date range picker
         laydate.render({
           elem: '#dbDatePicker',
@@ -379,7 +431,6 @@
             if (parts.length === 2) {
               customStart = parts[0].trim();
               customEnd = parts[1].trim();
-              currentRange = 'custom';
               $('.db-range').addClass('layui-btn-primary');
               loadDashboard();
             }
@@ -388,15 +439,20 @@
 
         // Range buttons
         $('.db-range').on('click', function () {
-          currentRange = $(this).data('range');
-          customStart = null;
-          customEnd = null;
+          var range = $(this).data('range');
+          var r = calcRange(range);
+          customStart = r.start;
+          customEnd = r.end;
           $('#dbDatePicker').val('');
           $('.db-range').addClass('layui-btn-primary');
           $(this).removeClass('layui-btn-primary');
           loadDashboard();
         });
 
+        // Init: today
+        var initR = calcRange('today');
+        customStart = initR.start;
+        customEnd = initR.end;
         loadDashboard();
 
         function loadDashboard() {
@@ -405,10 +461,7 @@
             '#kpi_totalMembers, #kpi_newMembers, #kpi_activeMembers, #kpi_depositTotal, #kpi_withdrawTotal, #kpi_netWinLoss'
           ).text('...');
 
-          var qs =
-            currentRange === 'custom' && customStart && customEnd
-              ? 'start_date=' + customStart + '&end_date=' + customEnd
-              : 'range=' + currentRange;
+          var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
           HubAPI.dashboardGet('stats?' + qs)
             .then(function (res) {
               if (res.code !== 0) {
@@ -426,13 +479,7 @@
               $('#kpi_depositTotal').text(fmtMoney(d.deposits.amount));
               $('#kpi_withdrawTotal').text(fmtMoney(d.withdrawals.amount));
 
-              // Sub-info (count)
-              $('#kpi_depositSub').text(
-                fmtNum(d.deposits.count) + ' ' + HubLang.t('dbOrders')
-              );
-              $('#kpi_withdrawSub').text(
-                fmtNum(d.withdrawals.count) + ' ' + HubLang.t('dbOrders')
-              );
+              // Sub-info removed — report_funds has no count
 
               var netWL =
                 (d.winLoss.lottery.winLose || 0) +
@@ -497,6 +544,7 @@
           // Flatten dailyOnline into flat fields per row
           var tableData = d.perAgent.map(function (row) {
             var flat = {
+              agentId: row.agentId,
               label: row.label,
               ee88Username: row.ee88Username,
               todayNewCustomers: row.todayNewCustomers || 0,

@@ -118,6 +118,14 @@
                     </div>
                   </div>
                   <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div style="width: 150px" class="layui-input-inline">
+                      <select name="agent_ids" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -159,7 +167,7 @@
                     <th data-i18n="depositAmountTotal">Số tiền nạp</th>
                     <th data-i18n="withdrawAmountTotal">Số tiền rút</th>
                     <th data-i18n="chargeFee">Phí dịch vụ</th>
-                    <th data-i18n="agentCommission">Hoa hồng đại lý</th>
+                    <th data-i18n="agentCommission">Hoa hồng Đại lý</th>
                     <th data-i18n="promotion">Ưu đãi</th>
                     <th data-i18n="thirdRebate">Hoàn trả bên thứ 3</th>
                     <th data-i18n="thirdActivityAmount">
@@ -191,10 +199,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'laydate'], function () {
         HubLang.init();
         HubLang.applyDOM();
+        HubAPI.loadAgentSelect();
         document.title = HubLang.t('reportFundsTitle');
         var $ = layui.$;
         var table = layui.table;
@@ -242,12 +252,14 @@
           lastMonthStart + ' | ' + lastMonthEnd;
         form.render('select');
 
+        var defaultRange = todayStr + ' | ' + todayStr;
         laydate.render({
           elem: '#dateRange',
           type: 'date',
           range: '|',
           rangeLinked: true,
-          max: 0
+          max: 0,
+          value: defaultRange
         });
 
         form.on('select(quickDateFilter)', function (data) {
@@ -385,10 +397,10 @@
 
         $('#btnReset').on('click', function () {
           setTimeout(function () {
-            $('#dateRange').val('');
+            $('#dateRange').val(defaultRange);
             form.render('select');
             table.reload('dataTable', {
-              where: { date: '', username: '' },
+              where: { date: defaultRange, username: '' },
               page: { curr: 1 }
             });
           }, 50);

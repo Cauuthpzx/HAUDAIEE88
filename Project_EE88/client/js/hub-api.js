@@ -250,6 +250,140 @@ var HubAPI = {
   },
 
   /**
+   * Load danh sách đại lý — multi-select checkbox dropdown
+   * Tự tìm <select name="agent_ids">, thay bằng dropdown checkbox
+   */
+  loadAgentSelect: function () {
+    var $ = layui.$;
+    var form = layui.form;
+    $.get('/api/data/agents', function (res) {
+      if (res.code !== 0 || !res.data || !res.data.length) return;
+      var agents = res.data;
+      var allLabel = HubLang.t('all');
+      var selectAllLabel = HubLang.t('selectAll');
+
+      $('select[name="agent_ids"]').each(function (idx) {
+        var $sel = $(this);
+        var $wrap = $sel.closest('.layui-input-inline');
+        var ff = $wrap.closest('[lay-filter]').attr('lay-filter') || '';
+        $wrap.css({ position: 'relative', width: '260px' });
+
+        var selected = agents.map(function (a) {
+          return a.id;
+        });
+        var pf = 'hubAF' + idx;
+
+        var items = '';
+        agents.forEach(function (a) {
+          items +=
+            '<dd style="padding:0 12px;line-height:32px;">' +
+            '<input type="checkbox" checked lay-skin="primary" ' +
+            'title="' +
+            a.label +
+            ' (' +
+            a.ee88_username +
+            ')" ' +
+            'data-id="' +
+            a.id +
+            '" lay-filter="' +
+            pf +
+            '_i"></dd>';
+        });
+
+        $wrap.html(
+          '<input type="text" class="layui-input" readonly ' +
+            'style="cursor:pointer;" value="' +
+            allLabel +
+            '" data-pf="' +
+            pf +
+            '">' +
+            '<input type="hidden" name="agent_ids">' +
+            '<dl id="' +
+            pf +
+            '" class="hub-agent-panel" style="display:none;position:absolute;' +
+            'top:40px;left:0;z-index:999;background:#fff;border:1px solid #e6e6e6;' +
+            'border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.12);padding:5px 0;' +
+            'max-height:250px;overflow-y:auto;min-width:100%;">' +
+            '<dd style="padding:0 12px;line-height:32px;border-bottom:1px solid #eee;">' +
+            '<input type="checkbox" checked lay-skin="primary" title="' +
+            selectAllLabel +
+            '" ' +
+            'lay-filter="' +
+            pf +
+            '_a"></dd>' +
+            items +
+            '</dl>'
+        );
+
+        var $d = $wrap.find('[data-pf="' + pf + '"]');
+        var $h = $wrap.find('input[name="agent_ids"]');
+        var $p = $('#' + pf);
+        form.render('checkbox', ff);
+
+        $d.on('click', function (e) {
+          e.stopPropagation();
+          $('.hub-agent-panel').not($p).hide();
+          $p.toggle();
+        });
+        $(document).on('click', function () {
+          $p.hide();
+        });
+        $p.on('click', function (e) {
+          e.stopPropagation();
+        });
+
+        function sync() {
+          var all = selected.length === agents.length;
+          $d.val(
+            all
+              ? allLabel
+              : agents
+                  .filter(function (a) {
+                    return selected.indexOf(a.id) !== -1;
+                  })
+                  .map(function (a) {
+                    return a.ee88_username;
+                  })
+                  .join(', ')
+          );
+          $h.val(all ? '' : selected.join(','));
+        }
+
+        form.on('checkbox(' + pf + '_i)', function (o) {
+          var id = parseInt($(o.elem).data('id'));
+          if (o.elem.checked) {
+            if (selected.indexOf(id) === -1) selected.push(id);
+          } else {
+            selected = selected.filter(function (i) {
+              return i !== id;
+            });
+          }
+          $p.find('[lay-filter="' + pf + '_a"]').prop(
+            'checked',
+            selected.length === agents.length
+          );
+          form.render('checkbox', ff);
+          sync();
+        });
+
+        form.on('checkbox(' + pf + '_a)', function (o) {
+          selected = o.elem.checked
+            ? agents.map(function (a) {
+                return a.id;
+              })
+            : [];
+          $p.find('[lay-filter="' + pf + '_i"]').prop(
+            'checked',
+            o.elem.checked
+          );
+          form.render('checkbox', ff);
+          sync();
+        });
+      });
+    });
+  },
+
+  /**
    * Single-panel date range picker (1 bảng lịch, chọn khoảng ngày)
    */
   singleRangePicker: function (elem, opts) {

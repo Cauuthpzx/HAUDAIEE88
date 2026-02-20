@@ -171,6 +171,14 @@
                     </div>
                   </div>
                   <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div style="width: 150px" class="layui-input-inline">
+                      <select name="agent_ids" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -210,20 +218,20 @@
                 <thead>
                   <tr>
                     <th data-i18n="betAmount">Tiền cược</th>
+                    <th data-i18n="betTimesCol">Lượt cược</th>
                     <th data-i18n="turnover">Doanh thu</th>
                     <th data-i18n="prize">Trúng thưởng</th>
                     <th data-i18n="winLose">Thắng / Thua</th>
-                    <th data-i18n="betTimesCol">Lượt cược</th>
                     <th data-i18n="bettersCountCol">Số người cược</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td id="total_bet_amount" class="hs-text">0.0000</td>
+                    <td id="total_bet_times" class="hs-text">0</td>
                     <td id="total_turnover" class="hs-text">0.0000</td>
                     <td id="total_prize" class="hs-text">0.0000</td>
                     <td id="total_win_lose" class="hs-text">0.0000</td>
-                    <td id="total_bet_times" class="hs-text">0</td>
                     <td id="total_bet_number" class="hs-text">0</td>
                   </tr>
                 </tbody>
@@ -238,10 +246,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'laydate'], function () {
         HubLang.init();
         HubLang.applyDOM();
+        HubAPI.loadAgentSelect();
         document.title = HubLang.t('reportThirdTitle');
         var table = layui.table;
         var form = layui.form;

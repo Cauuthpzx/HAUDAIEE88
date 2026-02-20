@@ -101,6 +101,14 @@
                     </div>
                   </div>
                   <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div style="width: 150px" class="layui-input-inline">
+                      <select name="agent_ids" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -136,20 +144,30 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'laydate'], function () {
         HubLang.init();
         HubLang.applyDOM();
+        HubAPI.loadAgentSelect();
         document.title = HubLang.t('betOrderTitle');
         var table = layui.table;
         var form = layui.form;
         var laydate = layui.laydate;
 
+        var _td = new Date(),
+          _todayStr =
+            _td.getFullYear() +
+            '-' +
+            String(_td.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(_td.getDate()).padStart(2, '0');
         laydate.render({
           elem: '#betTime',
           type: 'date',
           range: '|',
-          rangeLinked: true
+          rangeLinked: true,
+          value: _todayStr + ' | ' + _todayStr
         });
 
         table.render({
@@ -225,9 +243,14 @@
           .addEventListener('click', function () {
             setTimeout(function () {
               form.render('select');
-              document.getElementById('betTime').value = '';
+              document.getElementById('betTime').value =
+                _todayStr + ' | ' + _todayStr;
               table.reload('dataTable', {
-                where: { bet_time: '', serial_no: '', platform_username: '' },
+                where: {
+                  bet_time: _todayStr + ' | ' + _todayStr,
+                  serial_no: '',
+                  platform_username: ''
+                },
                 page: { curr: 1 }
               });
             }, 50);

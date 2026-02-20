@@ -240,6 +240,14 @@
                     </div>
                   </div>
                   <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div style="width: 150px" class="layui-input-inline">
+                      <select name="agent_ids" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -302,10 +310,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
         HubLang.applyDOM();
+        HubAPI.loadAgentSelect();
         document.title = HubLang.t('betTitle');
         var table = layui.table;
         var form = layui.form;
@@ -334,12 +344,14 @@
           yesterdayStr + ' | ' + yesterdayStr;
         form.render('select');
 
+        var defaultRange = todayStr + ' | ' + todayStr;
         laydate.render({
           elem: '#hsDateTime',
           type: 'date',
           range: '|',
           rangeLinked: true,
-          max: 0
+          max: 0,
+          value: defaultRange
         });
 
         form.on('select(quickDateFilter)', function (data) {
@@ -562,7 +574,7 @@
 
         $('#btnReset').on('click', function () {
           setTimeout(function () {
-            $('#hsDateTime').val('');
+            $('#hsDateTime').val(defaultRange);
             $('#playTypeSelect').html(
               '<option value="">' + HubLang.t('select') + '</option>'
             );

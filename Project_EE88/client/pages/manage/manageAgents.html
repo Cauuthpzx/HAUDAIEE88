@@ -144,6 +144,7 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'layer'], function () {
         HubLang.init();
@@ -153,7 +154,6 @@
         var form = layui.form;
         var layer = layui.layer;
         var $ = layui.$;
-
         // Kiểm tra solver status
         function checkSolverStatus() {
           HubAPI.adminGet('solver-status')

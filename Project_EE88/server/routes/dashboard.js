@@ -68,35 +68,45 @@ router.get('/stats', (req, res) => {
     const endTime = endStr + ' 23:59:59';
 
     const getData = db.transaction(() => {
-      // 1-3. Members: gộp 3 queries thành 1
+      // 1-2. Members: total + new
       const members = db
         .prepare(
           `SELECT COUNT(*) as total,
-                SUM(CASE WHEN register_time >= ? AND register_time <= ? THEN 1 ELSE 0 END) as new_cnt,
-                SUM(CASE WHEN last_login_time >= ? AND last_login_time <= ? THEN 1 ELSE 0 END) as active_cnt
+                SUM(CASE WHEN register_time >= ? AND register_time <= ? THEN 1 ELSE 0 END) as new_cnt
          FROM data_members WHERE agent_id IN (${ph})`
         )
-        .get(startTime, endTime, startTime, endTime, ...agentIds);
+        .get(startTime, endTime, ...agentIds);
 
-      // 4. Nạp tiền (completed deposits)
-      // status có thể là INTEGER (1) hoặc TEXT ('Hoàn tất') tùy API response
+      // 3. Active members: DISTINCT uid có cược trong khoảng thời gian (lottery UNION third)
+      const activeMembers = db
+        .prepare(
+          `SELECT COUNT(*) as cnt FROM (
+             SELECT DISTINCT uid FROM data_report_lottery
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+             UNION
+             SELECT DISTINCT uid FROM data_report_third
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           )`
+        )
+        .get(...agentIds, startStr, endStr, ...agentIds, startStr, endStr);
+
+      // 4. Nạp tiền (từ dữ liệu tổng hợp report_funds)
       const deposits = db
         .prepare(
-          `SELECT COUNT(*) as cnt, COALESCE(SUM(true_amount), 0) as total
-         FROM data_deposits
-         WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?
-           AND (status = 1 OR status = 'Hoàn tất')`
+          `SELECT COALESCE(SUM(deposit_amount), 0) as total
+         FROM data_report_funds
+         WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?`
         )
-        .get(...agentIds, startTime, endTime);
+        .get(...agentIds, startStr, endStr);
 
-      // 5. Rút tiền
+      // 5. Rút tiền (từ dữ liệu tổng hợp report_funds)
       const withdrawals = db
         .prepare(
-          `SELECT COUNT(*) as cnt, COALESCE(SUM(true_amount), 0) as total
-         FROM data_withdrawals
-         WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?`
+          `SELECT COALESCE(SUM(withdrawal_amount), 0) as total
+         FROM data_report_funds
+         WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?`
         )
-        .get(...agentIds, startTime, endTime);
+        .get(...agentIds, startStr, endStr);
 
       // 6. Thắng/thua cược bên thứ 3
       const betOrders = db
@@ -189,14 +199,50 @@ router.get('/stats', (req, res) => {
             todayStr
           );
 
-        // c) Today new customers (register_time)
+        // c) Today new customers: uid lần đầu xuất hiện hôm nay
+        //    (có trong lottery/third/deposits hôm nay, KHÔNG có trước hôm nay)
         const todayNewRows = db
           .prepare(
-            `SELECT agent_id, COUNT(*) as cnt FROM data_members
-             WHERE agent_id IN (${ph}) AND register_time >= ? AND register_time <= ?
-             GROUP BY agent_id`
+            `WITH today_uids AS (
+               SELECT DISTINCT agent_id, uid FROM data_report_lottery
+               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+               UNION
+               SELECT DISTINCT agent_id, uid FROM data_report_third
+               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+               UNION
+               SELECT DISTINCT agent_id, uid FROM data_deposits
+               WHERE agent_id IN (${ph}) AND SUBSTR(create_time, 1, 10) = ?
+             ),
+             old_uids AS (
+               SELECT DISTINCT agent_id, uid FROM data_report_lottery
+               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) < ?
+               UNION
+               SELECT DISTINCT agent_id, uid FROM data_report_third
+               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) < ?
+               UNION
+               SELECT DISTINCT agent_id, uid FROM data_deposits
+               WHERE agent_id IN (${ph}) AND SUBSTR(create_time, 1, 10) < ?
+             )
+             SELECT t.agent_id, COUNT(*) as cnt
+             FROM today_uids t
+             LEFT JOIN old_uids o ON o.agent_id = t.agent_id AND o.uid = t.uid
+             WHERE o.uid IS NULL
+             GROUP BY t.agent_id`
           )
-          .all(...agentIds, todayStart, todayEnd);
+          .all(
+            ...agentIds,
+            todayStr,
+            ...agentIds,
+            todayStr,
+            ...agentIds,
+            todayStr,
+            ...agentIds,
+            todayStr,
+            ...agentIds,
+            todayStr,
+            ...agentIds,
+            todayStr
+          );
 
         // d) Today lottery bet
         const todayLotteryRows = db
@@ -252,27 +298,26 @@ router.get('/stats', (req, res) => {
           )
           .all(...agentIds, monthStartTime, todayEnd);
 
-        // i) Today deposit (completed)
+        // i) Today deposit (from aggregated report_funds)
         const todayDepRows = db
           .prepare(
-            `SELECT agent_id, COALESCE(SUM(true_amount), 0) as total
-             FROM data_deposits
-             WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?
-               AND (status = 1 OR status = 'Hoàn tất')
+            `SELECT agent_id, COALESCE(SUM(deposit_amount), 0) as total
+             FROM data_report_funds
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
              GROUP BY agent_id`
           )
-          .all(...agentIds, todayStart, todayEnd);
+          .all(...agentIds, todayStr);
 
-        // j) Monthly deposit (completed)
+        // j) Monthly deposit (from aggregated report_funds)
         const monthDepRows = db
           .prepare(
-            `SELECT agent_id, COALESCE(SUM(true_amount), 0) as total
-             FROM data_deposits
-             WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?
-               AND (status = 1 OR status = 'Hoàn tất')
+            `SELECT agent_id, COALESCE(SUM(deposit_amount), 0) as total
+             FROM data_report_funds
+             WHERE agent_id IN (${ph})
+               AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
              GROUP BY agent_id`
           )
-          .all(...agentIds, monthStartTime, todayEnd);
+          .all(...agentIds, monthStart, todayStr);
 
         // Merge: build lookup maps
         const toMap = (rows, fn) => {
@@ -322,6 +367,7 @@ router.get('/stats', (req, res) => {
 
       return {
         members,
+        activeMembers,
         firstDeposit,
         deposits,
         withdrawals,
@@ -344,11 +390,11 @@ router.get('/stats', (req, res) => {
         members: {
           total: d.members.total,
           new: d.members.new_cnt,
-          active: d.members.active_cnt,
+          active: d.activeMembers.cnt,
           firstDeposit: d.firstDeposit
         },
-        deposits: { count: d.deposits.cnt, amount: d.deposits.total },
-        withdrawals: { count: d.withdrawals.cnt, amount: d.withdrawals.total },
+        deposits: { amount: d.deposits.total },
+        withdrawals: { amount: d.withdrawals.total },
         winLoss: {
           thirdParty: {
             bet: d.betOrders.bet,

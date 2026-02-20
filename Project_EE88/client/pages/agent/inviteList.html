@@ -121,6 +121,14 @@
                     </div>
                   </div>
                   <div class="layui-inline">
+                    <label data-i18n="agent">Đại lý</label>：
+                    <div style="width: 150px" class="layui-input-inline">
+                      <select name="agent_ids" lay-search>
+                        <option value="" data-i18n="all">Tất cả</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -157,9 +165,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
+        HubLang.applyDOM();
+        HubAPI.loadAgentSelect();
         var table = layui.table;
         var form = layui.form;
         var laydate = layui.laydate;
@@ -201,11 +212,19 @@
           return window.location.origin + '/register?invite=' + code;
         }
 
+        var _td = new Date(),
+          _todayStr =
+            _td.getFullYear() +
+            '-' +
+            String(_td.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(_td.getDate()).padStart(2, '0');
         laydate.render({
           elem: '#createTime',
           type: 'datetime',
           range: '|',
-          rangeLinked: true
+          rangeLinked: true,
+          value: _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59'
         });
 
         table.render({
@@ -542,11 +561,13 @@
           .addEventListener('click', function () {
             setTimeout(function () {
               form.render('select');
-              document.getElementById('createTime').value = '';
+              document.getElementById('createTime').value =
+                _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59';
               table.reload('dataTable', {
                 where: {
                   invite_code: '',
-                  create_time: ''
+                  create_time:
+                    _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59'
                 },
                 page: { curr: 1 }
               });
