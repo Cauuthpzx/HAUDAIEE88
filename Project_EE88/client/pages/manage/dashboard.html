@@ -449,6 +449,8 @@
                 $('#agentTableArea').show();
                 layui.table.render({
                   elem: '#agentTable',
+                  toolbar: true,
+                  defaultToolbar: ['filter', 'print', 'exports'],
                   data: d.perAgent,
                   text: { none: HubLang.t('noData') },
                   page: false,

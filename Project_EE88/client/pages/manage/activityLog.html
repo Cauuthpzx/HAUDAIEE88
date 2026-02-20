@@ -162,6 +162,8 @@
               if (res.code !== 0) return;
               table.render({
                 elem: '#al_dataTable',
+                toolbar: true,
+                defaultToolbar: ['filter', 'print', 'exports'],
                 data: res.data,
                 text: { none: HubLang.t('noData') },
                 page: {
