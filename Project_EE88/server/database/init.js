@@ -75,6 +75,12 @@ function getDb() {
     db.exec("ALTER TABLE ee88_agents ADD COLUMN user_agent TEXT DEFAULT ''");
     log.info('Migrate: thêm cột user_agent');
   }
+  if (!cols.includes('is_deleted')) {
+    db.exec(
+      'ALTER TABLE ee88_agents ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0'
+    );
+    log.info('Migrate: thêm cột is_deleted');
+  }
 
   // Migrate: token_version + must_change_password cho hub_users
   const userCols = db
@@ -111,15 +117,11 @@ function getDb() {
     .all()
     .map((c) => c.name);
   if (memberCols.length > 0 && !memberCols.includes('first_deposit_time')) {
-    db.exec(
-      'ALTER TABLE data_members ADD COLUMN first_deposit_time TEXT'
-    );
+    db.exec('ALTER TABLE data_members ADD COLUMN first_deposit_time TEXT');
     log.info('Migrate: thêm cột first_deposit_time cho data_members');
   }
   if (memberCols.length > 0 && !memberCols.includes('deposit_money')) {
-    db.exec(
-      'ALTER TABLE data_members ADD COLUMN deposit_money REAL DEFAULT 0'
-    );
+    db.exec('ALTER TABLE data_members ADD COLUMN deposit_money REAL DEFAULT 0');
     log.info('Migrate: thêm cột deposit_money cho data_members');
   }
   if (memberCols.length > 0 && !memberCols.includes('withdrawal_money')) {

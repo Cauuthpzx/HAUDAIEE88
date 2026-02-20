@@ -63,6 +63,17 @@
 
     <!-- Row actions -->
     <script type="text/html" id="rowActionTpl">
+      {{# if(d.is_deleted === 1){ }}
+      <button class="layui-btn layui-btn-xs" lay-event="enable">
+        <span data-i18n="enable">Kích hoạt</span>
+      </button>
+      <button
+        class="layui-btn layui-btn-xs layui-btn-danger"
+        lay-event="hardDelete"
+      >
+        <span data-i18n="deleteData">Xoá data</span>
+      </button>
+      {{# } else { }}
       <button class="layui-btn layui-btn-xs" lay-event="edit">
         <span data-i18n="edit">Sửa</span>
       </button>
@@ -80,11 +91,14 @@
       >
         <span data-i18n="delete">Xoá</span>
       </button>
+      {{# } }}
     </script>
 
     <!-- Status template -->
     <script type="text/html" id="statusTpl">
-      {{# if(d.status === 1){ }}
+      {{# if(d.is_deleted === 1){ }}
+      <span style="color:#999;" data-i18n="disabled">Đã vô hiệu</span>
+      {{# } else if(d.status === 1){ }}
       <span class="status-active" data-i18n="active">Hoạt động</span>
       {{# } else { }}
       <span class="status-inactive" data-i18n="stopped">Ngừng</span>
@@ -252,33 +266,105 @@
               loginAgent(d);
               break;
             case 'delete':
-              layer.confirm(
-                HubLang.t('confirmDeleteAgent') +
+              layer.open({
+                type: 1,
+                title:
+                  HubLang.t('confirmDeleteAgent') +
                   HubUtils.escapeHtml(d.label) +
-                  '"?',
+                  '"',
+                area: ['420px', '220px'],
+                shadeClose: true,
+                content:
+                  '<div style="padding:20px;text-align:center;">' +
+                  '<p style="margin-bottom:18px;font-size:14px;">' +
+                  HubLang.t('deleteAgentPrompt') +
+                  '</p>' +
+                  '<button class="layui-btn layui-btn-warm" id="btnSoftDel">' +
+                  '<i class="layui-icon layui-icon-pause"></i> ' +
+                  HubLang.t('disableAgent') +
+                  '</button> ' +
+                  '<button class="layui-btn layui-btn-danger" id="btnHardDel">' +
+                  '<i class="layui-icon layui-icon-delete"></i> ' +
+                  HubLang.t('deleteAgentFull') +
+                  '</button>' +
+                  '<p style="margin-top:12px;font-size:12px;color:#999;">' +
+                  HubLang.t('disableAgentHint') +
+                  '</p>' +
+                  '</div>',
+                success: function (layero, idx) {
+                  layero.find('#btnSoftDel').on('click', function () {
+                    layer.close(idx);
+                    doDeleteAgent(d.id, 'soft');
+                  });
+                  layero.find('#btnHardDel').on('click', function () {
+                    layer.close(idx);
+                    layer.confirm(
+                      HubLang.t('confirmHardDelete'),
+                      { icon: 3 },
+                      function (idx2) {
+                        layer.close(idx2);
+                        doDeleteAgent(d.id, 'hard');
+                      }
+                    );
+                  });
+                }
+              });
+              break;
+            case 'enable':
+              doEnableAgent(d.id);
+              break;
+            case 'hardDelete':
+              layer.confirm(
+                HubLang.t('confirmHardDelete'),
                 { icon: 3 },
                 function (idx) {
                   layer.close(idx);
-                  var loadIdx = layer.load();
-                  HubAPI.adminRequest('agents/' + d.id, 'DELETE')
-                    .then(function (res) {
-                      layer.close(loadIdx);
-                      if (res.code === 0) {
-                        layer.msg(HubLang.t('deleted'), { icon: 1 });
-                        loadAgents();
-                      } else {
-                        layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
-                      }
-                    })
-                    .catch(function () {
-                      layer.close(loadIdx);
-                      layer.msg(HubLang.t('connectionError'), { icon: 2 });
-                    });
+                  doDeleteAgent(d.id, 'hard');
                 }
               );
               break;
           }
         });
+
+        // Xoá agent (soft/hard)
+        function doDeleteAgent(agentId, mode) {
+          var loadIdx = layer.load();
+          HubAPI.adminRequest('agents/' + agentId + '?mode=' + mode, 'DELETE')
+            .then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                layer.msg(res.msg, { icon: 1 });
+                loadAgents();
+              } else {
+                layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
+              }
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
+        }
+
+        // Kích hoạt lại agent đã vô hiệu
+        function doEnableAgent(agentId) {
+          var loadIdx = layer.load();
+          HubAPI.adminRequest('agents/' + agentId, 'PUT', {
+            is_deleted: 0
+          })
+            .then(function (res) {
+              layer.close(loadIdx);
+              if (res.code === 0) {
+                layer.msg(HubLang.t('agentEnabled'), { icon: 1 });
+                loadAgents();
+              } else {
+                layer.msg(res.msg || HubLang.t('failed'), { icon: 2 });
+              }
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
+        }
 
         // Form thêm/sửa agent
         function openAgentForm(data) {

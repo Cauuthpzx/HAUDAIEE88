@@ -104,6 +104,7 @@ router.get('/dashboard/stats', (req, res) => {
       FROM ee88_agents a
       LEFT JOIN (SELECT agent_id, COUNT(*) as cnt FROM user_agent_permissions GROUP BY agent_id) p
         ON p.agent_id = a.id
+      WHERE a.is_deleted = 0
       ORDER BY a.id
     `
       )
@@ -208,7 +209,7 @@ router.post('/agents/login-all', async (req, res) => {
     .prepare(
       `
     SELECT * FROM ee88_agents
-    WHERE status = 0 AND ee88_username != '' AND ee88_password != ''
+    WHERE status = 0 AND is_deleted = 0 AND ee88_username != '' AND ee88_password != ''
   `
     )
     .all();
@@ -320,22 +321,33 @@ router.post('/agents', async (req, res) => {
 
   // Check trùng ee88_username
   const existingAgent = db
-    .prepare('SELECT id, label FROM ee88_agents WHERE ee88_username = ?')
+    .prepare(
+      'SELECT id, label, is_deleted FROM ee88_agents WHERE ee88_username = ?'
+    )
     .get(ee88_username);
-  if (existingAgent) {
+
+  let agentId;
+
+  if (existingAgent && existingAgent.is_deleted === 1) {
+    // Reactivate agent đã bị vô hiệu hoá — data cũ vẫn còn, không cần sync lại
+    db.prepare(
+      "UPDATE ee88_agents SET label = ?, base_url = ?, ee88_password = ?, is_deleted = 0, status = 0, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(label, base_url, ee88_password, existingAgent.id);
+    agentId = existingAgent.id;
+    log.ok(`Kích hoạt lại agent #${agentId}: ${label} (data cũ được giữ)`);
+  } else if (existingAgent) {
     return res.status(400).json({
       code: -1,
       msg: `Tài khoản EE88 "${ee88_username}" đã tồn tại (agent: ${existingAgent.label})`
     });
+  } else {
+    const result = db
+      .prepare(
+        'INSERT INTO ee88_agents (label, base_url, cookie, ee88_username, ee88_password, status) VALUES (?, ?, ?, ?, ?, 0)'
+      )
+      .run(label, base_url, '', ee88_username, ee88_password);
+    agentId = result.lastInsertRowid;
   }
-
-  const result = db
-    .prepare(
-      'INSERT INTO ee88_agents (label, base_url, cookie, ee88_username, ee88_password, status) VALUES (?, ?, ?, ?, ?, 0)'
-    )
-    .run(label, base_url, '', ee88_username, ee88_password);
-
-  const agentId = result.lastInsertRowid;
   clearPermCache();
   log.ok(`Thêm agent: ${label} (id=${agentId}) — đang auto-login...`);
   logActivity({
@@ -397,8 +409,15 @@ router.post('/agents', async (req, res) => {
 
 // PUT /api/admin/agents/:id — Sửa agent
 router.put('/agents/:id', (req, res) => {
-  const { label, base_url, cookie, status, ee88_username, ee88_password } =
-    req.body;
+  const {
+    label,
+    base_url,
+    cookie,
+    status,
+    ee88_username,
+    ee88_password,
+    is_deleted
+  } = req.body;
   const id = req.params.id;
 
   const db = getDb();
@@ -413,7 +432,7 @@ router.put('/agents/:id', (req, res) => {
     `
     UPDATE ee88_agents
     SET label = ?, base_url = ?, cookie = ?, ee88_username = ?, ee88_password = ?,
-        status = ?, updated_at = datetime('now', 'localtime')
+        status = ?, is_deleted = ?, updated_at = datetime('now', 'localtime')
     WHERE id = ?
   `
   ).run(
@@ -423,6 +442,7 @@ router.put('/agents/:id', (req, res) => {
     ee88_username !== undefined ? ee88_username : agent.ee88_username || '',
     newPassword,
     status !== undefined ? status : agent.status,
+    is_deleted !== undefined ? is_deleted : agent.is_deleted,
     id
   );
 
@@ -446,8 +466,11 @@ router.put('/agents/:id', (req, res) => {
 });
 
 // DELETE /api/admin/agents/:id — Xoá agent
+// ?mode=hard  → xoá hoàn toàn (CASCADE xoá data)
+// ?mode=soft  → vô hiệu hoá (giữ data, đánh dấu is_deleted)
 router.delete('/agents/:id', (req, res) => {
   const id = req.params.id;
+  const mode = req.query.mode || 'soft';
   const db = getDb();
 
   const agent = db.prepare('SELECT * FROM ee88_agents WHERE id = ?').get(id);
@@ -455,22 +478,36 @@ router.delete('/agents/:id', (req, res) => {
     return res.status(404).json({ code: -1, msg: 'Agent không tồn tại' });
   }
 
-  db.prepare('DELETE FROM ee88_agents WHERE id = ?').run(id);
+  if (mode === 'hard') {
+    db.prepare('DELETE FROM ee88_agents WHERE id = ?').run(id);
+    log.ok(`Xoá hoàn toàn agent #${id}: ${agent.label} (hard delete)`);
+  } else {
+    db.prepare(
+      "UPDATE ee88_agents SET is_deleted = 1, status = 0, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(id);
+    log.ok(`Vô hiệu hoá agent #${id}: ${agent.label} (soft delete)`);
+  }
+
   clearPermCache();
-  log.ok(`Xoá agent #${id}: ${agent.label}`);
   logActivity({
     userId: req.user.id,
     username: req.user.username,
-    action: 'agent_delete',
+    action: mode === 'hard' ? 'agent_delete' : 'agent_disable',
     targetType: 'agent',
     targetId: parseInt(id),
     targetLabel: agent.label,
     ip: req.ip
   });
-  res.json({ code: 0, msg: 'Đã xoá agent' });
+  res.json({
+    code: 0,
+    msg:
+      mode === 'hard'
+        ? 'Đã xoá hoàn toàn agent + data'
+        : 'Đã vô hiệu hoá agent (data được giữ lại)'
+  });
   adminEmitter.emit('change', {
     type: 'agent',
-    action: 'delete',
+    action: mode === 'hard' ? 'delete' : 'disable',
     id: parseInt(id)
   });
 });
@@ -708,7 +745,7 @@ router.get('/users', (req, res) => {
     SELECT a.id, a.label
     FROM ee88_agents a
     JOIN user_agent_permissions p ON p.agent_id = a.id
-    WHERE p.user_id = ?
+    WHERE p.user_id = ? AND a.is_deleted = 0
   `);
 
   users.forEach((u) => {

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS ee88_agents (
   ee88_username TEXT DEFAULT '',
   ee88_password TEXT DEFAULT '',
   status INTEGER NOT NULL DEFAULT 1,
+  is_deleted INTEGER NOT NULL DEFAULT 0,
   last_check TEXT,
   last_login TEXT,
   created_at TEXT DEFAULT (datetime('now', 'localtime')),

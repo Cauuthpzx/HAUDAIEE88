@@ -65,7 +65,7 @@ async function healthCheckAll() {
 
   const db = getDb();
   const agents = db
-    .prepare('SELECT * FROM ee88_agents WHERE status >= 0')
+    .prepare('SELECT * FROM ee88_agents WHERE status >= 0 AND is_deleted = 0')
     .all();
 
   if (agents.length === 0) return;

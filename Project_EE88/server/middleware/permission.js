@@ -44,7 +44,7 @@ function permissionMiddleware(req, res, next) {
       if (user.role === 'admin') {
         agents = db
           .prepare(
-            'SELECT id, label, base_url, cookie, user_agent, ee88_username, status FROM ee88_agents WHERE status >= 0'
+            'SELECT id, label, base_url, cookie, user_agent, ee88_username, status FROM ee88_agents WHERE status >= 0 AND is_deleted = 0'
           )
           .all();
       } else {
@@ -54,7 +54,7 @@ function permissionMiddleware(req, res, next) {
           SELECT a.id, a.label, a.base_url, a.cookie, a.user_agent, a.ee88_username, a.status
           FROM ee88_agents a
           JOIN user_agent_permissions p ON p.agent_id = a.id
-          WHERE p.user_id = ? AND a.status >= 0
+          WHERE p.user_id = ? AND a.status >= 0 AND a.is_deleted = 0
         `
           )
           .all(user.id);

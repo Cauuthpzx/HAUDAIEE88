@@ -158,7 +158,7 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', (req, res) => {
   const stats = db
     .prepare(
-      'SELECT (SELECT COUNT(*) FROM ee88_agents WHERE status = 1) as agents, (SELECT COUNT(*) FROM hub_users WHERE status = 1) as users'
+      'SELECT (SELECT COUNT(*) FROM ee88_agents WHERE status = 1 AND is_deleted = 0) as agents, (SELECT COUNT(*) FROM hub_users WHERE status = 1) as users'
     )
     .get();
   res.json({
@@ -318,7 +318,7 @@ app.listen(PORT, () => {
   log.info(`Thư mục log: ${LOG_DIR}`);
 
   const agentCount = db
-    .prepare('SELECT COUNT(*) as cnt FROM ee88_agents')
+    .prepare('SELECT COUNT(*) as cnt FROM ee88_agents WHERE is_deleted = 0')
     .get().cnt;
   const userCount = db
     .prepare('SELECT COUNT(*) as cnt FROM hub_users')

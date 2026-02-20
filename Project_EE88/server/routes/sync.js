@@ -79,7 +79,9 @@ router.get('/sync/status', (req, res) => {
     const db = getDb();
 
     const agents = db
-      .prepare('SELECT id, label, status FROM ee88_agents ORDER BY id')
+      .prepare(
+        'SELECT id, label, status FROM ee88_agents WHERE is_deleted = 0 ORDER BY id'
+      )
       .all();
 
     // Bảng → endpoint mapping cho row count

@@ -114,7 +114,9 @@ router.get('/me', authMiddleware, (req, res) => {
   // Lấy danh sách agents được phân quyền
   let agents;
   if (user.role === 'admin') {
-    agents = db.prepare('SELECT id, label, status FROM ee88_agents').all();
+    agents = db
+      .prepare('SELECT id, label, status FROM ee88_agents WHERE is_deleted = 0')
+      .all();
   } else {
     agents = db
       .prepare(
@@ -122,7 +124,7 @@ router.get('/me', authMiddleware, (req, res) => {
       SELECT a.id, a.label, a.status
       FROM ee88_agents a
       JOIN user_agent_permissions p ON p.agent_id = a.id
-      WHERE p.user_id = ?
+      WHERE p.user_id = ? AND a.is_deleted = 0
     `
       )
       .all(user.id);
