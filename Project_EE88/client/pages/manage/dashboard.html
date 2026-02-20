@@ -694,13 +694,18 @@
           HubAgentFilter.onFilter(
             'agentTable',
             function (selectedIds, allSelected) {
-              if (!_agentTableData) return;
-              var filtered = allSelected
-                ? _agentTableData
-                : _agentTableData.filter(function (d) {
-                    return selectedIds.indexOf(d.agentId) !== -1;
-                  });
-              layui.table.reload('agentTable', { data: filtered });
+              var cache = layui.table.cache['agentTable'];
+              if (!cache) return;
+              var view = layui.$('[lay-id="agentTable"]');
+              for (var i = 0; i < cache.length; i++) {
+                if (layui.type(cache[i]) === 'array') continue;
+                var show =
+                  allSelected || selectedIds.indexOf(cache[i].agentId) !== -1;
+                view
+                  .find('tr[data-index="' + i + '"]')
+                  [show ? 'removeClass' : 'addClass']('layui-hide');
+              }
+              layui.table.resize('agentTable');
             }
           );
         }

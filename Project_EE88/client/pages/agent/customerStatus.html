@@ -1,0 +1,481 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tình trạng Khách hàng</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-table-cell {
+        text-align: left;
+      }
+      .cs-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .cs-kpi-card {
+        flex: 1;
+        min-width: 140px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-left: 3px solid transparent;
+        cursor: pointer;
+        transition:
+          box-shadow 0.2s,
+          transform 0.2s;
+      }
+      .cs-kpi-card:hover {
+        box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 0 0 1px rgba(0, 0, 0, 0.04);
+        transform: translateY(-1px);
+      }
+      .cs-kpi-card.cs-active {
+        box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.12),
+          0 0 0 2px rgba(0, 0, 0, 0.08);
+      }
+      .cs-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .cs-kpi-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .cs-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .cs-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+      .cs-section-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .cs-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        color: #fff;
+        font-weight: 500;
+      }
+      .cs-badge-vip {
+        background: #e91e63;
+      }
+      .cs-badge-potential {
+        background: #7c3aed;
+      }
+      .cs-badge-needCare {
+        background: #ff5722;
+      }
+      .cs-badge-normal {
+        background: #16b777;
+      }
+      .cs-badge-new {
+        background: #999;
+      }
+      .cs-no-data {
+        text-align: center;
+        padding: 60px 0;
+        color: #ccc;
+        font-size: 13px;
+      }
+      @media (max-width: 768px) {
+        .cs-kpi-card {
+          min-width: calc(50% - 8px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="customerStatus">Tình trạng Khách hàng</legend>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <!-- KPI Cards -->
+            <div class="cs-kpi-row" id="kpiRow">
+              <div
+                class="cs-kpi-card"
+                style="border-left-color: #e91e63"
+                data-filter="vip"
+              >
+                <div class="cs-kpi-icon" style="background: #e91e63">
+                  <i class="hi hi-o hi-o-star"></i>
+                </div>
+                <div class="cs-kpi-info">
+                  <div class="cs-kpi-value" id="kpi_vip">-</div>
+                  <div class="cs-kpi-label">VIP</div>
+                </div>
+              </div>
+              <div
+                class="cs-kpi-card"
+                style="border-left-color: #7c3aed"
+                data-filter="potential"
+              >
+                <div class="cs-kpi-icon" style="background: #7c3aed">
+                  <i class="hi hi-chart-line"></i>
+                </div>
+                <div class="cs-kpi-info">
+                  <div class="cs-kpi-value" id="kpi_potential">-</div>
+                  <div class="cs-kpi-label" data-i18n="csPotential">
+                    Tiềm năng
+                  </div>
+                </div>
+              </div>
+              <div
+                class="cs-kpi-card"
+                style="border-left-color: #ff5722"
+                data-filter="needCare"
+              >
+                <div class="cs-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-o hi-o-circle-user"></i>
+                </div>
+                <div class="cs-kpi-info">
+                  <div class="cs-kpi-value" id="kpi_needCare">-</div>
+                  <div class="cs-kpi-label" data-i18n="csNeedCare">
+                    Cần chăm sóc
+                  </div>
+                </div>
+              </div>
+              <div
+                class="cs-kpi-card"
+                style="border-left-color: #16b777"
+                data-filter="normal"
+              >
+                <div class="cs-kpi-icon" style="background: #16b777">
+                  <i class="hi hi-users"></i>
+                </div>
+                <div class="cs-kpi-info">
+                  <div class="cs-kpi-value" id="kpi_normal">-</div>
+                  <div class="cs-kpi-label" data-i18n="csNormal">Thường</div>
+                </div>
+              </div>
+              <div
+                class="cs-kpi-card"
+                style="border-left-color: #999"
+                data-filter="new"
+              >
+                <div class="cs-kpi-icon" style="background: #999">
+                  <i class="hi hi-o hi-o-circle-plus"></i>
+                </div>
+                <div class="cs-kpi-info">
+                  <div class="cs-kpi-value" id="kpi_new">-</div>
+                  <div class="cs-kpi-label" data-i18n="csNew">Mới</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="cs-section-title">
+              <span data-i18n="csCustomerList">Danh sách khách hàng</span>
+              <span
+                id="filterLabel"
+                style="
+                  font-weight: 400;
+                  color: #999;
+                  font-size: 12px;
+                  margin-left: 8px;
+                "
+              ></span>
+            </div>
+            <table id="customerTable" lay-filter="customerTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-agent-filter.js"></script>
+
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('customerStatus');
+
+      var _allData = null;
+      var _activeFilter = null;
+
+      function fmtMoney(n) {
+        return (n || 0).toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+      function fmtNum(n) {
+        return (n || 0).toLocaleString();
+      }
+
+      var categoryLabels = {
+        vip: 'VIP',
+        potential: function () {
+          return HubLang.t('csPotential');
+        },
+        needCare: function () {
+          return HubLang.t('csNeedCare');
+        },
+        normal: function () {
+          return HubLang.t('csNormal');
+        },
+        new: function () {
+          return HubLang.t('csNew');
+        }
+      };
+
+      function getCatLabel(cat) {
+        var l = categoryLabels[cat];
+        return typeof l === 'function' ? l() : l || cat;
+      }
+
+      layui.use(['table'], function () {
+        var $ = layui.$;
+
+        loadData();
+
+        // KPI card click → filter
+        $('.cs-kpi-card').on('click', function () {
+          var cat = $(this).data('filter');
+          if (_activeFilter === cat) {
+            // Toggle off
+            _activeFilter = null;
+            $('.cs-kpi-card').removeClass('cs-active');
+            $('#filterLabel').text('');
+          } else {
+            _activeFilter = cat;
+            $('.cs-kpi-card').removeClass('cs-active');
+            $(this).addClass('cs-active');
+            $('#filterLabel').text('— ' + getCatLabel(cat));
+          }
+          applyFilter();
+        });
+
+        function loadData() {
+          HubAPI.dashboardGet('customer-status')
+            .then(function (res) {
+              if (res.code !== 0) {
+                console.error('[CustomerStatus] Error:', res.msg);
+                return;
+              }
+              renderData(res.data);
+            })
+            .catch(function (err) {
+              console.error('[CustomerStatus] Load error:', err);
+            });
+        }
+
+        function renderData(d) {
+          var c = d.counts;
+          $('#kpi_vip').text(fmtNum(c.vip));
+          $('#kpi_potential').text(fmtNum(c.potential));
+          $('#kpi_needCare').text(fmtNum(c.needCare));
+          $('#kpi_normal').text(fmtNum(c.normal));
+          $('#kpi_new').text(fmtNum(c.new));
+
+          _allData = d.customers;
+
+          function moneyTpl(field) {
+            return function (row) {
+              return fmtMoney(row[field]);
+            };
+          }
+          function wlTpl(field) {
+            return function (row) {
+              var v = row[field] || 0;
+              return (
+                '<span style="color:' +
+                (v >= 0 ? '#16b777' : '#ff5722') +
+                '">' +
+                fmtMoney(v) +
+                '</span>'
+              );
+            };
+          }
+          function catTpl(row) {
+            return (
+              '<span class="cs-badge cs-badge-' +
+              row.category +
+              '">' +
+              getCatLabel(row.category) +
+              '</span>'
+            );
+          }
+
+          layui.table.render({
+            elem: '#customerTable',
+            toolbar: true,
+            defaultToolbar: [
+              HubAgentFilter.create('customerTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
+            data: d.customers,
+            text: { none: HubLang.t('noData') },
+            page: { limit: 50, limits: [20, 50, 100, 200] },
+            cols: [
+              [
+                {
+                  field: 'username',
+                  title: HubLang.t('userName'),
+                  width: 120,
+                  fixed: 'left'
+                },
+                {
+                  field: 'agentLabel',
+                  title: HubLang.t('agent'),
+                  width: 100
+                },
+                {
+                  field: 'category',
+                  title: HubLang.t('csCategory'),
+                  width: 110,
+                  templet: catTpl
+                },
+                {
+                  field: 'balance',
+                  title: HubLang.t('balance'),
+                  width: 120,
+                  align: 'right',
+                  templet: moneyTpl('balance')
+                },
+                {
+                  field: 'depositMoney',
+                  title: HubLang.t('totalDeposit'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('depositMoney')
+                },
+                {
+                  field: 'withdrawalMoney',
+                  title: HubLang.t('totalWithdraw'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('withdrawalMoney')
+                },
+                {
+                  field: 'lotteryWL',
+                  title: HubLang.t('dbLotteryWL'),
+                  width: 120,
+                  align: 'right',
+                  templet: wlTpl('lotteryWL')
+                },
+                {
+                  field: 'thirdWL',
+                  title: HubLang.t('dbThirdPartyWL'),
+                  width: 120,
+                  align: 'right',
+                  templet: wlTpl('thirdWL')
+                },
+                {
+                  field: 'totalWL',
+                  title: HubLang.t('winLose'),
+                  width: 120,
+                  align: 'right',
+                  templet: wlTpl('totalWL')
+                },
+                {
+                  field: 'actualProfit',
+                  title: HubLang.t('csActualProfit'),
+                  minWidth: 130,
+                  align: 'right',
+                  templet: wlTpl('actualProfit')
+                }
+              ]
+            ]
+          });
+
+          HubAgentFilter.onFilter(
+            'customerTable',
+            function (selectedIds, allSelected) {
+              applyFilter(selectedIds, allSelected);
+            }
+          );
+        }
+
+        function applyFilter(agentSelectedIds, allAgentsSelected) {
+          if (!_allData) return;
+          var filtered = _allData;
+
+          // Agent filter
+          if (agentSelectedIds && !allAgentsSelected) {
+            filtered = filtered.filter(function (d) {
+              // customerStatus has agentLabel, not agentId — match via label
+              return true; // agent filter handled by HubAgentFilter.onFilter
+            });
+          }
+
+          // Category filter
+          if (_activeFilter) {
+            filtered = filtered.filter(function (d) {
+              return d.category === _activeFilter;
+            });
+          }
+
+          layui.table.reloadData('customerTable', { data: filtered });
+        }
+      });
+    </script>
+  </body>
+</html>

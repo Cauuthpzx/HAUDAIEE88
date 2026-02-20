@@ -1,0 +1,600 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thống kê Thắng/Thua</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-table-cell {
+        text-align: left;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .wl-range-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .wl-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .wl-kpi-card {
+        flex: 1;
+        min-width: 155px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-left: 3px solid transparent;
+      }
+      .wl-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .wl-kpi-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .wl-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .wl-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+      .wl-section-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin: 15px 0 10px;
+      }
+      .wl-tables-row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .wl-table-box {
+        flex: 1;
+        min-width: 300px;
+      }
+      .wl-no-data {
+        text-align: center;
+        padding: 60px 0;
+        color: #ccc;
+        font-size: 13px;
+      }
+      @media (max-width: 768px) {
+        .wl-kpi-card {
+          min-width: calc(50% - 8px);
+        }
+        .wl-tables-row {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="winLossStats">Thống kê Thắng/Thua</legend>
+              <div class="layui-field-box">
+                <div class="wl-range-bar">
+                  <span
+                    style="font-size: 13px; color: #999"
+                    data-i18n="dbDateRange"
+                    >Khoảng thời gian:</span
+                  >
+                  <div class="layui-btn-group">
+                    <button
+                      class="layui-btn layui-btn-sm wl-range"
+                      data-range="today"
+                      data-i18n="today"
+                    >
+                      Hôm nay
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary wl-range"
+                      data-range="yesterday"
+                      data-i18n="yesterday"
+                    >
+                      Hôm qua
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary wl-range"
+                      data-range="thisWeek"
+                      data-i18n="thisWeek"
+                    >
+                      Tuần này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary wl-range"
+                      data-range="thisMonth"
+                      data-i18n="thisMonth"
+                    >
+                      Tháng này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary wl-range"
+                      data-range="lastMonth"
+                      data-i18n="lastMonth"
+                    >
+                      Tháng trước
+                    </button>
+                  </div>
+                  <div class="layui-input-inline" style="width: 220px">
+                    <input
+                      type="text"
+                      id="wlDatePicker"
+                      class="layui-input"
+                      placeholder="Chọn khoảng thời gian"
+                      data-i18n="dbPickDateRange"
+                      data-i18n-attr="placeholder"
+                      readonly
+                      autocomplete="off"
+                    />
+                  </div>
+                  <span
+                    id="dateLabel"
+                    style="font-size: 12px; color: #666"
+                  ></span>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <!-- KPI Cards -->
+            <div class="wl-kpi-row" id="kpiRow">
+              <div class="wl-kpi-card" style="border-left-color: #1e9fff">
+                <div class="wl-kpi-icon" style="background: #1e9fff">
+                  <i class="hi hi-users"></i>
+                </div>
+                <div class="wl-kpi-info">
+                  <div class="wl-kpi-value" id="kpi_total">-</div>
+                  <div class="wl-kpi-label" data-i18n="wlTotalCustomers">
+                    Tổng khách
+                  </div>
+                </div>
+              </div>
+              <div class="wl-kpi-card" style="border-left-color: #16b777">
+                <div class="wl-kpi-icon" style="background: #16b777">
+                  <i class="hi hi-chart-line"></i>
+                </div>
+                <div class="wl-kpi-info">
+                  <div class="wl-kpi-value" id="kpi_winners">-</div>
+                  <div class="wl-kpi-label" data-i18n="wlWinners">
+                    Khách thắng
+                  </div>
+                </div>
+              </div>
+              <div class="wl-kpi-card" style="border-left-color: #ff5722">
+                <div class="wl-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-chart-bar"></i>
+                </div>
+                <div class="wl-kpi-info">
+                  <div class="wl-kpi-value" id="kpi_losers">-</div>
+                  <div class="wl-kpi-label" data-i18n="wlLosers">
+                    Khách thua
+                  </div>
+                </div>
+              </div>
+              <div class="wl-kpi-card" style="border-left-color: #7c3aed">
+                <div class="wl-kpi-icon" style="background: #7c3aed">
+                  <i class="hi hi-o hi-o-money-bill-1"></i>
+                </div>
+                <div class="wl-kpi-info">
+                  <div class="wl-kpi-value" id="kpi_profit">-</div>
+                  <div class="wl-kpi-label" data-i18n="wlCompanyProfit">
+                    Lợi nhuận CT
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top winners / losers -->
+            <div class="wl-tables-row">
+              <div class="wl-table-box">
+                <div class="wl-section-title" data-i18n="wlTopWinners">
+                  Top khách thắng (CT lỗ)
+                </div>
+                <table
+                  id="topWinnersTable"
+                  lay-filter="topWinnersTable"
+                ></table>
+              </div>
+              <div class="wl-table-box">
+                <div class="wl-section-title" data-i18n="wlTopLosers">
+                  Top khách thua (CT lời)
+                </div>
+                <table id="topLosersTable" lay-filter="topLosersTable"></table>
+              </div>
+            </div>
+
+            <!-- By agent -->
+            <div class="wl-section-title" data-i18n="wlByAgent">
+              Thắng/Thua theo đại lý
+            </div>
+            <table id="byAgentTable" lay-filter="byAgentTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-agent-filter.js"></script>
+
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('winLossStats');
+
+      var customStart = null,
+        customEnd = null;
+      var _byAgentData = null;
+
+      function fmtDate(d) {
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+      function fmtMoney(n) {
+        return (n || 0).toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+      function fmtNum(n) {
+        return (n || 0).toLocaleString();
+      }
+
+      function calcRange(range) {
+        var now = new Date();
+        var todayStr = fmtDate(now);
+        if (range === 'today') return { start: todayStr, end: todayStr };
+        if (range === 'yesterday') {
+          var yd = new Date(now);
+          yd.setDate(yd.getDate() - 1);
+          return { start: fmtDate(yd), end: fmtDate(yd) };
+        }
+        if (range === 'thisWeek') {
+          var ws = new Date(now);
+          var dow = ws.getDay();
+          dow = dow === 0 ? 6 : dow - 1;
+          ws.setDate(ws.getDate() - dow);
+          return { start: fmtDate(ws), end: todayStr };
+        }
+        if (range === 'thisMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+            end: todayStr
+          };
+        }
+        if (range === 'lastMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+            end: fmtDate(new Date(now.getFullYear(), now.getMonth(), 0))
+          };
+        }
+        return { start: todayStr, end: todayStr };
+      }
+
+      layui.use(['table', 'laydate'], function () {
+        var $ = layui.$;
+        var laydate = layui.laydate;
+
+        laydate.render({
+          elem: '#wlDatePicker',
+          type: 'date',
+          range: '|',
+          rangeLinked: true,
+          max: 0,
+          done: function (value) {
+            if (!value) return;
+            var parts = value.split('|');
+            if (parts.length === 2) {
+              customStart = parts[0].trim();
+              customEnd = parts[1].trim();
+              $('.wl-range').addClass('layui-btn-primary');
+              loadData();
+            }
+          }
+        });
+
+        $('.wl-range').on('click', function () {
+          var range = $(this).data('range');
+          var r = calcRange(range);
+          customStart = r.start;
+          customEnd = r.end;
+          $('#wlDatePicker').val('');
+          $('.wl-range').addClass('layui-btn-primary');
+          $(this).removeClass('layui-btn-primary');
+          loadData();
+        });
+
+        var initR = calcRange('today');
+        customStart = initR.start;
+        customEnd = initR.end;
+        loadData();
+
+        function loadData() {
+          $('#kpi_total, #kpi_winners, #kpi_losers, #kpi_profit').text('...');
+
+          var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
+          HubAPI.dashboardGet('win-loss-stats?' + qs)
+            .then(function (res) {
+              if (res.code !== 0) {
+                console.error('[WinLossStats] Error:', res.msg);
+                return;
+              }
+              renderData(res.data);
+            })
+            .catch(function (err) {
+              console.error('[WinLossStats] Load error:', err);
+            });
+        }
+
+        function renderData(d) {
+          var s = d.summary;
+          $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
+
+          // KPIs
+          $('#kpi_total').text(fmtNum(s.totalCustomers));
+          $('#kpi_winners').text(fmtNum(s.winners));
+          $('#kpi_losers').text(fmtNum(s.losers));
+          $('#kpi_profit')
+            .text(fmtMoney(s.netProfit))
+            .css('color', s.netProfit >= 0 ? '#16b777' : '#ff5722');
+
+          function wlTpl(field) {
+            return function (row) {
+              var v = row[field] || 0;
+              return (
+                '<span style="color:' +
+                (v >= 0 ? '#16b777' : '#ff5722') +
+                '">' +
+                fmtMoney(v) +
+                '</span>'
+              );
+            };
+          }
+          function moneyTpl(field) {
+            return function (row) {
+              return fmtMoney(row[field]);
+            };
+          }
+
+          // Top winners table
+          layui.table.render({
+            elem: '#topWinnersTable',
+            data: d.topWinners,
+            text: { none: HubLang.t('noData') },
+            page: d.topWinners.length > 20 ? { limit: 20 } : false,
+            cols: [
+              [
+                {
+                  field: 'username',
+                  title: HubLang.t('userName'),
+                  width: 120
+                },
+                {
+                  field: 'agentLabel',
+                  title: HubLang.t('agent'),
+                  width: 100
+                },
+                {
+                  field: 'lotteryWL',
+                  title: HubLang.t('dbLotteryWL'),
+                  width: 110,
+                  align: 'right',
+                  templet: wlTpl('lotteryWL')
+                },
+                {
+                  field: 'thirdWL',
+                  title: HubLang.t('dbThirdPartyWL'),
+                  width: 110,
+                  align: 'right',
+                  templet: wlTpl('thirdWL')
+                },
+                {
+                  field: 'totalWL',
+                  title: HubLang.t('winLose'),
+                  minWidth: 120,
+                  align: 'right',
+                  templet: wlTpl('totalWL')
+                }
+              ]
+            ]
+          });
+
+          // Top losers table
+          layui.table.render({
+            elem: '#topLosersTable',
+            data: d.topLosers,
+            text: { none: HubLang.t('noData') },
+            page: d.topLosers.length > 20 ? { limit: 20 } : false,
+            cols: [
+              [
+                {
+                  field: 'username',
+                  title: HubLang.t('userName'),
+                  width: 120
+                },
+                {
+                  field: 'agentLabel',
+                  title: HubLang.t('agent'),
+                  width: 100
+                },
+                {
+                  field: 'lotteryWL',
+                  title: HubLang.t('dbLotteryWL'),
+                  width: 110,
+                  align: 'right',
+                  templet: wlTpl('lotteryWL')
+                },
+                {
+                  field: 'thirdWL',
+                  title: HubLang.t('dbThirdPartyWL'),
+                  width: 110,
+                  align: 'right',
+                  templet: wlTpl('thirdWL')
+                },
+                {
+                  field: 'totalWL',
+                  title: HubLang.t('winLose'),
+                  minWidth: 120,
+                  align: 'right',
+                  templet: wlTpl('totalWL')
+                }
+              ]
+            ]
+          });
+
+          // By agent table
+          _byAgentData = d.byAgent;
+          layui.table.render({
+            elem: '#byAgentTable',
+            toolbar: true,
+            defaultToolbar: [
+              HubAgentFilter.create('byAgentTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
+            data: d.byAgent,
+            text: { none: HubLang.t('noData') },
+            page: false,
+            cols: [
+              [
+                {
+                  field: 'label',
+                  title: HubLang.t('dbSale'),
+                  width: 120,
+                  fixed: 'left'
+                },
+                {
+                  field: 'ee88Username',
+                  title: HubLang.t('dbAgentLine'),
+                  width: 120
+                },
+                {
+                  field: 'customers',
+                  title: HubLang.t('wlTotalCustomers'),
+                  width: 100,
+                  align: 'right'
+                },
+                {
+                  field: 'winners',
+                  title: HubLang.t('wlWinners'),
+                  width: 100,
+                  align: 'right'
+                },
+                {
+                  field: 'losers',
+                  title: HubLang.t('wlLosers'),
+                  width: 100,
+                  align: 'right'
+                },
+                {
+                  field: 'totalWon',
+                  title: HubLang.t('wlTotalWon'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('totalWon')
+                },
+                {
+                  field: 'totalLost',
+                  title: HubLang.t('wlTotalLost'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('totalLost')
+                },
+                {
+                  field: 'companyProfit',
+                  title: HubLang.t('wlCompanyProfit'),
+                  minWidth: 130,
+                  align: 'right',
+                  templet: wlTpl('companyProfit')
+                }
+              ]
+            ]
+          });
+
+          HubAgentFilter.onFilter(
+            'byAgentTable',
+            function (selectedIds, allSelected) {
+              if (!_byAgentData) return;
+              var filtered = allSelected
+                ? _byAgentData
+                : _byAgentData.filter(function (d) {
+                    return selectedIds.indexOf(d.agentId) !== -1;
+                  });
+              layui.table.reload('byAgentTable', { data: filtered });
+            }
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

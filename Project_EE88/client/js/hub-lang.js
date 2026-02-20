@@ -44,6 +44,8 @@ var HubLang = (function () {
       revenueCalc: 'Tính doanh thu',
       customerQuality: 'Chất lượng khách hàng',
       qcGroupQuality: 'Chất lượng nhóm QC',
+      agentReport: 'Báo cáo chi tiết từng đại lý',
+      comingSoon: 'Tính năng đang phát triển...',
       referralCode: 'Mã giới thiệu',
       reports: 'Báo cáo',
       lotteryReport: 'BC xổ số',
@@ -572,7 +574,61 @@ var HubLang = (function () {
       epLotteryBets: 'Đơn cược xổ số',
       epReportLottery: 'Báo cáo xổ số',
       epReportFunds: 'Sao kê giao dịch',
-      epReportThird: 'Báo cáo NCC game'
+      epReportThird: 'Báo cáo NCC game',
+
+      // ── revenueCalc.html ──
+      revTotalRevenue: 'Tổng doanh thu',
+      revLotteryProfit: 'Lợi nhuận XS',
+      revThirdProfit: 'Lợi nhuận NCC',
+      revPerAgent: 'Chi tiết theo đại lý',
+      revVsPrev: 'so kỳ trước',
+      revNewPeriod: 'Kỳ mới (chưa có dữ liệu trước)',
+
+      // ── customerQuality.html ──
+      cqTotalMembers: 'Tổng hội viên',
+      cqActiveMembers: 'Đang hoạt động',
+      cqInactiveMembers: 'Không hoạt động',
+      cqDepositRate: 'Tỷ lệ nạp',
+      cqDepositTier: 'Phân loại mức nạp',
+      cqWinLossSeg: 'Phân loại thắng/thua',
+      cqQualityMetrics: 'Chỉ số chất lượng',
+      cqMultiDeposit: 'Nạp nhiều lần',
+      cqMultiDepositDesc: 'Khách nạp từ 2 lần trở lên',
+      cqHighValue: 'Giá trị cao (≥10M)',
+      cqHighValueDesc: 'Tổng nạp từ 10 triệu trở lên',
+      cqMultiDepositRate: 'Tỷ lệ nạp lại',
+      cqMultiDepositRateDesc: 'Trong số khách đã nạp',
+      cqTierZero: 'Chưa nạp (0)',
+      cqTierUnder1M: 'Dưới 1M',
+      cqTier1to5M: '1-5M',
+      cqTier5to10M: '5-10M',
+      cqTier10to50M: '10-50M',
+      cqTierOver50M: 'Trên 50M',
+      cqWinners: 'Thắng',
+      cqLosers: 'Thua',
+      cqDraw: 'Hoà',
+
+      // ── winLossStats.html ──
+      winLossStats: 'Thống kê Thắng/Thua',
+      wlTotalCustomers: 'Tổng khách',
+      wlWinners: 'Khách thắng',
+      wlLosers: 'Khách thua',
+      wlCompanyProfit: 'Lợi nhuận CT',
+      wlTotalWon: 'Tổng thắng',
+      wlTotalLost: 'Tổng thua',
+      wlTopWinners: 'Top khách thắng (CT lỗ)',
+      wlTopLosers: 'Top khách thua (CT lời)',
+      wlByAgent: 'Thắng/Thua theo đại lý',
+
+      // ── customerStatus.html ──
+      customerStatus: 'Tình trạng Khách hàng',
+      csPotential: 'Tiềm năng',
+      csNeedCare: 'Cần chăm sóc',
+      csNormal: 'Thường',
+      csNew: 'Mới',
+      csCategory: 'Phân loại',
+      csActualProfit: 'Lợi nhuận thực',
+      csCustomerList: 'Danh sách khách hàng'
     },
 
     en: {
@@ -598,6 +654,8 @@ var HubLang = (function () {
       revenueCalc: 'Revenue Calculation',
       customerQuality: 'Customer Quality',
       qcGroupQuality: 'QC Group Quality',
+      agentReport: 'Agent Detail Report',
+      comingSoon: 'Coming soon...',
       referralCode: 'Referral Code',
       reports: 'Reports',
       lotteryReport: 'Lottery Report',
@@ -1124,7 +1182,61 @@ var HubLang = (function () {
       epLotteryBets: 'Lottery Bets',
       epReportLottery: 'Lottery Report',
       epReportFunds: 'Transaction Statement',
-      epReportThird: 'Provider Report'
+      epReportThird: 'Provider Report',
+
+      // ── revenueCalc.html ──
+      revTotalRevenue: 'Total Revenue',
+      revLotteryProfit: 'Lottery Profit',
+      revThirdProfit: '3rd Party Profit',
+      revPerAgent: 'Per Agent Breakdown',
+      revVsPrev: 'vs previous period',
+      revNewPeriod: 'New period (no prior data)',
+
+      // ── customerQuality.html ──
+      cqTotalMembers: 'Total Members',
+      cqActiveMembers: 'Active Members',
+      cqInactiveMembers: 'Inactive Members',
+      cqDepositRate: 'Deposit Rate',
+      cqDepositTier: 'Deposit Tier',
+      cqWinLossSeg: 'Win/Loss Segmentation',
+      cqQualityMetrics: 'Quality Metrics',
+      cqMultiDeposit: 'Multi-Deposit',
+      cqMultiDepositDesc: 'Customers with 2+ deposits',
+      cqHighValue: 'High Value (≥10M)',
+      cqHighValueDesc: 'Total deposits ≥ 10 million',
+      cqMultiDepositRate: 'Repeat Deposit Rate',
+      cqMultiDepositRateDesc: 'Among depositing customers',
+      cqTierZero: 'No Deposit (0)',
+      cqTierUnder1M: 'Under 1M',
+      cqTier1to5M: '1-5M',
+      cqTier5to10M: '5-10M',
+      cqTier10to50M: '10-50M',
+      cqTierOver50M: 'Over 50M',
+      cqWinners: 'Winners',
+      cqLosers: 'Losers',
+      cqDraw: 'Draw',
+
+      // ── winLossStats.html ──
+      winLossStats: 'Win/Loss Statistics',
+      wlTotalCustomers: 'Total Customers',
+      wlWinners: 'Winners',
+      wlLosers: 'Losers',
+      wlCompanyProfit: 'Company Profit',
+      wlTotalWon: 'Total Won',
+      wlTotalLost: 'Total Lost',
+      wlTopWinners: 'Top Winners (Company Loss)',
+      wlTopLosers: 'Top Losers (Company Profit)',
+      wlByAgent: 'Win/Loss by Agent',
+
+      // ── customerStatus.html ──
+      customerStatus: 'Customer Status',
+      csPotential: 'Potential',
+      csNeedCare: 'Needs Care',
+      csNormal: 'Normal',
+      csNew: 'New',
+      csCategory: 'Category',
+      csActualProfit: 'Actual Profit',
+      csCustomerList: 'Customer List'
     },
 
     'zh-CN': {
@@ -1150,6 +1262,8 @@ var HubLang = (function () {
       revenueCalc: '营收计算',
       customerQuality: '客户质量',
       qcGroupQuality: 'QC组质量',
+      agentReport: '代理详细报表',
+      comingSoon: '功能开发中...',
       referralCode: '邀请码',
       reports: '报表',
       lotteryReport: '彩票报表',
@@ -1674,7 +1788,61 @@ var HubLang = (function () {
       epLotteryBets: '彩票投注',
       epReportLottery: '彩票报表',
       epReportFunds: '交易流水',
-      epReportThird: '供应商报表'
+      epReportThird: '供应商报表',
+
+      // ── revenueCalc.html ──
+      revTotalRevenue: '总营收',
+      revLotteryProfit: '彩票利润',
+      revThirdProfit: '第三方利润',
+      revPerAgent: '代理明细',
+      revVsPrev: '对比上期',
+      revNewPeriod: '新期间（无前期数据）',
+
+      // ── customerQuality.html ──
+      cqTotalMembers: '会员总数',
+      cqActiveMembers: '活跃会员',
+      cqInactiveMembers: '不活跃会员',
+      cqDepositRate: '充值率',
+      cqDepositTier: '充值分级',
+      cqWinLossSeg: '输赢分布',
+      cqQualityMetrics: '质量指标',
+      cqMultiDeposit: '多次充值',
+      cqMultiDepositDesc: '充值2次以上的客户',
+      cqHighValue: '高价值 (≥1000万)',
+      cqHighValueDesc: '总充值≥1000万',
+      cqMultiDepositRate: '复充率',
+      cqMultiDepositRateDesc: '已充值客户中',
+      cqTierZero: '未充值 (0)',
+      cqTierUnder1M: '100万以下',
+      cqTier1to5M: '100-500万',
+      cqTier5to10M: '500-1000万',
+      cqTier10to50M: '1000-5000万',
+      cqTierOver50M: '5000万以上',
+      cqWinners: '赢家',
+      cqLosers: '输家',
+      cqDraw: '平局',
+
+      // ── winLossStats.html ──
+      winLossStats: '输赢统计',
+      wlTotalCustomers: '总客户',
+      wlWinners: '赢家',
+      wlLosers: '输家',
+      wlCompanyProfit: '公司利润',
+      wlTotalWon: '总赢金额',
+      wlTotalLost: '总输金额',
+      wlTopWinners: 'Top赢家（公司亏损）',
+      wlTopLosers: 'Top输家（公司盈利）',
+      wlByAgent: '代理输赢',
+
+      // ── customerStatus.html ──
+      customerStatus: '客户状态',
+      csPotential: '潜力客户',
+      csNeedCare: '需关注',
+      csNormal: '普通',
+      csNew: '新客户',
+      csCategory: '分类',
+      csActualProfit: '实际利润',
+      csCustomerList: '客户列表'
     }
   };
 

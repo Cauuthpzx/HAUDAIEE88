@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Chất lượng khách hàng</title>
     <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
     <style>
       body {
         margin: 0;
@@ -28,33 +29,112 @@
         border-radius: 4px;
         border-color: #e6e6e6;
       }
-      .layui-table-view {
-        box-shadow:
-          0 1px 4px rgba(0, 0, 0, 0.08),
-          0 2px 8px rgba(0, 0, 0, 0.04);
-        border-radius: 4px;
-      }
-      .layui-table-cell {
-        text-align: left;
-      }
       .layui-field-box .layui-inline {
         margin-bottom: 8px;
       }
-      .layui-field-box .layui-inline label {
-        font-size: 13px;
-        margin-right: 5px;
+      .cq-range-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
       }
-      .placeholder-msg {
-        text-align: center;
-        padding: 60px 20px;
-        color: #999;
-        font-size: 15px;
-      }
-      .placeholder-msg i {
-        font-size: 48px;
-        display: block;
+      .cq-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
         margin-bottom: 15px;
+      }
+      .cq-kpi-card {
+        flex: 1;
+        min-width: 130px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 14px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        text-align: center;
+        border-top: 3px solid transparent;
+      }
+      .cq-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .cq-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+      }
+      .cq-charts-row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .cq-chart-box {
+        background: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+      .cq-chart-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .cq-quality-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .cq-quality-card {
+        flex: 1;
+        min-width: 180px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+      .cq-quality-card h4 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        color: #555;
+      }
+      .cq-quality-card .val {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .cq-quality-card .desc {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+      }
+      .cq-section-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin: 15px 0 10px;
+      }
+      .cq-no-data {
+        text-align: center;
+        padding: 60px 0;
         color: #ccc;
+        font-size: 13px;
+      }
+      @media (max-width: 768px) {
+        .cq-kpi-card {
+          min-width: calc(50% - 8px);
+        }
+        .cq-charts-row {
+          flex-direction: column;
+        }
       }
     </style>
   </head>
@@ -62,57 +142,76 @@
     <div class="layui-row">
       <div class="layui-col-md12">
         <div class="layui-card">
-          <div class="layui-form layui-card-header">
+          <div class="layui-card-header">
             <fieldset class="layui-elem-field">
               <legend data-i18n="customerQuality">Chất lượng khách hàng</legend>
               <div class="layui-field-box">
-                <form class="layui-form" lay-filter="searchForm">
-                  <div class="layui-inline">
-                    <label data-i18n="time">Thời gian</label>：
-                    <div style="width: 220px" class="layui-input-inline">
-                      <input
-                        type="text"
-                        name="date_range"
-                        id="dateRange"
-                        placeholder="Chọn khoảng thời gian"
-                        data-i18n="dateStartEnd"
-                        data-i18n-attr="placeholder"
-                        class="layui-input"
-                        readonly
-                        autocomplete="off"
-                      />
-                    </div>
-                  </div>
-                  <div class="layui-inline">
+                <div class="cq-range-bar">
+                  <span
+                    style="font-size: 13px; color: #999"
+                    data-i18n="dbDateRange"
+                    >Khoảng thời gian:</span
+                  >
+                  <div class="layui-btn-group">
                     <button
-                      type="button"
-                      class="layui-btn"
-                      lay-submit
-                      lay-filter="doSearch"
+                      class="layui-btn layui-btn-sm cq-range"
+                      data-range="today"
+                      data-i18n="today"
                     >
-                      <i class="layui-icon layui-icon-search"></i>
-                      <span data-i18n="search">Tìm kiếm</span>
+                      Hôm nay
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary cq-range"
+                      data-range="yesterday"
+                      data-i18n="yesterday"
+                    >
+                      Hôm qua
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary cq-range"
+                      data-range="thisWeek"
+                      data-i18n="thisWeek"
+                    >
+                      Tuần này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary cq-range"
+                      data-range="thisMonth"
+                      data-i18n="thisMonth"
+                    >
+                      Tháng này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary cq-range"
+                      data-range="lastMonth"
+                      data-i18n="lastMonth"
+                    >
+                      Tháng trước
                     </button>
                   </div>
-                  <div class="layui-inline">
-                    <button
-                      type="reset"
-                      class="layui-btn layui-btn-primary"
-                      id="btnReset"
-                    >
-                      <i class="layui-icon layui-icon-refresh"></i>
-                      <span data-i18n="reset">Đặt lại</span>
-                    </button>
+                  <div class="layui-input-inline" style="width: 220px">
+                    <input
+                      type="text"
+                      id="cqDatePicker"
+                      class="layui-input"
+                      placeholder="Chọn khoảng thời gian"
+                      data-i18n="dbPickDateRange"
+                      data-i18n-attr="placeholder"
+                      readonly
+                      autocomplete="off"
+                    />
                   </div>
-                </form>
+                  <span
+                    id="dateLabel"
+                    style="font-size: 12px; color: #666"
+                  ></span>
+                </div>
               </div>
             </fieldset>
           </div>
-          <div class="layui-card-body">
-            <div class="placeholder-msg">
-              <i class="layui-icon layui-icon-user"></i>
-              <span data-i18n="customerQuality">Chất lượng khách hàng</span> —
-              Coming soon
+          <div class="layui-card-body" id="mainBody">
+            <div class="cq-no-data" id="loadingMsg">
+              <span data-i18n="dbLoading">Đang tải...</span>
             </div>
           </div>
         </div>
@@ -120,41 +219,357 @@
     </div>
 
     <script src="/lib/layui/layui.js"></script>
-    <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+
     <script>
-      layui.use(['form', 'laydate'], function () {
-        HubLang.init();
-        HubLang.applyDOM();
-        document.title = HubLang.t('customerQuality');
-        var form = layui.form;
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('customerQuality');
+
+      var customStart = null,
+        customEnd = null;
+      var pieChart1 = null,
+        pieChart2 = null;
+
+      function fmtDate(d) {
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+      function fmtMoney(n) {
+        return (n || 0).toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+      function fmtNum(n) {
+        return (n || 0).toLocaleString();
+      }
+
+      function calcRange(range) {
+        var now = new Date();
+        var todayStr = fmtDate(now);
+        if (range === 'today') return { start: todayStr, end: todayStr };
+        if (range === 'yesterday') {
+          var yd = new Date(now);
+          yd.setDate(yd.getDate() - 1);
+          return { start: fmtDate(yd), end: fmtDate(yd) };
+        }
+        if (range === 'thisWeek') {
+          var ws = new Date(now);
+          var dow = ws.getDay();
+          dow = dow === 0 ? 6 : dow - 1;
+          ws.setDate(ws.getDate() - dow);
+          return { start: fmtDate(ws), end: todayStr };
+        }
+        if (range === 'thisMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+            end: todayStr
+          };
+        }
+        if (range === 'lastMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+            end: fmtDate(new Date(now.getFullYear(), now.getMonth(), 0))
+          };
+        }
+        return { start: todayStr, end: todayStr };
+      }
+
+      layui.use(['laydate'], function () {
+        var $ = layui.$;
         var laydate = layui.laydate;
 
-        var _td = new Date(),
-          _todayStr =
-            _td.getFullYear() +
-            '-' +
-            String(_td.getMonth() + 1).padStart(2, '0') +
-            '-' +
-            String(_td.getDate()).padStart(2, '0');
         laydate.render({
-          elem: '#dateRange',
+          elem: '#cqDatePicker',
           type: 'date',
           range: '|',
           rangeLinked: true,
-          value: _todayStr + ' | ' + _todayStr
+          max: 0,
+          done: function (value) {
+            if (!value) return;
+            var parts = value.split('|');
+            if (parts.length === 2) {
+              customStart = parts[0].trim();
+              customEnd = parts[1].trim();
+              $('.cq-range').addClass('layui-btn-primary');
+              loadData();
+            }
+          }
         });
 
-        document
-          .getElementById('btnReset')
-          .addEventListener('click', function () {
-            setTimeout(function () {
-              document.getElementById('dateRange').value =
-                _todayStr + ' | ' + _todayStr;
-            }, 50);
+        $('.cq-range').on('click', function () {
+          var range = $(this).data('range');
+          var r = calcRange(range);
+          customStart = r.start;
+          customEnd = r.end;
+          $('#cqDatePicker').val('');
+          $('.cq-range').addClass('layui-btn-primary');
+          $(this).removeClass('layui-btn-primary');
+          loadData();
+        });
+
+        var initR = calcRange('today');
+        customStart = initR.start;
+        customEnd = initR.end;
+        loadData();
+
+        function loadData() {
+          $('#mainBody').html(
+            '<div class="cq-no-data">' + HubLang.t('dbLoading') + '</div>'
+          );
+          var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
+          HubAPI.dashboardGet('customer-analysis?' + qs)
+            .then(function (res) {
+              if (res.code !== 0) {
+                $('#mainBody').html(
+                  '<div class="cq-no-data" style="color:#ff5722">' +
+                    (res.msg || HubLang.t('error')) +
+                    '</div>'
+                );
+                return;
+              }
+              renderData(res.data);
+            })
+            .catch(function (err) {
+              $('#mainBody').html(
+                '<div class="cq-no-data" style="color:#ff5722">' +
+                  err.message +
+                  '</div>'
+              );
+            });
+        }
+
+        function renderData(d) {
+          var s = d.summary;
+          var html = '';
+
+          // KPI Cards
+          html += '<div class="cq-kpi-row">';
+          html += kpiCard(
+            fmtNum(s.total),
+            HubLang.t('cqTotalMembers'),
+            '#1e9fff'
+          );
+          html += kpiCard(
+            fmtNum(s.active),
+            HubLang.t('cqActiveMembers'),
+            '#16b777'
+          );
+          html += kpiCard(
+            fmtNum(s.inactive),
+            HubLang.t('cqInactiveMembers'),
+            '#999'
+          );
+          html += kpiCard(
+            s.depositRate + '%',
+            HubLang.t('cqDepositRate'),
+            '#ffb800'
+          );
+          html += kpiCard(
+            fmtMoney(s.totalDeposit),
+            HubLang.t('dbDepositTotal'),
+            '#16b777'
+          );
+          html += kpiCard(
+            fmtMoney(s.totalWithdrawal),
+            HubLang.t('dbWithdrawTotal'),
+            '#ff5722'
+          );
+          html += kpiCard(
+            fmtMoney(s.lotteryWL),
+            HubLang.t('dbLotteryWL'),
+            '#ffb800'
+          );
+          html += kpiCard(
+            fmtMoney(s.thirdWL),
+            HubLang.t('dbThirdPartyWL'),
+            '#1e9fff'
+          );
+          html += '</div>';
+
+          // Charts
+          html += '<div class="cq-charts-row">';
+          html += '<div class="cq-chart-box" style="flex:1;min-width:280px">';
+          html +=
+            '<div class="cq-chart-title" data-i18n="cqDepositTier">' +
+            HubLang.t('cqDepositTier') +
+            '</div>';
+          html += '<div id="chartTier" style="height:300px"></div>';
+          html += '</div>';
+          html += '<div class="cq-chart-box" style="flex:1;min-width:280px">';
+          html +=
+            '<div class="cq-chart-title" data-i18n="cqWinLossSeg">' +
+            HubLang.t('cqWinLossSeg') +
+            '</div>';
+          html += '<div id="chartWL" style="height:300px"></div>';
+          html += '</div>';
+          html += '</div>';
+
+          // Quality metrics
+          html +=
+            '<div class="cq-section-title" data-i18n="cqQualityMetrics">' +
+            HubLang.t('cqQualityMetrics') +
+            '</div>';
+          html += '<div class="cq-quality-row">';
+          html += qualityCard(
+            HubLang.t('cqMultiDeposit'),
+            fmtNum(d.quality.multiDeposit),
+            HubLang.t('cqMultiDepositDesc')
+          );
+          html += qualityCard(
+            HubLang.t('cqHighValue'),
+            fmtNum(d.quality.highValue),
+            HubLang.t('cqHighValueDesc')
+          );
+          html += qualityCard(
+            HubLang.t('cqMultiDepositRate'),
+            d.quality.multiDepositRate + '%',
+            HubLang.t('cqMultiDepositRateDesc')
+          );
+          html += '</div>';
+
+          $('#mainBody').html(html);
+          $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
+
+          // Render charts
+          loadEcharts(function () {
+            renderTierChart(d.tiers);
+            renderWLChart(d.winLossSeg);
           });
+        }
+
+        function kpiCard(value, label, color) {
+          return (
+            '<div class="cq-kpi-card" style="border-top-color:' +
+            color +
+            '">' +
+            '<div class="cq-kpi-value" style="color:' +
+            color +
+            '">' +
+            value +
+            '</div>' +
+            '<div class="cq-kpi-label">' +
+            label +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function qualityCard(title, value, desc) {
+          return (
+            '<div class="cq-quality-card">' +
+            '<h4>' +
+            title +
+            '</h4>' +
+            '<div class="val">' +
+            value +
+            '</div>' +
+            '<div class="desc">' +
+            desc +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function renderTierChart(tiers) {
+          var el = document.getElementById('chartTier');
+          if (!el) return;
+          if (pieChart1) pieChart1.dispose();
+          pieChart1 = echarts.init(el);
+          pieChart1.setOption({
+            tooltip: {
+              trigger: 'item',
+              formatter: '{b}: {c} ({d}%)'
+            },
+            legend: {
+              bottom: 0,
+              textStyle: { color: '#999', fontSize: 11 }
+            },
+            color: [
+              '#e0e0e0',
+              '#90caf9',
+              '#66bb6a',
+              '#ffb800',
+              '#ff7043',
+              '#e91e63'
+            ],
+            series: [
+              {
+                type: 'pie',
+                radius: ['35%', '65%'],
+                center: ['50%', '45%'],
+                label: { show: false },
+                emphasis: { label: { show: true, fontWeight: 'bold' } },
+                data: [
+                  { value: tiers.zero, name: HubLang.t('cqTierZero') },
+                  { value: tiers.under1M, name: HubLang.t('cqTierUnder1M') },
+                  { value: tiers['1to5M'], name: HubLang.t('cqTier1to5M') },
+                  { value: tiers['5to10M'], name: HubLang.t('cqTier5to10M') },
+                  { value: tiers['10to50M'], name: HubLang.t('cqTier10to50M') },
+                  { value: tiers.over50M, name: HubLang.t('cqTierOver50M') }
+                ]
+              }
+            ]
+          });
+        }
+
+        function renderWLChart(wl) {
+          var el = document.getElementById('chartWL');
+          if (!el) return;
+          if (pieChart2) pieChart2.dispose();
+          pieChart2 = echarts.init(el);
+          pieChart2.setOption({
+            tooltip: {
+              trigger: 'item',
+              formatter: '{b}: {c} ({d}%)'
+            },
+            legend: {
+              bottom: 0,
+              textStyle: { color: '#999', fontSize: 11 }
+            },
+            color: ['#16b777', '#ff5722', '#999'],
+            series: [
+              {
+                type: 'pie',
+                radius: ['35%', '65%'],
+                center: ['50%', '45%'],
+                label: { show: false },
+                emphasis: { label: { show: true, fontWeight: 'bold' } },
+                data: [
+                  { value: wl.winners, name: HubLang.t('cqWinners') },
+                  { value: wl.losers, name: HubLang.t('cqLosers') },
+                  { value: wl.draw, name: HubLang.t('cqDraw') }
+                ]
+              }
+            ]
+          });
+        }
+
+        $(window).on('resize', function () {
+          if (pieChart1) pieChart1.resize();
+          if (pieChart2) pieChart2.resize();
+        });
       });
+
+      var _echartsReady = false;
+      function loadEcharts(cb) {
+        if (typeof echarts !== 'undefined') return cb();
+        if (_echartsReady) return;
+        _echartsReady = true;
+        var s = document.createElement('script');
+        s.src = '/lib/echarts/echarts.min.js';
+        s.onload = cb;
+        document.body.appendChild(s);
+      }
     </script>
   </body>
 </html>

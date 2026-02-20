@@ -160,13 +160,17 @@
         HubAgentFilter.onFilter(
           'dataTable',
           function (selectedIds, allSelected) {
-            if (!_allAgents) return;
-            var filtered = allSelected
-              ? _allAgents
-              : _allAgents.filter(function (d) {
-                  return selectedIds.indexOf(d.id) !== -1;
-                });
-            table.reload('dataTable', { data: filtered });
+            var cache = layui.table.cache['dataTable'];
+            if (!cache) return;
+            var view = layui.$('[lay-id="dataTable"]');
+            for (var i = 0; i < cache.length; i++) {
+              if (layui.type(cache[i]) === 'array') continue;
+              var show = allSelected || selectedIds.indexOf(cache[i].id) !== -1;
+              view
+                .find('tr[data-index="' + i + '"]')
+                [show ? 'removeClass' : 'addClass']('layui-hide');
+            }
+            layui.table.resize('dataTable');
           }
         );
 

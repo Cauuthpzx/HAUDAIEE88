@@ -235,10 +235,10 @@
                       Tiền cược hợp lệ (trừ cược hoà)
                     </th>
                     <th data-i18n="rebateAmount">Hoàn trả</th>
-                    <th data-i18n="winLose">Thắng thua</th>
                     <th data-i18n="winLoseNoRebate">
                       Kết quả thắng thua (không gồm hoàn trả)
                     </th>
+                    <th data-i18n="winLose">Thắng thua</th>
                     <th data-i18n="prizeCol">Tiền trúng</th>
                   </tr>
                 </thead>
@@ -411,12 +411,12 @@
                 title: HubLang.t('rebateAmount'),
                 width: 120
               },
-              { field: 'result', title: HubLang.t('result'), width: 140 },
               {
-                field: 'win_lose',
+                field: 'result',
                 title: HubLang.t('winLoseNoRebate'),
                 width: 180
               },
+              { field: 'win_lose', title: HubLang.t('winLose'), width: 140 },
               { field: 'prize', title: HubLang.t('prize'), width: 140 },
               {
                 field: 'lottery_name',

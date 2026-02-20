@@ -1,0 +1,288 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Báo cáo chi tiết từng đại lý</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-table-cell {
+        text-align: left;
+      }
+      .ar-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin: 15px 15px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ar-title" data-i18n="agentReport">
+      Báo cáo chi tiết từng đại lý
+    </div>
+    <table id="agentTable" lay-filter="agentTable"></table>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-agent-filter.js"></script>
+
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('agentReport');
+
+      var _agentTableData = null;
+
+      function fmtMoney(v) {
+        if (v == null || isNaN(v)) return '0';
+        return Number(v).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+
+      layui.use(['table'], function () {
+        var $ = layui.$;
+
+        HubAPI.dashboardGet('agent-report')
+          .then(function (res) {
+            if (res.code !== 0) {
+              console.error('[AgentReport] Error:', res.msg);
+              return;
+            }
+            renderAgentTable(res.data);
+          })
+          .catch(function (err) {
+            console.error('[AgentReport] Load error:', err);
+          });
+
+        function renderAgentTable(d) {
+          var perAgent = d.perAgent || [];
+          if (!perAgent.length) return;
+
+          // Build date columns: 1st of month → today
+          var monthNames = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec'
+          ];
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = now.getMonth();
+          var today = now.getDate();
+          var dateCols = [];
+          var startDay = Math.max(1, today - 9);
+          for (var day = startDay; day <= today; day++) {
+            var dd = String(day).padStart(2, '0');
+            var mm = String(month + 1).padStart(2, '0');
+            var dateKey = year + '-' + mm + '-' + dd;
+            var field = 'd_' + dateKey.replace(/-/g, '_');
+            dateCols.push({
+              field: field,
+              title: dd + '-' + monthNames[month],
+              width: 65,
+              align: 'center'
+            });
+          }
+
+          // Flatten dailyOnline into flat fields per row
+          var tableData = perAgent.map(function (row) {
+            var flat = {
+              agentId: row.agentId,
+              label: row.label,
+              ee88Username: row.ee88Username,
+              todayNewCustomers: row.todayNewCustomers || 0,
+              todayLotteryBet: row.todayLotteryBet || 0,
+              todayThirdBet: row.todayThirdBet || 0,
+              monthlyLotteryBet: row.monthlyLotteryBet || 0,
+              monthlyThirdBet: row.monthlyThirdBet || 0,
+              todayDeposit: row.todayDeposit || 0,
+              monthlyDeposit: row.monthlyDeposit || 0,
+              lotteryWL: row.lotteryWL || 0,
+              thirdWL: row.thirdWL || 0
+            };
+            var online = row.dailyOnline || {};
+            for (var i = 0; i < dateCols.length; i++) {
+              var dk =
+                year +
+                '-' +
+                String(month + 1).padStart(2, '0') +
+                '-' +
+                String(startDay + i).padStart(2, '0');
+              flat[dateCols[i].field] = online[dk] || 0;
+            }
+            return flat;
+          });
+
+          // Color templet for money values
+          function moneyTpl(field) {
+            return function (row) {
+              return fmtMoney(row[field]);
+            };
+          }
+          function wlTpl(field) {
+            return function (row) {
+              var v = row[field] || 0;
+              return (
+                '<span style="color:' +
+                (v >= 0 ? '#16b777' : '#ff5722') +
+                '">' +
+                fmtMoney(v) +
+                '</span>'
+              );
+            };
+          }
+
+          // Build columns array
+          var cols = [
+            {
+              field: 'label',
+              title: HubLang.t('dbSale'),
+              width: 120,
+              fixed: 'left'
+            },
+            {
+              field: 'ee88Username',
+              title: HubLang.t('dbAgentLine'),
+              width: 120,
+              fixed: 'left'
+            }
+          ];
+
+          // Add date columns
+          cols = cols.concat(dateCols);
+
+          // Add metric columns
+          cols.push({
+            field: 'todayNewCustomers',
+            title: HubLang.t('dbTodayNewCustomers'),
+            width: 130,
+            align: 'right'
+          });
+          cols.push({
+            field: 'todayLotteryBet',
+            title: HubLang.t('dbTodayLotteryBet'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('todayLotteryBet')
+          });
+          cols.push({
+            field: 'todayThirdBet',
+            title: HubLang.t('dbTodayThirdBet'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('todayThirdBet')
+          });
+          cols.push({
+            field: 'monthlyLotteryBet',
+            title: HubLang.t('dbMonthlyLotteryBet'),
+            width: 150,
+            align: 'right',
+            templet: moneyTpl('monthlyLotteryBet')
+          });
+          cols.push({
+            field: 'monthlyThirdBet',
+            title: HubLang.t('dbMonthlyThirdBet'),
+            width: 150,
+            align: 'right',
+            templet: moneyTpl('monthlyThirdBet')
+          });
+          cols.push({
+            field: 'todayDeposit',
+            title: HubLang.t('dbTodayDeposit'),
+            width: 130,
+            align: 'right',
+            templet: moneyTpl('todayDeposit')
+          });
+          cols.push({
+            field: 'monthlyDeposit',
+            title: HubLang.t('dbMonthlyDeposit'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('monthlyDeposit')
+          });
+          cols.push({
+            field: 'lotteryWL',
+            title: HubLang.t('dbLotteryWLTotal'),
+            width: 130,
+            align: 'right',
+            templet: wlTpl('lotteryWL')
+          });
+          cols.push({
+            field: 'thirdWL',
+            title: HubLang.t('dbThirdWLTotal'),
+            minWidth: 130,
+            align: 'right',
+            templet: wlTpl('thirdWL')
+          });
+
+          _agentTableData = tableData;
+          layui.table.render({
+            elem: '#agentTable',
+            toolbar: true,
+            defaultToolbar: [
+              HubAgentFilter.create('agentTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
+            data: tableData,
+            text: { none: HubLang.t('noData') },
+            page: false,
+            cols: [cols]
+          });
+
+          HubAgentFilter.onFilter(
+            'agentTable',
+            function (selectedIds, allSelected) {
+              if (!_agentTableData) return;
+              var filtered = allSelected
+                ? _agentTableData
+                : _agentTableData.filter(function (d) {
+                    return selectedIds.indexOf(d.agentId) !== -1;
+                  });
+              layui.table.reload('agentTable', { data: filtered });
+            }
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

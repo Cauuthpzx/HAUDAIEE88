@@ -180,7 +180,8 @@ const COLUMN_MAP = {
     ],
     uniqueKey: ['agent_id', 'date_key', 'uid', 'lottery_id'],
     hasDate: true,
-    needsDateKey: true
+    needsDateKey: true,
+    defaultSort: 'bet_amount'
   },
   'report-funds': {
     table: 'data_report_funds',
@@ -202,7 +203,8 @@ const COLUMN_MAP = {
     ],
     uniqueKey: ['agent_id', 'date_key', 'uid'],
     hasDate: true,
-    needsDateKey: true
+    needsDateKey: true,
+    defaultSort: 'deposit_amount'
   },
   'report-third': {
     table: 'data_report_third',
@@ -219,7 +221,8 @@ const COLUMN_MAP = {
     ],
     uniqueKey: ['agent_id', 'date_key', 'uid', 'platform_id'],
     hasDate: true,
-    needsDateKey: true
+    needsDateKey: true,
+    defaultSort: 't_bet_amount'
   },
   'lottery-bets': {
     table: 'data_lottery_bets',
@@ -723,8 +726,14 @@ function queryLocal(agentIds, endpointKey, params) {
       if (mapping.columns.includes(dbCol)) {
         orderCol = dbCol;
       }
+    } else if (
+      mapping.defaultSort &&
+      mapping.columns.includes(mapping.defaultSort)
+    ) {
+      // Dùng sort mặc định theo endpoint (VD: bet_amount cho report-lottery)
+      orderCol = mapping.defaultSort;
     } else {
-      // Smart default sort per endpoint
+      // Fallback: date column hoặc id
       const dateCol = getDateColumn(endpointKey);
       if (dateCol && mapping.columns.includes(dateCol)) {
         orderCol = dateCol;
