@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Chất lượng nhóm QC</title>
+    <title>Phan tich Uu dai</title>
     <link rel="stylesheet" href="/lib/layui/css/layui.css" />
     <link rel="stylesheet" href="/css/hub-icons.css" />
     <style>
@@ -45,19 +45,19 @@
         font-size: 13px;
         margin-right: 5px;
       }
-      .qc-range-bar {
+      .pm-range-bar {
         display: flex;
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
       }
-      .qc-kpi-row {
+      .pm-kpi-row {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
         margin-bottom: 15px;
       }
-      .qc-kpi-card {
+      .pm-kpi-card {
         flex: 1;
         min-width: 155px;
         background: #fff;
@@ -71,7 +71,7 @@
         gap: 14px;
         border-left: 3px solid transparent;
       }
-      .qc-kpi-icon {
+      .pm-kpi-icon {
         width: 44px;
         height: 44px;
         border-radius: 10px;
@@ -83,34 +83,34 @@
         flex-shrink: 0;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
       }
-      .qc-kpi-info {
+      .pm-kpi-info {
         flex: 1;
         min-width: 0;
       }
-      .qc-kpi-value {
+      .pm-kpi-value {
         font-size: 22px;
         font-weight: 700;
         line-height: 1.2;
       }
-      .qc-kpi-label {
+      .pm-kpi-label {
         font-size: 12px;
         color: #999;
         margin-top: 2px;
       }
-      .qc-section-title {
+      .pm-section-title {
         font-size: 13px;
         color: #555;
         font-weight: 600;
         margin-bottom: 10px;
       }
-      .qc-error {
+      .pm-error {
         text-align: center;
         padding: 40px 0;
         color: #ff5722;
         font-size: 13px;
       }
       @media (max-width: 768px) {
-        .qc-kpi-card {
+        .pm-kpi-card {
           min-width: calc(50% - 8px);
         }
       }
@@ -122,57 +122,57 @@
         <div class="layui-card">
           <div class="layui-card-header">
             <fieldset class="layui-elem-field">
-              <legend data-i18n="qcGroupQuality">Chất lượng nhóm QC</legend>
+              <legend data-i18n="promotionAnalysis">Phan tich Uu dai</legend>
               <div class="layui-field-box">
-                <div class="qc-range-bar">
+                <div class="pm-range-bar">
                   <span
                     style="font-size: 13px; color: #999"
                     data-i18n="dbDateRange"
-                    >Khoảng thời gian:</span
+                    >Khoang thoi gian:</span
                   >
                   <div class="layui-btn-group">
                     <button
-                      class="layui-btn layui-btn-sm qc-range"
+                      class="layui-btn layui-btn-sm pm-range"
                       data-range="today"
                       data-i18n="today"
                     >
-                      Hôm nay
+                      Hom nay
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pm-range"
                       data-range="yesterday"
                       data-i18n="yesterday"
                     >
-                      Hôm qua
+                      Hom qua
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pm-range"
                       data-range="thisWeek"
                       data-i18n="thisWeek"
                     >
-                      Tuần này
+                      Tuan nay
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pm-range"
                       data-range="thisMonth"
                       data-i18n="thisMonth"
                     >
-                      Tháng này
+                      Thang nay
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pm-range"
                       data-range="lastMonth"
                       data-i18n="lastMonth"
                     >
-                      Tháng trước
+                      Thang truoc
                     </button>
                   </div>
                   <div class="layui-input-inline" style="width: 220px">
                     <input
                       type="text"
-                      id="qcDatePicker"
+                      id="pmDatePicker"
                       class="layui-input"
-                      placeholder="Chọn khoảng thời gian"
+                      placeholder="Chon khoang thoi gian"
                       data-i18n="dbPickDateRange"
                       data-i18n-attr="placeholder"
                       readonly
@@ -189,58 +189,58 @@
           </div>
           <div class="layui-card-body">
             <!-- KPI Cards -->
-            <div class="qc-kpi-row" id="kpiRow">
-              <div class="qc-kpi-card" style="border-left-color: #1e9fff">
-                <div class="qc-kpi-icon" style="background: #1e9fff">
-                  <i class="hi hi-users"></i>
-                </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalGroups">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalGroups">
-                    Tổng nhóm
-                  </div>
-                </div>
-              </div>
-              <div class="qc-kpi-card" style="border-left-color: #16b777">
-                <div class="qc-kpi-icon" style="background: #16b777">
-                  <i class="hi hi-o hi-o-circle-user"></i>
-                </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalMembers">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalMembers">
-                    Tổng thành viên
-                  </div>
-                </div>
-              </div>
-              <div class="qc-kpi-card" style="border-left-color: #ffb800">
-                <div class="qc-kpi-icon" style="background: #ffb800">
-                  <i class="hi hi-chart-line"></i>
-                </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalActive">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcActiveMembers">
-                    Hoạt động
-                  </div>
-                </div>
-              </div>
-              <div class="qc-kpi-card" style="border-left-color: #7c3aed">
-                <div class="qc-kpi-icon" style="background: #7c3aed">
+            <div class="pm-kpi-row" id="kpiRow">
+              <div class="pm-kpi-card" style="border-left-color: #7c3aed">
+                <div class="pm-kpi-icon" style="background: #7c3aed">
                   <i class="hi hi-o hi-o-star"></i>
                 </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalDeposit">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalDeposit">
-                    Tổng nạp
+                <div class="pm-kpi-info">
+                  <div class="pm-kpi-value" id="kpi_totalPromotion">-</div>
+                  <div class="pm-kpi-label" data-i18n="pmTotalPromotion">
+                    Tong uu dai
+                  </div>
+                </div>
+              </div>
+              <div class="pm-kpi-card" style="border-left-color: #ffb800">
+                <div class="pm-kpi-icon" style="background: #ffb800">
+                  <i class="hi hi-percent"></i>
+                </div>
+                <div class="pm-kpi-info">
+                  <div class="pm-kpi-value" id="kpi_totalRebate">-</div>
+                  <div class="pm-kpi-label" data-i18n="pmTotalRebate">
+                    Hoan tra NCC
+                  </div>
+                </div>
+              </div>
+              <div class="pm-kpi-card" style="border-left-color: #1e9fff">
+                <div class="pm-kpi-icon" style="background: #1e9fff">
+                  <i class="hi hi-chart-bar"></i>
+                </div>
+                <div class="pm-kpi-info">
+                  <div class="pm-kpi-value" id="kpi_totalActivity">-</div>
+                  <div class="pm-kpi-label" data-i18n="pmTotalActivity">
+                    Hoat dong NCC
+                  </div>
+                </div>
+              </div>
+              <div class="pm-kpi-card" style="border-left-color: #ff5722">
+                <div class="pm-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-chart-line"></i>
+                </div>
+                <div class="pm-kpi-info">
+                  <div class="pm-kpi-value" id="kpi_promoRate">-</div>
+                  <div class="pm-kpi-label" data-i18n="pmPromoRate">
+                    Ty le uu dai/nap
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Table -->
-            <div class="qc-section-title" data-i18n="qcGroupQuality">
-              Chất lượng nhóm QC
+            <div class="pm-section-title" data-i18n="revPerAgent">
+              Chi tiet theo dai ly
             </div>
-            <table id="qcTable" lay-filter="qcTable"></table>
+            <table id="promoTable" lay-filter="promoTable"></table>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@
       HubAPI.requireAuth();
       HubLang.init();
       HubLang.applyDOM();
-      document.title = HubLang.t('qcGroupQuality');
+      document.title = HubLang.t('promotionAnalysis');
 
       var customStart = null,
         customEnd = null;
@@ -313,7 +313,7 @@
         var laydate = layui.laydate;
 
         laydate.render({
-          elem: '#qcDatePicker',
+          elem: '#pmDatePicker',
           type: 'date',
           range: '|',
           rangeLinked: true,
@@ -324,19 +324,19 @@
             if (parts.length === 2) {
               customStart = parts[0].trim();
               customEnd = parts[1].trim();
-              $('.qc-range').addClass('layui-btn-primary');
+              $('.pm-range').addClass('layui-btn-primary');
               loadData();
             }
           }
         });
 
-        $('.qc-range').on('click', function () {
+        $('.pm-range').on('click', function () {
           var range = $(this).data('range');
           var r = calcRange(range);
           customStart = r.start;
           customEnd = r.end;
-          $('#qcDatePicker').val('');
-          $('.qc-range').addClass('layui-btn-primary');
+          $('#pmDatePicker').val('');
+          $('.pm-range').addClass('layui-btn-primary');
           $(this).removeClass('layui-btn-primary');
           loadData();
         });
@@ -349,11 +349,11 @@
 
         function loadData() {
           $(
-            '#kpi_totalGroups, #kpi_totalMembers, #kpi_totalActive, #kpi_totalDeposit'
+            '#kpi_totalPromotion, #kpi_totalRebate, #kpi_totalActivity, #kpi_promoRate'
           ).text('...');
 
           var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
-          HubAPI.dashboardGet('qc-group-quality?' + qs)
+          HubAPI.dashboardGet('promotion-analysis?' + qs)
             .then(function (res) {
               if (res.code !== 0) {
                 showError(res.msg || HubLang.t('error'));
@@ -367,14 +367,16 @@
         }
 
         function renderData(d) {
-          $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
+          $('#dateLabel').text(d.startDate + ' \u2192 ' + d.endDate);
 
           // KPIs
           var s = d.summary;
-          $('#kpi_totalGroups').text(fmtMoney(s.totalGroups));
-          $('#kpi_totalMembers').text(fmtMoney(s.totalMembers));
-          $('#kpi_totalActive').text(fmtMoney(s.totalActive));
-          $('#kpi_totalDeposit').text(fmtMoney(s.totalDeposit));
+          $('#kpi_totalPromotion').text(fmtMoney(s.totalPromotion));
+          $('#kpi_totalRebate').text(fmtMoney(s.totalRebate));
+          $('#kpi_totalActivity').text(fmtMoney(s.totalActivity));
+          $('#kpi_promoRate').text(
+            (s.promoRate != null ? s.promoRate : 0) + '%'
+          );
 
           // Table
           function moneyTpl(field) {
@@ -382,36 +384,57 @@
               return fmtMoney(row[field]);
             };
           }
+          function rateTpl(row) {
+            var v = row.promoRate != null ? row.promoRate : 0;
+            return v + '%';
+          }
 
-          _tableData = d.groups;
+          _tableData = d.perAgent;
           layui.table.render({
-            elem: '#qcTable',
+            elem: '#promoTable',
             toolbar: true,
-            defaultToolbar: ['filter', 'print', 'exports'],
-            data: d.groups,
+            defaultToolbar: [
+              HubAgentFilter.create('promoTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
+            data: d.perAgent,
             text: { none: HubLang.t('noData') },
             page: false,
             cols: [
               [
                 {
-                  field: 'groupId',
-                  title: HubLang.t('qcGroup'),
-                  width: 100,
+                  field: 'label',
+                  title: HubLang.t('dbSale'),
+                  width: 120,
                   fixed: 'left'
                 },
                 {
-                  field: 'members',
-                  title: HubLang.t('qcMembers'),
-                  width: 110,
-                  align: 'right',
-                  templet: moneyTpl('members')
+                  field: 'ee88Username',
+                  title: HubLang.t('dbAgentLine'),
+                  width: 120
                 },
                 {
-                  field: 'active',
-                  title: HubLang.t('qcActive'),
-                  width: 110,
+                  field: 'promotion',
+                  title: HubLang.t('promotion'),
+                  width: 130,
                   align: 'right',
-                  templet: moneyTpl('active')
+                  templet: moneyTpl('promotion')
+                },
+                {
+                  field: 'thirdRebate',
+                  title: HubLang.t('thirdRebate'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('thirdRebate')
+                },
+                {
+                  field: 'thirdActivity',
+                  title: HubLang.t('pmThirdActivity'),
+                  width: 140,
+                  align: 'right',
+                  templet: moneyTpl('thirdActivity')
                 },
                 {
                   field: 'totalDeposit',
@@ -421,41 +444,33 @@
                   templet: moneyTpl('totalDeposit')
                 },
                 {
-                  field: 'lotteryBet',
-                  title: HubLang.t('dbLotteryBet'),
-                  width: 140,
+                  field: 'promoRate',
+                  title: HubLang.t('pmRate'),
+                  minWidth: 100,
                   align: 'right',
-                  templet: moneyTpl('lotteryBet')
-                },
-                {
-                  field: 'lotteryWL',
-                  title: HubLang.t('dbLotteryWL'),
-                  width: 130,
-                  align: 'right',
-                  templet: moneyTpl('lotteryWL')
-                },
-                {
-                  field: 'thirdBet',
-                  title: HubLang.t('dbThirdBet'),
-                  width: 140,
-                  align: 'right',
-                  templet: moneyTpl('thirdBet')
-                },
-                {
-                  field: 'thirdWL',
-                  title: HubLang.t('dbThirdPartyWL'),
-                  minWidth: 130,
-                  align: 'right',
-                  templet: moneyTpl('thirdWL')
+                  templet: rateTpl
                 }
               ]
             ]
           });
+
+          HubAgentFilter.onFilter(
+            'promoTable',
+            function (selectedIds, allSelected) {
+              if (!_tableData) return;
+              var filtered = allSelected
+                ? _tableData
+                : _tableData.filter(function (d) {
+                    return selectedIds.indexOf(d.agentId) !== -1;
+                  });
+              layui.table.reload('promoTable', { data: filtered });
+            }
+          );
         }
 
         function showError(msg) {
           document.getElementById('kpiRow').innerHTML =
-            '<div class="qc-error">' + (msg || HubLang.t('error')) + '</div>';
+            '<div class="pm-error">' + (msg || HubLang.t('error')) + '</div>';
         }
       });
     </script>

@@ -335,7 +335,7 @@
         var statsTimer = null;
         var sseRetryCount = 0;
         var MAX_SSE_RETRIES = 3;
-        var totalDays = 65;
+        var totalDays = 66;
         var sseIdleTimer = null;
         var lastTreeData = null;
         var updateTimer = null;
@@ -344,10 +344,10 @@
         // ── Static endpoint list — phải KHỚP thứ tự server ALL_EPS ──
         // ═══════════════════════════════════════
 
+        // Thứ tự khớp flow sync mới: Step 1 (snapshots) → Step 2 (date) → Step 3 (bet-orders)
         var STATIC_EPS = [
-          { key: 'members', name: HubLang.t('epMembers'), isDate: false },
           { key: 'invites', name: HubLang.t('epInvites'), isDate: false },
-          { key: 'bet-orders', name: HubLang.t('epBetOrders'), isDate: false },
+          { key: 'members', name: HubLang.t('epMembers'), isDate: false },
           { key: 'deposits', name: HubLang.t('epDeposits'), isDate: true },
           {
             key: 'withdrawals',
@@ -357,6 +357,11 @@
           {
             key: 'lottery-bets',
             name: HubLang.t('epLotteryBets'),
+            isDate: true
+          },
+          {
+            key: 'lottery-bets-summary',
+            name: HubLang.t('epLotteryBetsSummary') || 'Tổng hợp đơn cược XS',
             isDate: true
           },
           {
@@ -373,7 +378,8 @@
             key: 'report-third',
             name: HubLang.t('epReportThird'),
             isDate: true
-          }
+          },
+          { key: 'bet-orders', name: HubLang.t('epBetOrders'), isDate: false }
         ];
 
         // Populate endpoint filter dropdown
@@ -440,7 +446,9 @@
               syncing: isSyncing,
               syncStatus: pa ? pa.status : null,
               elapsed:
-                isSyncing || (pa && pa.status === 'done') ? pa.elapsed || 0 : 0
+                isSyncing || (pa && pa.status === 'done') ? pa.elapsed || 0 : 0,
+              currentStep: pa ? pa.currentStep || null : null,
+              currentDate: pa ? pa.currentDate || null : null
             };
 
             if (hasProgress) {
@@ -554,13 +562,39 @@
               var syncIcon = d.syncing
                 ? ' <i class="hi hi-arrows-rotate syncing-spin" style="font-size:12px;color:#1e9fff;"></i>'
                 : '';
+              var dateInfo = '';
+              if (d.syncing && d.currentDate) {
+                dateInfo =
+                  ' <span style="font-size:11px;color:#999;font-weight:normal;">[' +
+                  d.currentDate +
+                  ']</span>';
+              }
+              var stepInfo = '';
+              if (d.syncing && d.currentStep) {
+                var stepLabel =
+                  d.currentStep === 'snapshots'
+                    ? 'Step 1'
+                    : d.currentStep === 'dates'
+                      ? 'Step 2'
+                      : d.currentStep === 'bet-orders'
+                        ? 'Step 3'
+                        : '';
+                if (stepLabel) {
+                  stepInfo =
+                    ' <span style="font-size:10px;color:#1e9fff;font-weight:600;">' +
+                    stepLabel +
+                    '</span>';
+                }
+              }
               return (
                 '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' +
                 c +
                 ';margin-right:6px;vertical-align:middle;"></span><b>' +
                 HubUtils.escapeHtml(d.name) +
                 '</b>' +
-                syncIcon
+                syncIcon +
+                stepInfo +
+                dateInfo
               );
             }
             return (
@@ -1228,7 +1262,7 @@
               if (res.code !== 0) return;
               var d = res.data;
               agents = d.agents || [];
-              totalDays = d.totalDays || 65;
+              totalDays = d.totalDays || 66;
 
               // Stat cards
               var active = agents.filter(function (a) {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Chất lượng nhóm QC</title>
+    <title>Phân tích NCC Game</title>
     <link rel="stylesheet" href="/lib/layui/css/layui.css" />
     <link rel="stylesheet" href="/css/hub-icons.css" />
     <style>
@@ -45,19 +45,19 @@
         font-size: 13px;
         margin-right: 5px;
       }
-      .qc-range-bar {
+      .pa-range-bar {
         display: flex;
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
       }
-      .qc-kpi-row {
+      .pa-kpi-row {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
         margin-bottom: 15px;
       }
-      .qc-kpi-card {
+      .pa-kpi-card {
         flex: 1;
         min-width: 155px;
         background: #fff;
@@ -71,7 +71,7 @@
         gap: 14px;
         border-left: 3px solid transparent;
       }
-      .qc-kpi-icon {
+      .pa-kpi-icon {
         width: 44px;
         height: 44px;
         border-radius: 10px;
@@ -83,34 +83,37 @@
         flex-shrink: 0;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
       }
-      .qc-kpi-info {
+      .pa-kpi-info {
         flex: 1;
         min-width: 0;
       }
-      .qc-kpi-value {
+      .pa-kpi-value {
         font-size: 22px;
         font-weight: 700;
         line-height: 1.2;
       }
-      .qc-kpi-label {
+      .pa-kpi-label {
         font-size: 12px;
         color: #999;
         margin-top: 2px;
       }
-      .qc-section-title {
+      .pa-section-title {
         font-size: 13px;
         color: #555;
         font-weight: 600;
         margin-bottom: 10px;
       }
-      .qc-error {
+      .pa-error {
         text-align: center;
         padding: 40px 0;
         color: #ff5722;
         font-size: 13px;
       }
+      .pa-table-gap {
+        margin-top: 25px;
+      }
       @media (max-width: 768px) {
-        .qc-kpi-card {
+        .pa-kpi-card {
           min-width: calc(50% - 8px);
         }
       }
@@ -122,9 +125,9 @@
         <div class="layui-card">
           <div class="layui-card-header">
             <fieldset class="layui-elem-field">
-              <legend data-i18n="qcGroupQuality">Chất lượng nhóm QC</legend>
+              <legend data-i18n="providerAnalysis">Phân tích NCC Game</legend>
               <div class="layui-field-box">
-                <div class="qc-range-bar">
+                <div class="pa-range-bar">
                   <span
                     style="font-size: 13px; color: #999"
                     data-i18n="dbDateRange"
@@ -132,35 +135,35 @@
                   >
                   <div class="layui-btn-group">
                     <button
-                      class="layui-btn layui-btn-sm qc-range"
+                      class="layui-btn layui-btn-sm pa-range"
                       data-range="today"
                       data-i18n="today"
                     >
                       Hôm nay
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pa-range"
                       data-range="yesterday"
                       data-i18n="yesterday"
                     >
                       Hôm qua
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pa-range"
                       data-range="thisWeek"
                       data-i18n="thisWeek"
                     >
                       Tuần này
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pa-range"
                       data-range="thisMonth"
                       data-i18n="thisMonth"
                     >
                       Tháng này
                     </button>
                     <button
-                      class="layui-btn layui-btn-sm layui-btn-primary qc-range"
+                      class="layui-btn layui-btn-sm layui-btn-primary pa-range"
                       data-range="lastMonth"
                       data-i18n="lastMonth"
                     >
@@ -170,7 +173,7 @@
                   <div class="layui-input-inline" style="width: 220px">
                     <input
                       type="text"
-                      id="qcDatePicker"
+                      id="paDatePicker"
                       class="layui-input"
                       placeholder="Chọn khoảng thời gian"
                       data-i18n="dbPickDateRange"
@@ -189,58 +192,53 @@
           </div>
           <div class="layui-card-body">
             <!-- KPI Cards -->
-            <div class="qc-kpi-row" id="kpiRow">
-              <div class="qc-kpi-card" style="border-left-color: #1e9fff">
-                <div class="qc-kpi-icon" style="background: #1e9fff">
-                  <i class="hi hi-users"></i>
+            <div class="pa-kpi-row" id="kpiRow">
+              <div class="pa-kpi-card" style="border-left-color: #1e9fff">
+                <div class="pa-kpi-icon" style="background: #1e9fff">
+                  <i class="hi hi-o hi-o-newspaper"></i>
                 </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalGroups">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalGroups">
-                    Tổng nhóm
+                <div class="pa-kpi-info">
+                  <div class="pa-kpi-value" id="kpi_totalProviders">-</div>
+                  <div class="pa-kpi-label" data-i18n="paTotalProviders">
+                    Tổng NCC
                   </div>
                 </div>
               </div>
-              <div class="qc-kpi-card" style="border-left-color: #16b777">
-                <div class="qc-kpi-icon" style="background: #16b777">
-                  <i class="hi hi-o hi-o-circle-user"></i>
+              <div class="pa-kpi-card" style="border-left-color: #ffb800">
+                <div class="pa-kpi-icon" style="background: #ffb800">
+                  <i class="hi hi-chart-bar"></i>
                 </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalMembers">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalMembers">
-                    Tổng thành viên
+                <div class="pa-kpi-info">
+                  <div class="pa-kpi-value" id="kpi_totalBet">-</div>
+                  <div class="pa-kpi-label" data-i18n="paTotalBet">
+                    Tổng cược
                   </div>
                 </div>
               </div>
-              <div class="qc-kpi-card" style="border-left-color: #ffb800">
-                <div class="qc-kpi-icon" style="background: #ffb800">
-                  <i class="hi hi-chart-line"></i>
+              <div class="pa-kpi-card" style="border-left-color: #ff5722">
+                <div class="pa-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-percent"></i>
                 </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalActive">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcActiveMembers">
-                    Hoạt động
-                  </div>
-                </div>
-              </div>
-              <div class="qc-kpi-card" style="border-left-color: #7c3aed">
-                <div class="qc-kpi-icon" style="background: #7c3aed">
-                  <i class="hi hi-o hi-o-star"></i>
-                </div>
-                <div class="qc-kpi-info">
-                  <div class="qc-kpi-value" id="kpi_totalDeposit">-</div>
-                  <div class="qc-kpi-label" data-i18n="qcTotalDeposit">
-                    Tổng nạp
-                  </div>
+                <div class="pa-kpi-info">
+                  <div class="pa-kpi-value" id="kpi_totalWL">-</div>
+                  <div class="pa-kpi-label" data-i18n="paTotalWL">Tổng T/T</div>
                 </div>
               </div>
             </div>
 
-            <!-- Table -->
-            <div class="qc-section-title" data-i18n="qcGroupQuality">
-              Chất lượng nhóm QC
+            <!-- Providers Table -->
+            <div class="pa-section-title" data-i18n="paProvider">
+              Nhà cung cấp
             </div>
-            <table id="qcTable" lay-filter="qcTable"></table>
+            <table id="providerTable" lay-filter="providerTable"></table>
+
+            <!-- Top Games Table -->
+            <div class="pa-table-gap">
+              <div class="pa-section-title" data-i18n="paTopGames">
+                Top Games
+              </div>
+              <table id="topGamesTable" lay-filter="topGamesTable"></table>
+            </div>
           </div>
         </div>
       </div>
@@ -256,11 +254,10 @@
       HubAPI.requireAuth();
       HubLang.init();
       HubLang.applyDOM();
-      document.title = HubLang.t('qcGroupQuality');
+      document.title = HubLang.t('providerAnalysis');
 
       var customStart = null,
         customEnd = null;
-      var _tableData = null;
 
       function fmtDate(d) {
         return (
@@ -313,7 +310,7 @@
         var laydate = layui.laydate;
 
         laydate.render({
-          elem: '#qcDatePicker',
+          elem: '#paDatePicker',
           type: 'date',
           range: '|',
           rangeLinked: true,
@@ -324,19 +321,19 @@
             if (parts.length === 2) {
               customStart = parts[0].trim();
               customEnd = parts[1].trim();
-              $('.qc-range').addClass('layui-btn-primary');
+              $('.pa-range').addClass('layui-btn-primary');
               loadData();
             }
           }
         });
 
-        $('.qc-range').on('click', function () {
+        $('.pa-range').on('click', function () {
           var range = $(this).data('range');
           var r = calcRange(range);
           customStart = r.start;
           customEnd = r.end;
-          $('#qcDatePicker').val('');
-          $('.qc-range').addClass('layui-btn-primary');
+          $('#paDatePicker').val('');
+          $('.pa-range').addClass('layui-btn-primary');
           $(this).removeClass('layui-btn-primary');
           loadData();
         });
@@ -347,13 +344,30 @@
         customEnd = initR.end;
         loadData();
 
+        function moneyTpl(field) {
+          return function (row) {
+            return fmtMoney(row[field]);
+          };
+        }
+
+        function wlTpl(field) {
+          return function (row) {
+            var v = row[field] || 0;
+            return (
+              '<span style="color:' +
+              (v >= 0 ? '#16b777' : '#ff5722') +
+              ';font-weight:600">' +
+              fmtMoney(v) +
+              '</span>'
+            );
+          };
+        }
+
         function loadData() {
-          $(
-            '#kpi_totalGroups, #kpi_totalMembers, #kpi_totalActive, #kpi_totalDeposit'
-          ).text('...');
+          $('#kpi_totalProviders, #kpi_totalBet, #kpi_totalWL').text('...');
 
           var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
-          HubAPI.dashboardGet('qc-group-quality?' + qs)
+          HubAPI.dashboardGet('provider-analysis?' + qs)
             .then(function (res) {
               if (res.code !== 0) {
                 showError(res.msg || HubLang.t('error'));
@@ -371,82 +385,119 @@
 
           // KPIs
           var s = d.summary;
-          $('#kpi_totalGroups').text(fmtMoney(s.totalGroups));
-          $('#kpi_totalMembers').text(fmtMoney(s.totalMembers));
-          $('#kpi_totalActive').text(fmtMoney(s.totalActive));
-          $('#kpi_totalDeposit').text(fmtMoney(s.totalDeposit));
+          $('#kpi_totalProviders').text(s.totalProviders);
+          $('#kpi_totalBet').text(fmtMoney(s.totalBet));
+          var wlColor = s.totalWL >= 0 ? '#16b777' : '#ff5722';
+          $('#kpi_totalWL').text(fmtMoney(s.totalWL)).css('color', wlColor);
 
-          // Table
-          function moneyTpl(field) {
-            return function (row) {
-              return fmtMoney(row[field]);
-            };
-          }
-
-          _tableData = d.groups;
+          // Providers Table
           layui.table.render({
-            elem: '#qcTable',
+            elem: '#providerTable',
             toolbar: true,
             defaultToolbar: ['filter', 'print', 'exports'],
-            data: d.groups,
+            data: d.platforms,
             text: { none: HubLang.t('noData') },
             page: false,
             cols: [
               [
                 {
-                  field: 'groupId',
-                  title: HubLang.t('qcGroup'),
-                  width: 100,
+                  field: 'platform_id_name',
+                  title: HubLang.t('paProvider'),
+                  width: 160,
                   fixed: 'left'
                 },
                 {
-                  field: 'members',
-                  title: HubLang.t('qcMembers'),
+                  field: 'players',
+                  title: HubLang.t('paPlayers'),
                   width: 110,
-                  align: 'right',
-                  templet: moneyTpl('members')
+                  align: 'right'
                 },
                 {
-                  field: 'active',
-                  title: HubLang.t('qcActive'),
+                  field: 'betAmount',
+                  title: HubLang.t('paBetAmount'),
+                  width: 150,
+                  align: 'right',
+                  templet: moneyTpl('betAmount')
+                },
+                {
+                  field: 'betTimes',
+                  title: HubLang.t('paBetTimes'),
+                  width: 120,
+                  align: 'right',
+                  templet: moneyTpl('betTimes')
+                },
+                {
+                  field: 'winLose',
+                  title: HubLang.t('paWinLose'),
+                  width: 150,
+                  align: 'right',
+                  templet: wlTpl('winLose')
+                },
+                {
+                  field: 'companyProfit',
+                  title: HubLang.t('paCompanyProfit'),
+                  minWidth: 150,
+                  align: 'right',
+                  templet: wlTpl('companyProfit')
+                }
+              ]
+            ]
+          });
+
+          // Top Games Table
+          layui.table.render({
+            elem: '#topGamesTable',
+            toolbar: true,
+            defaultToolbar: ['filter', 'print', 'exports'],
+            data: d.topGames,
+            text: { none: HubLang.t('noData') },
+            page: false,
+            cols: [
+              [
+                {
+                  field: 'game_name',
+                  title: HubLang.t('paGameName'),
+                  width: 180,
+                  fixed: 'left'
+                },
+                {
+                  field: 'platform_id_name',
+                  title: HubLang.t('paProvider'),
+                  width: 140
+                },
+                {
+                  field: 'players',
+                  title: HubLang.t('paPlayers'),
                   width: 110,
-                  align: 'right',
-                  templet: moneyTpl('active')
+                  align: 'right'
                 },
                 {
-                  field: 'totalDeposit',
-                  title: HubLang.t('totalDeposit'),
-                  width: 140,
+                  field: 'betCount',
+                  title: HubLang.t('paBetCount'),
+                  width: 120,
                   align: 'right',
-                  templet: moneyTpl('totalDeposit')
+                  templet: moneyTpl('betCount')
                 },
                 {
-                  field: 'lotteryBet',
-                  title: HubLang.t('dbLotteryBet'),
-                  width: 140,
+                  field: 'betAmount',
+                  title: HubLang.t('paBetAmount'),
+                  width: 150,
                   align: 'right',
-                  templet: moneyTpl('lotteryBet')
+                  templet: moneyTpl('betAmount')
                 },
                 {
-                  field: 'lotteryWL',
-                  title: HubLang.t('dbLotteryWL'),
-                  width: 130,
+                  field: 'winLose',
+                  title: HubLang.t('paWinLose'),
+                  width: 150,
                   align: 'right',
-                  templet: moneyTpl('lotteryWL')
+                  templet: wlTpl('winLose')
                 },
                 {
-                  field: 'thirdBet',
-                  title: HubLang.t('dbThirdBet'),
-                  width: 140,
+                  field: 'companyProfit',
+                  title: HubLang.t('paCompanyProfit'),
+                  minWidth: 150,
                   align: 'right',
-                  templet: moneyTpl('thirdBet')
-                },
-                {
-                  field: 'thirdWL',
-                  title: HubLang.t('dbThirdPartyWL'),
-                  minWidth: 130,
-                  align: 'right',
-                  templet: moneyTpl('thirdWL')
+                  templet: wlTpl('companyProfit')
                 }
               ]
             ]
@@ -455,7 +506,7 @@
 
         function showError(msg) {
           document.getElementById('kpiRow').innerHTML =
-            '<div class="qc-error">' + (msg || HubLang.t('error')) + '</div>';
+            '<div class="pa-error">' + (msg || HubLang.t('error')) + '</div>';
         }
       });
     </script>

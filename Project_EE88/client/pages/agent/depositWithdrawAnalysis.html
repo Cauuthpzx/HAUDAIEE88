@@ -1,0 +1,679 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phân tích Nạp/Rút</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .layui-elem-field {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        border-color: #e6e6e6;
+      }
+      .layui-table-view {
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-table-cell {
+        text-align: left;
+      }
+      .layui-field-box .layui-inline {
+        margin-bottom: 8px;
+      }
+      .dw-range-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .dw-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .dw-kpi-card {
+        flex: 1;
+        min-width: 155px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-left: 3px solid transparent;
+      }
+      .dw-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .dw-kpi-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .dw-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .dw-kpi-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+      .dw-section-title {
+        font-size: 13px;
+        color: #555;
+        font-weight: 600;
+        margin: 15px 0 10px;
+      }
+      .dw-chart-wrap {
+        background: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.06),
+          0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+      #dwChart {
+        width: 100%;
+        height: 340px;
+      }
+      .dw-error {
+        text-align: center;
+        padding: 40px 0;
+        color: #ff5722;
+        font-size: 13px;
+      }
+      @media (max-width: 768px) {
+        .dw-kpi-card {
+          min-width: calc(50% - 8px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-row">
+      <div class="layui-col-md12">
+        <div class="layui-card">
+          <div class="layui-card-header">
+            <fieldset class="layui-elem-field">
+              <legend data-i18n="depositWithdrawAnalysis">
+                Phân tích Nạp/Rút
+              </legend>
+              <div class="layui-field-box">
+                <div class="dw-range-bar">
+                  <span
+                    style="font-size: 13px; color: #999"
+                    data-i18n="dbDateRange"
+                    >Khoảng thời gian:</span
+                  >
+                  <div class="layui-btn-group">
+                    <button
+                      class="layui-btn layui-btn-sm dw-range"
+                      data-range="today"
+                      data-i18n="today"
+                    >
+                      Hôm nay
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary dw-range"
+                      data-range="yesterday"
+                      data-i18n="yesterday"
+                    >
+                      Hôm qua
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary dw-range"
+                      data-range="thisWeek"
+                      data-i18n="thisWeek"
+                    >
+                      Tuần này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary dw-range"
+                      data-range="thisMonth"
+                      data-i18n="thisMonth"
+                    >
+                      Tháng này
+                    </button>
+                    <button
+                      class="layui-btn layui-btn-sm layui-btn-primary dw-range"
+                      data-range="lastMonth"
+                      data-i18n="lastMonth"
+                    >
+                      Tháng trước
+                    </button>
+                  </div>
+                  <div class="layui-input-inline" style="width: 220px">
+                    <input
+                      type="text"
+                      id="dwDatePicker"
+                      class="layui-input"
+                      placeholder="Chọn khoảng thời gian"
+                      data-i18n="dbPickDateRange"
+                      data-i18n-attr="placeholder"
+                      readonly
+                      autocomplete="off"
+                    />
+                  </div>
+                  <span
+                    id="dateLabel"
+                    style="font-size: 12px; color: #666"
+                  ></span>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="layui-card-body">
+            <!-- KPI Cards -->
+            <div class="dw-kpi-row" id="kpiRow">
+              <div class="dw-kpi-card" style="border-left-color: #16b777">
+                <div class="dw-kpi-icon" style="background: #16b777">
+                  <i class="hi hi-arrow-up"></i>
+                </div>
+                <div class="dw-kpi-info">
+                  <div class="dw-kpi-value" id="kpi_deposit">-</div>
+                  <div class="dw-kpi-label" data-i18n="dwTotalDeposit">
+                    Tổng nạp
+                  </div>
+                </div>
+              </div>
+              <div class="dw-kpi-card" style="border-left-color: #ff5722">
+                <div class="dw-kpi-icon" style="background: #ff5722">
+                  <i class="hi hi-arrow-down"></i>
+                </div>
+                <div class="dw-kpi-info">
+                  <div class="dw-kpi-value" id="kpi_withdrawal">-</div>
+                  <div class="dw-kpi-label" data-i18n="dwTotalWithdrawal">
+                    Tổng rút
+                  </div>
+                </div>
+              </div>
+              <div class="dw-kpi-card" style="border-left-color: #1e9fff">
+                <div class="dw-kpi-icon" style="background: #1e9fff">
+                  <i class="hi hi-chart-line"></i>
+                </div>
+                <div class="dw-kpi-info">
+                  <div class="dw-kpi-value" id="kpi_net">-</div>
+                  <div class="dw-kpi-label" data-i18n="dwNet">
+                    Chênh lệch (Nạp - Rút)
+                  </div>
+                </div>
+              </div>
+              <div class="dw-kpi-card" style="border-left-color: #7c3aed">
+                <div class="dw-kpi-icon" style="background: #7c3aed">
+                  <i class="hi hi-o hi-o-star"></i>
+                </div>
+                <div class="dw-kpi-info">
+                  <div class="dw-kpi-value" id="kpi_promotion">-</div>
+                  <div class="dw-kpi-label" data-i18n="dwPromotion">Ưu đãi</div>
+                </div>
+              </div>
+              <div class="dw-kpi-card" style="border-left-color: #ffb800">
+                <div class="dw-kpi-icon" style="background: #ffb800">
+                  <i class="hi hi-percent"></i>
+                </div>
+                <div class="dw-kpi-info">
+                  <div class="dw-kpi-value" id="kpi_rebate">-</div>
+                  <div class="dw-kpi-label" data-i18n="dwRebate">Hoàn trả</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="dw-section-title" data-i18n="dwDailyTrend">
+              Xu hướng Nạp/Rút theo ngày
+            </div>
+            <div class="dw-chart-wrap">
+              <div id="dwChart"></div>
+            </div>
+
+            <!-- Table -->
+            <div class="dw-section-title" data-i18n="revPerAgent">
+              Chi tiết theo đại lý
+            </div>
+            <table id="dwTable" lay-filter="dwTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-agent-filter.js"></script>
+
+    <script>
+      HubAPI.requireAuth();
+      HubLang.init();
+      HubLang.applyDOM();
+      document.title = HubLang.t('depositWithdrawAnalysis');
+
+      var customStart = null,
+        customEnd = null;
+      var _tableData = null;
+      var _chartInstance = null;
+
+      function fmtDate(d) {
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+      function fmtMoney(n) {
+        return (n || 0).toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+      }
+
+      function calcRange(range) {
+        var now = new Date();
+        var todayStr = fmtDate(now);
+        if (range === 'today') return { start: todayStr, end: todayStr };
+        if (range === 'yesterday') {
+          var yd = new Date(now);
+          yd.setDate(yd.getDate() - 1);
+          return { start: fmtDate(yd), end: fmtDate(yd) };
+        }
+        if (range === 'thisWeek') {
+          var ws = new Date(now);
+          var dow = ws.getDay();
+          dow = dow === 0 ? 6 : dow - 1;
+          ws.setDate(ws.getDate() - dow);
+          return { start: fmtDate(ws), end: todayStr };
+        }
+        if (range === 'thisMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+            end: todayStr
+          };
+        }
+        if (range === 'lastMonth') {
+          return {
+            start: fmtDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+            end: fmtDate(new Date(now.getFullYear(), now.getMonth(), 0))
+          };
+        }
+        return { start: todayStr, end: todayStr };
+      }
+
+      /* ── ECharts lazy load from CDN ── */
+      var _echartsLoading = false;
+      var _echartsCbs = [];
+      function loadEcharts(cb) {
+        if (typeof echarts !== 'undefined') return cb();
+        _echartsCbs.push(cb);
+        if (_echartsLoading) return;
+        _echartsLoading = true;
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js';
+        s.onload = function () {
+          _echartsCbs.forEach(function (fn) {
+            fn();
+          });
+          _echartsCbs = [];
+        };
+        s.onerror = function () {
+          console.error('[DepositWithdrawAnalysis] ECharts CDN load failed');
+        };
+        document.body.appendChild(s);
+      }
+
+      layui.use(['table', 'laydate'], function () {
+        var $ = layui.$;
+        var laydate = layui.laydate;
+
+        laydate.render({
+          elem: '#dwDatePicker',
+          type: 'date',
+          range: '|',
+          rangeLinked: true,
+          max: 0,
+          done: function (value) {
+            if (!value) return;
+            var parts = value.split('|');
+            if (parts.length === 2) {
+              customStart = parts[0].trim();
+              customEnd = parts[1].trim();
+              $('.dw-range').addClass('layui-btn-primary');
+              loadData();
+            }
+          }
+        });
+
+        $('.dw-range').on('click', function () {
+          var range = $(this).data('range');
+          var r = calcRange(range);
+          customStart = r.start;
+          customEnd = r.end;
+          $('#dwDatePicker').val('');
+          $('.dw-range').addClass('layui-btn-primary');
+          $(this).removeClass('layui-btn-primary');
+          loadData();
+        });
+
+        // Init: today
+        var initR = calcRange('today');
+        customStart = initR.start;
+        customEnd = initR.end;
+        loadData();
+
+        function loadData() {
+          $(
+            '#kpi_deposit, #kpi_withdrawal, #kpi_net, #kpi_promotion, #kpi_rebate'
+          ).text('...');
+
+          var qs = 'start_date=' + customStart + '&end_date=' + customEnd;
+          HubAPI.dashboardGet('deposit-withdraw-analysis?' + qs)
+            .then(function (res) {
+              if (res.code !== 0) {
+                showError(res.msg || HubLang.t('error'));
+                return;
+              }
+              renderData(res.data);
+            })
+            .catch(function (err) {
+              showError(err.message);
+            });
+        }
+
+        function renderData(d) {
+          $('#dateLabel').text(d.startDate + ' → ' + d.endDate);
+
+          // KPIs
+          var s = d.summary;
+          $('#kpi_deposit')
+            .text(fmtMoney(s.totalDeposit))
+            .css('color', '#16b777');
+          $('#kpi_withdrawal')
+            .text(fmtMoney(s.totalWithdrawal))
+            .css('color', '#ff5722');
+          $('#kpi_net')
+            .text(fmtMoney(s.net))
+            .css('color', s.net >= 0 ? '#16b777' : '#ff5722');
+          $('#kpi_promotion')
+            .text(fmtMoney(s.totalPromotion))
+            .css('color', '#7c3aed');
+          $('#kpi_rebate')
+            .text(fmtMoney(s.totalRebate))
+            .css('color', '#ffb800');
+
+          // Chart
+          if (d.daily && d.daily.length) {
+            loadEcharts(function () {
+              renderChart(d.daily);
+            });
+          }
+
+          // Table
+          function moneyTpl(field) {
+            return function (row) {
+              return fmtMoney(row[field]);
+            };
+          }
+          function netTpl(row) {
+            var v = row.net || 0;
+            return (
+              '<span style="color:' +
+              (v >= 0 ? '#16b777' : '#ff5722') +
+              ';font-weight:600">' +
+              fmtMoney(v) +
+              '</span>'
+            );
+          }
+
+          _tableData = d.perAgent;
+          layui.table.render({
+            elem: '#dwTable',
+            toolbar: true,
+            defaultToolbar: [
+              HubAgentFilter.create('dwTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
+            data: d.perAgent,
+            text: { none: HubLang.t('noData') },
+            page: false,
+            cols: [
+              [
+                {
+                  field: 'label',
+                  title: HubLang.t('dbSale'),
+                  width: 120,
+                  fixed: 'left'
+                },
+                {
+                  field: 'ee88Username',
+                  title: HubLang.t('dbAgentLine'),
+                  width: 120
+                },
+                {
+                  field: 'deposit',
+                  title: HubLang.t('totalDeposit'),
+                  width: 140,
+                  align: 'right',
+                  templet: moneyTpl('deposit')
+                },
+                {
+                  field: 'withdrawal',
+                  title: HubLang.t('totalWithdraw'),
+                  width: 140,
+                  align: 'right',
+                  templet: moneyTpl('withdrawal')
+                },
+                {
+                  field: 'net',
+                  title: HubLang.t('dwNetAmount'),
+                  width: 140,
+                  align: 'right',
+                  templet: netTpl
+                },
+                {
+                  field: 'promotion',
+                  title: HubLang.t('promotion'),
+                  width: 130,
+                  align: 'right',
+                  templet: moneyTpl('promotion')
+                },
+                {
+                  field: 'thirdRebate',
+                  title: HubLang.t('thirdRebate'),
+                  minWidth: 130,
+                  align: 'right',
+                  templet: moneyTpl('thirdRebate')
+                }
+              ]
+            ]
+          });
+
+          HubAgentFilter.onFilter(
+            'dwTable',
+            function (selectedIds, allSelected) {
+              if (!_tableData) return;
+              var filtered = allSelected
+                ? _tableData
+                : _tableData.filter(function (d) {
+                    return selectedIds.indexOf(d.agentId) !== -1;
+                  });
+              layui.table.reload('dwTable', { data: filtered });
+            }
+          );
+        }
+
+        function renderChart(daily) {
+          var el = document.getElementById('dwChart');
+          if (!el) return;
+
+          if (_chartInstance) {
+            _chartInstance.dispose();
+          }
+          _chartInstance = echarts.init(el);
+
+          var days = [];
+          var deposits = [];
+          var withdrawals = [];
+          for (var i = 0; i < daily.length; i++) {
+            days.push(daily[i].day);
+            deposits.push(daily[i].deposit || 0);
+            withdrawals.push(daily[i].withdrawal || 0);
+          }
+
+          var option = {
+            tooltip: {
+              trigger: 'axis',
+              axisPointer: { type: 'cross' },
+              formatter: function (params) {
+                var html = params[0].axisValue + '<br/>';
+                for (var i = 0; i < params.length; i++) {
+                  html +=
+                    params[i].marker +
+                    ' ' +
+                    params[i].seriesName +
+                    ': <b>' +
+                    fmtMoney(params[i].value) +
+                    '</b><br/>';
+                }
+                return html;
+              }
+            },
+            legend: {
+              data: [
+                HubLang.t('dwTotalDeposit'),
+                HubLang.t('dwTotalWithdrawal')
+              ],
+              bottom: 0
+            },
+            grid: {
+              left: '3%',
+              right: '4%',
+              bottom: '12%',
+              top: '8%',
+              containLabel: true
+            },
+            xAxis: {
+              type: 'category',
+              data: days,
+              boundaryGap: false,
+              axisLabel: {
+                fontSize: 11,
+                rotate: days.length > 15 ? 45 : 0
+              }
+            },
+            yAxis: {
+              type: 'value',
+              axisLabel: {
+                fontSize: 11,
+                formatter: function (v) {
+                  if (Math.abs(v) >= 1000000)
+                    return (v / 1000000).toFixed(1) + 'M';
+                  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'K';
+                  return v;
+                }
+              }
+            },
+            series: [
+              {
+                name: HubLang.t('dwTotalDeposit'),
+                type: 'line',
+                data: deposits,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: { width: 2, color: '#16b777' },
+                itemStyle: { color: '#16b777' },
+                areaStyle: {
+                  color: {
+                    type: 'linear',
+                    x: 0,
+                    y: 0,
+                    x2: 0,
+                    y2: 1,
+                    colorStops: [
+                      { offset: 0, color: 'rgba(22,183,119,0.25)' },
+                      { offset: 1, color: 'rgba(22,183,119,0.02)' }
+                    ]
+                  }
+                }
+              },
+              {
+                name: HubLang.t('dwTotalWithdrawal'),
+                type: 'line',
+                data: withdrawals,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: { width: 2, color: '#ff5722' },
+                itemStyle: { color: '#ff5722' },
+                areaStyle: {
+                  color: {
+                    type: 'linear',
+                    x: 0,
+                    y: 0,
+                    x2: 0,
+                    y2: 1,
+                    colorStops: [
+                      { offset: 0, color: 'rgba(255,87,34,0.25)' },
+                      { offset: 1, color: 'rgba(255,87,34,0.02)' }
+                    ]
+                  }
+                }
+              }
+            ]
+          };
+
+          _chartInstance.setOption(option);
+
+          // Responsive resize
+          window.addEventListener('resize', function () {
+            if (_chartInstance) _chartInstance.resize();
+          });
+        }
+
+        function showError(msg) {
+          document.getElementById('kpiRow').innerHTML =
+            '<div class="dw-error">' + (msg || HubLang.t('error')) + '</div>';
+        }
+      });
+    </script>
+  </body>
+</html>

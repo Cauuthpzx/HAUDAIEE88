@@ -799,6 +799,49 @@ function queryLocal(agentIds, endpointKey, params) {
   }
 }
 
+/**
+ * Xoá data của 1 ngày cụ thể cho 1 agent + endpoint
+ * Dùng khi cần re-sync ngày (xoá data cũ trước khi insert mới)
+ */
+function deleteDataForDay(agentId, endpointKey, dateStr) {
+  const mapping = COLUMN_MAP[endpointKey];
+  if (!mapping) return 0;
+
+  const db = getDb();
+  let result;
+
+  if (mapping.needsDateKey) {
+    // report-lottery, report-funds, report-third — filter by date_key
+    const dateKey = dateStr + '|' + dateStr;
+    result = db
+      .prepare(
+        `DELETE FROM ${mapping.table} WHERE agent_id = ? AND date_key = ?`
+      )
+      .run(agentId, dateKey);
+  } else {
+    // deposits, withdrawals, lottery-bets — filter by timestamp column
+    const dateCol = getDateColumn(endpointKey);
+    if (!dateCol) return 0;
+    result = db
+      .prepare(
+        `DELETE FROM ${mapping.table} WHERE agent_id = ? AND ${dateCol} >= ? AND ${dateCol} <= ?`
+      )
+      .run(agentId, dateStr + ' 00:00:00', dateStr + ' 23:59:59');
+  }
+
+  // Xoá totals nếu có
+  try {
+    const dateKey = dateStr + '|' + dateStr;
+    db.prepare(
+      'DELETE FROM data_totals WHERE agent_id = ? AND endpoint_key = ? AND date_key = ?'
+    ).run(agentId, endpointKey, dateKey);
+  } catch (e) {
+    /* ignore */
+  }
+
+  return result.changes;
+}
+
 module.exports = {
   saveData,
   saveTotals,
@@ -807,6 +850,7 @@ module.exports = {
   queryLocal,
   getDataStats,
   clearData,
+  deleteDataForDay,
   getEndpointList,
   COLUMN_MAP
 };

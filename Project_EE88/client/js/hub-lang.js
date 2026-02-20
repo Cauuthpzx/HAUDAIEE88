@@ -42,8 +42,18 @@ var HubLang = (function () {
       members: 'Hội viên',
       generalFeatures: 'Tính năng chung',
       revenueCalc: 'Tính doanh thu',
+      promotionAnalysis: 'Phân tích Ưu đãi',
       customerQuality: 'Chất lượng khách hàng',
       qcGroupQuality: 'Chất lượng nhóm QC',
+      qcTotalGroups: 'Tổng nhóm',
+      qcTotalMembers: 'Tổng thành viên',
+      qcActiveMembers: 'Hoạt động',
+      qcTotalDeposit: 'Tổng nạp',
+      qcGroup: 'Nhóm',
+      qcMembers: 'Thành viên',
+      qcActive: 'Hoạt động',
+      dbLotteryBet: 'Cược XS',
+      dbThirdBet: 'Cược NCC',
       agentReport: 'Báo cáo chi tiết từng đại lý',
       comingSoon: 'Tính năng đang phát triển...',
       referralCode: 'Mã giới thiệu',
@@ -572,6 +582,7 @@ var HubLang = (function () {
       epDeposits: 'Nạp / Rút tiền',
       epWithdrawals: 'Lịch sử rút tiền',
       epLotteryBets: 'Đơn cược xổ số',
+      epLotteryBetsSummary: 'Tổng hợp đơn cược XS',
       epReportLottery: 'Báo cáo xổ số',
       epReportFunds: 'Sao kê giao dịch',
       epReportThird: 'Báo cáo NCC game',
@@ -583,6 +594,34 @@ var HubLang = (function () {
       revPerAgent: 'Chi tiết theo đại lý',
       revVsPrev: 'so kỳ trước',
       revNewPeriod: 'Kỳ mới (chưa có dữ liệu trước)',
+
+      // ── promotionAnalysis.html ──
+      pmTotalPromotion: 'Tổng ưu đãi',
+      pmTotalRebate: 'Hoàn trả NCC',
+      pmTotalActivity: 'Hoạt động NCC',
+      pmPromoRate: 'Tỷ lệ ưu đãi/nạp',
+      pmThirdActivity: 'Hoạt động NCC',
+      pmRate: 'Tỷ lệ (%)',
+
+      // ── depositWithdrawAnalysis.html ──
+      depositWithdrawAnalysis: 'Phân tích Nạp/Rút',
+      dwTotalDeposit: 'Tổng nạp',
+      dwTotalWithdrawal: 'Tổng rút',
+      dwNet: 'Chênh lệch (Nạp - Rút)',
+      dwPromotion: 'Ưu đãi',
+      dwRebate: 'Hoàn trả',
+      dwDailyTrend: 'Xu hướng Nạp/Rút theo ngày',
+      dwNetAmount: 'Chênh lệch',
+
+      // ── financialSummary.html ──
+      financialSummary: 'Tổng hợp Tài chính',
+      fsTotalRevenue: 'Doanh thu',
+      fsCost: 'Chi phí',
+      fsProfit: 'Lợi nhuận',
+      fsMargin: 'Margin',
+      fsLotteryWL: 'T/T Xổ số',
+      fsThirdWL: 'T/T NCC',
+      fsPerAgent: 'Chi tiết theo đại lý',
 
       // ── customerQuality.html ──
       cqTotalMembers: 'Tổng hội viên',
@@ -620,6 +659,37 @@ var HubLang = (function () {
       wlTopLosers: 'Top khách thua (CT lời)',
       wlByAgent: 'Thắng/Thua theo đại lý',
 
+      // ── lotteryAnalysis.html ──
+      lotteryAnalysis: 'Phân tích Xổ số',
+      laTotalLotteries: 'Tổng loại XS',
+      laTotalBet: 'Tổng cược',
+      laTotalWL: 'Tổng T/T',
+      laLotteryName: 'Loại XS',
+      laPlayers: 'Người chơi',
+      laBetCount: 'Lượt cược',
+      laBetAmount: 'Cược',
+      laValidAmount: 'Hợp lệ',
+      laPrize: 'Thưởng',
+      laRebateAmount: 'Hoàn trả',
+      laWinLose: 'T/T',
+      laCompanyProfit: 'Lợi nhuận CT',
+
+      // ── detailedGameStats.html ──
+      detailedGameStats: 'Thống kê Game Chi tiết',
+      dgTotalGames: 'Tổng game',
+      dgTotalBetCount: 'Tổng lượt cược',
+      dgTotalBet: 'Tổng cược',
+      dgGameName: 'Game',
+      dgProvider: 'NCC',
+      dgPlayers: 'Người chơi',
+      dgBetCount: 'Lượt cược',
+      dgBetAmount: 'Cược',
+      dgTurnover: 'Doanh thu',
+      dgPrize: 'Thưởng',
+      dgWinLose: 'T/T',
+      dgCompanyProfit: 'CT Profit',
+      dgSearchGame: 'Tìm theo tên game...',
+
       // ── customerStatus.html ──
       customerStatus: 'Tình trạng Khách hàng',
       csPotential: 'Tiềm năng',
@@ -628,7 +698,22 @@ var HubLang = (function () {
       csNew: 'Mới',
       csCategory: 'Phân loại',
       csActualProfit: 'Lợi nhuận thực',
-      csCustomerList: 'Danh sách khách hàng'
+      csCustomerList: 'Danh sách khách hàng',
+
+      // ── providerAnalysis.html ──
+      providerAnalysis: 'Phân tích NCC Game',
+      paTotalProviders: 'Tổng NCC',
+      paTotalBet: 'Tổng cược',
+      paTotalWL: 'Tổng T/T',
+      paProvider: 'Nhà cung cấp',
+      paPlayers: 'Người chơi',
+      paBetAmount: 'Cược',
+      paBetTimes: 'Lượt cược',
+      paWinLose: 'T/T',
+      paCompanyProfit: 'Lợi nhuận CT',
+      paTopGames: 'Top Games',
+      paGameName: 'Game',
+      paBetCount: 'Lượt cược'
     },
 
     en: {
@@ -652,8 +737,18 @@ var HubLang = (function () {
       members: 'Members',
       generalFeatures: 'General Features',
       revenueCalc: 'Revenue Calculation',
+      promotionAnalysis: 'Promotion Analysis',
       customerQuality: 'Customer Quality',
       qcGroupQuality: 'QC Group Quality',
+      qcTotalGroups: 'Total Groups',
+      qcTotalMembers: 'Total Members',
+      qcActiveMembers: 'Active',
+      qcTotalDeposit: 'Total Deposit',
+      qcGroup: 'Group',
+      qcMembers: 'Members',
+      qcActive: 'Active',
+      dbLotteryBet: 'Lottery Bet',
+      dbThirdBet: '3rd Party Bet',
       agentReport: 'Agent Detail Report',
       comingSoon: 'Coming soon...',
       referralCode: 'Referral Code',
@@ -1180,6 +1275,7 @@ var HubLang = (function () {
       epDeposits: 'Deposits / Withdrawals',
       epWithdrawals: 'Withdrawal History',
       epLotteryBets: 'Lottery Bets',
+      epLotteryBetsSummary: 'Lottery Bets Summary',
       epReportLottery: 'Lottery Report',
       epReportFunds: 'Transaction Statement',
       epReportThird: 'Provider Report',
@@ -1191,6 +1287,34 @@ var HubLang = (function () {
       revPerAgent: 'Per Agent Breakdown',
       revVsPrev: 'vs previous period',
       revNewPeriod: 'New period (no prior data)',
+
+      // ── promotionAnalysis.html ──
+      pmTotalPromotion: 'Total Promotion',
+      pmTotalRebate: '3rd Party Rebate',
+      pmTotalActivity: '3rd Party Activity',
+      pmPromoRate: 'Promotion/Deposit Ratio',
+      pmThirdActivity: '3rd Party Activity',
+      pmRate: 'Rate (%)',
+
+      // ── depositWithdrawAnalysis.html ──
+      depositWithdrawAnalysis: 'Deposit/Withdrawal Analysis',
+      dwTotalDeposit: 'Total Deposit',
+      dwTotalWithdrawal: 'Total Withdrawal',
+      dwNet: 'Net (Deposit - Withdrawal)',
+      dwPromotion: 'Promotion',
+      dwRebate: 'Rebate',
+      dwDailyTrend: 'Daily Deposit/Withdrawal Trend',
+      dwNetAmount: 'Net Amount',
+
+      // ── financialSummary.html ──
+      financialSummary: 'Financial Summary',
+      fsTotalRevenue: 'Revenue',
+      fsCost: 'Cost',
+      fsProfit: 'Profit',
+      fsMargin: 'Margin',
+      fsLotteryWL: 'Lottery W/L',
+      fsThirdWL: '3rd Party W/L',
+      fsPerAgent: 'Per Agent Breakdown',
 
       // ── customerQuality.html ──
       cqTotalMembers: 'Total Members',
@@ -1228,6 +1352,37 @@ var HubLang = (function () {
       wlTopLosers: 'Top Losers (Company Profit)',
       wlByAgent: 'Win/Loss by Agent',
 
+      // ── lotteryAnalysis.html ──
+      lotteryAnalysis: 'Lottery Analysis',
+      laTotalLotteries: 'Total Lotteries',
+      laTotalBet: 'Total Bet',
+      laTotalWL: 'Total W/L',
+      laLotteryName: 'Lottery Type',
+      laPlayers: 'Players',
+      laBetCount: 'Bet Count',
+      laBetAmount: 'Bet Amount',
+      laValidAmount: 'Valid Amount',
+      laPrize: 'Prize',
+      laRebateAmount: 'Rebate',
+      laWinLose: 'W/L',
+      laCompanyProfit: 'Company Profit',
+
+      // ── detailedGameStats.html ──
+      detailedGameStats: 'Detailed Game Statistics',
+      dgTotalGames: 'Total Games',
+      dgTotalBetCount: 'Total Bet Count',
+      dgTotalBet: 'Total Bet',
+      dgGameName: 'Game',
+      dgProvider: 'Provider',
+      dgPlayers: 'Players',
+      dgBetCount: 'Bet Count',
+      dgBetAmount: 'Bet Amount',
+      dgTurnover: 'Turnover',
+      dgPrize: 'Prize',
+      dgWinLose: 'W/L',
+      dgCompanyProfit: 'Company Profit',
+      dgSearchGame: 'Search by game name...',
+
       // ── customerStatus.html ──
       customerStatus: 'Customer Status',
       csPotential: 'Potential',
@@ -1236,7 +1391,22 @@ var HubLang = (function () {
       csNew: 'New',
       csCategory: 'Category',
       csActualProfit: 'Actual Profit',
-      csCustomerList: 'Customer List'
+      csCustomerList: 'Customer List',
+
+      // ── providerAnalysis.html ──
+      providerAnalysis: 'Provider / Game Analysis',
+      paTotalProviders: 'Total Providers',
+      paTotalBet: 'Total Bet',
+      paTotalWL: 'Total W/L',
+      paProvider: 'Provider',
+      paPlayers: 'Players',
+      paBetAmount: 'Bet Amount',
+      paBetTimes: 'Bet Times',
+      paWinLose: 'W/L',
+      paCompanyProfit: 'Company Profit',
+      paTopGames: 'Top Games',
+      paGameName: 'Game',
+      paBetCount: 'Bet Count'
     },
 
     'zh-CN': {
@@ -1260,8 +1430,18 @@ var HubLang = (function () {
       members: '会员',
       generalFeatures: '常用功能',
       revenueCalc: '营收计算',
+      promotionAnalysis: '优惠分析',
       customerQuality: '客户质量',
       qcGroupQuality: 'QC组质量',
+      qcTotalGroups: '总组数',
+      qcTotalMembers: '总成员',
+      qcActiveMembers: '活跃',
+      qcTotalDeposit: '总充值',
+      qcGroup: '组',
+      qcMembers: '成员',
+      qcActive: '活跃',
+      dbLotteryBet: '彩票投注',
+      dbThirdBet: '三方投注',
       agentReport: '代理详细报表',
       comingSoon: '功能开发中...',
       referralCode: '邀请码',
@@ -1786,6 +1966,7 @@ var HubLang = (function () {
       epDeposits: '充提',
       epWithdrawals: '提现记录',
       epLotteryBets: '彩票投注',
+      epLotteryBetsSummary: '彩票投注汇总',
       epReportLottery: '彩票报表',
       epReportFunds: '交易流水',
       epReportThird: '供应商报表',
@@ -1797,6 +1978,34 @@ var HubLang = (function () {
       revPerAgent: '代理明细',
       revVsPrev: '对比上期',
       revNewPeriod: '新期间（无前期数据）',
+
+      // ── promotionAnalysis.html ──
+      pmTotalPromotion: '总优惠',
+      pmTotalRebate: '第三方返点',
+      pmTotalActivity: '第三方活动',
+      pmPromoRate: '优惠/充值比',
+      pmThirdActivity: '第三方活动',
+      pmRate: '比率 (%)',
+
+      // ── depositWithdrawAnalysis.html ──
+      depositWithdrawAnalysis: '充提分析',
+      dwTotalDeposit: '总充值',
+      dwTotalWithdrawal: '总提现',
+      dwNet: '净额（充值 - 提现）',
+      dwPromotion: '优惠',
+      dwRebate: '返点',
+      dwDailyTrend: '每日充提趋势',
+      dwNetAmount: '净额',
+
+      // ── financialSummary.html ──
+      financialSummary: '财务汇总',
+      fsTotalRevenue: '营收',
+      fsCost: '成本',
+      fsProfit: '利润',
+      fsMargin: '利润率',
+      fsLotteryWL: '彩票盈亏',
+      fsThirdWL: '第三方盈亏',
+      fsPerAgent: '代理明细',
 
       // ── customerQuality.html ──
       cqTotalMembers: '会员总数',
@@ -1834,6 +2043,37 @@ var HubLang = (function () {
       wlTopLosers: 'Top输家（公司盈利）',
       wlByAgent: '代理输赢',
 
+      // ── lotteryAnalysis.html ──
+      lotteryAnalysis: '彩票分析',
+      laTotalLotteries: '彩票类型总数',
+      laTotalBet: '总投注',
+      laTotalWL: '总输赢',
+      laLotteryName: '彩票类型',
+      laPlayers: '玩家',
+      laBetCount: '投注次数',
+      laBetAmount: '投注额',
+      laValidAmount: '有效投注',
+      laPrize: '奖金',
+      laRebateAmount: '返水',
+      laWinLose: '输赢',
+      laCompanyProfit: '公司利润',
+
+      // ── detailedGameStats.html ──
+      detailedGameStats: '游戏详细统计',
+      dgTotalGames: '游戏总数',
+      dgTotalBetCount: '总投注次数',
+      dgTotalBet: '总投注额',
+      dgGameName: '游戏',
+      dgProvider: '供应商',
+      dgPlayers: '玩家',
+      dgBetCount: '投注次数',
+      dgBetAmount: '投注额',
+      dgTurnover: '流水',
+      dgPrize: '奖金',
+      dgWinLose: '输赢',
+      dgCompanyProfit: '公司利润',
+      dgSearchGame: '按游戏名搜索...',
+
       // ── customerStatus.html ──
       customerStatus: '客户状态',
       csPotential: '潜力客户',
@@ -1842,7 +2082,22 @@ var HubLang = (function () {
       csNew: '新客户',
       csCategory: '分类',
       csActualProfit: '实际利润',
-      csCustomerList: '客户列表'
+      csCustomerList: '客户列表',
+
+      // ── providerAnalysis.html ──
+      providerAnalysis: '供应商游戏分析',
+      paTotalProviders: '总供应商',
+      paTotalBet: '总投注',
+      paTotalWL: '总输赢',
+      paProvider: '供应商',
+      paPlayers: '玩家',
+      paBetAmount: '投注额',
+      paBetTimes: '投注次数',
+      paWinLose: '输赢',
+      paCompanyProfit: '公司利润',
+      paTopGames: 'Top游戏',
+      paGameName: '游戏',
+      paBetCount: '投注次数'
     }
   };
 

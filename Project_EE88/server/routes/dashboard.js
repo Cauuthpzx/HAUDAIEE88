@@ -867,7 +867,7 @@ router.get('/win-loss-stats', (req, res) => {
       agentMap[a.id] = a;
     });
 
-    // CTE: gộp lottery + third per uid
+    // Gộp lottery + third per uid (LEFT JOIN + UNION ALL thay FULL OUTER JOIN vì SQLite)
     const customerRows = db
       .prepare(
         `SELECT agent_id, uid, username, lottery_wl, third_wl,
@@ -882,15 +882,43 @@ router.get('/win-loss-stats', (req, res) => {
            FROM data_report_lottery WHERE agent_id IN (${ph})
            AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
            GROUP BY agent_id, uid
-         ) l FULL OUTER JOIN (
+         ) l
+         LEFT JOIN (
            SELECT agent_id, uid, username, SUM(t_win_lose) as third_wl
            FROM data_report_third WHERE agent_id IN (${ph})
            AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
            GROUP BY agent_id, uid
          ) t ON l.agent_id = t.agent_id AND l.uid = t.uid
+         UNION ALL
+         SELECT t2.agent_id, t2.uid, t2.username, NULL as lottery_wl, t2.third_wl
+         FROM (
+           SELECT agent_id, uid, username, SUM(t_win_lose) as third_wl
+           FROM data_report_third WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           GROUP BY agent_id, uid
+         ) t2
+         LEFT JOIN (
+           SELECT agent_id, uid FROM data_report_lottery WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           GROUP BY agent_id, uid
+         ) l2 ON t2.agent_id = l2.agent_id AND t2.uid = l2.uid
+         WHERE l2.uid IS NULL
        ) ORDER BY total_wl DESC`
       )
-      .all(...agentIds, startStr, endStr, ...agentIds, startStr, endStr);
+      .all(
+        ...agentIds,
+        startStr,
+        endStr,
+        ...agentIds,
+        startStr,
+        endStr,
+        ...agentIds,
+        startStr,
+        endStr,
+        ...agentIds,
+        startStr,
+        endStr
+      );
 
     // Summary
     let winners = 0,
@@ -1077,6 +1105,838 @@ router.get('/customer-status', (req, res) => {
     });
   } catch (err) {
     log.error('dashboard/customer-status error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/qc-group-quality ──
+// ═══════════════════════════════════════
+
+router.get('/qc-group-quality', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    // Per group_id metrics
+    const groups = db
+      .prepare(
+        `SELECT COALESCE(m.group_id, 0) as group_id,
+                COUNT(*) as members,
+                COALESCE(SUM(m.deposit_money), 0) as totalDeposit
+         FROM data_members m WHERE m.agent_id IN (${ph})
+         GROUP BY COALESCE(m.group_id, 0)`
+      )
+      .all(...agentIds);
+
+    // Active per group
+    const activeRows = db
+      .prepare(
+        `SELECT group_id, COUNT(*) as active FROM (
+           SELECT DISTINCT m.group_id, a.uid FROM (
+             SELECT uid FROM data_report_lottery
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+             UNION
+             SELECT uid FROM data_report_third
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           ) a JOIN data_members m ON a.uid = m.uid AND m.agent_id IN (${ph})
+         ) GROUP BY group_id`
+      )
+      .all(
+        ...agentIds,
+        startStr,
+        endStr,
+        ...agentIds,
+        startStr,
+        endStr,
+        ...agentIds
+      );
+    const activeMap = {};
+    activeRows.forEach((r) => {
+      activeMap[r.group_id] = r.active;
+    });
+
+    // Lottery stats per group
+    const lotteryRows = db
+      .prepare(
+        `SELECT COALESCE(m.group_id, 0) as group_id,
+                COALESCE(SUM(l.bet_amount), 0) as lotteryBet,
+                COALESCE(SUM(l.win_lose), 0) as lotteryWL
+         FROM data_report_lottery l
+         JOIN data_members m ON l.uid = m.uid AND l.agent_id = m.agent_id
+         WHERE l.agent_id IN (${ph})
+         AND SUBSTR(l.date_key, 1, 10) >= ? AND SUBSTR(l.date_key, 1, 10) <= ?
+         GROUP BY COALESCE(m.group_id, 0)`
+      )
+      .all(...agentIds, startStr, endStr);
+    const lotteryMap = {};
+    lotteryRows.forEach((r) => {
+      lotteryMap[r.group_id] = r;
+    });
+
+    // Third stats per group
+    const thirdRows = db
+      .prepare(
+        `SELECT COALESCE(m.group_id, 0) as group_id,
+                COALESCE(SUM(t.t_bet_amount), 0) as thirdBet,
+                COALESCE(SUM(t.t_win_lose), 0) as thirdWL
+         FROM data_report_third t
+         JOIN data_members m ON t.uid = m.uid AND t.agent_id = m.agent_id
+         WHERE t.agent_id IN (${ph})
+         AND SUBSTR(t.date_key, 1, 10) >= ? AND SUBSTR(t.date_key, 1, 10) <= ?
+         GROUP BY COALESCE(m.group_id, 0)`
+      )
+      .all(...agentIds, startStr, endStr);
+    const thirdMap = {};
+    thirdRows.forEach((r) => {
+      thirdMap[r.group_id] = r;
+    });
+
+    let totalMembers = 0,
+      totalActive = 0,
+      totalDep = 0;
+    const result = groups.map((g) => {
+      const gid = g.group_id;
+      const active = activeMap[gid] || 0;
+      const lot = lotteryMap[gid] || { lotteryBet: 0, lotteryWL: 0 };
+      const thd = thirdMap[gid] || { thirdBet: 0, thirdWL: 0 };
+      totalMembers += g.members;
+      totalActive += active;
+      totalDep += g.totalDeposit;
+      return {
+        groupId: gid,
+        members: g.members,
+        active,
+        totalDeposit: g.totalDeposit,
+        lotteryBet: lot.lotteryBet,
+        lotteryWL: lot.lotteryWL,
+        thirdBet: thd.thirdBet,
+        thirdWL: thd.thirdWL
+      };
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalGroups: groups.length,
+          totalMembers,
+          totalActive,
+          totalDeposit: totalDep
+        },
+        groups: result
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/qc-group-quality error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/provider-analysis ──
+// ═══════════════════════════════════════
+
+router.get('/provider-analysis', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    // Per platform from report_third
+    const platforms = db
+      .prepare(
+        `SELECT platform_id, platform_id_name,
+                COUNT(DISTINCT uid) as players,
+                COALESCE(SUM(t_bet_amount), 0) as betAmount,
+                COALESCE(SUM(t_bet_times), 0) as betTimes,
+                COALESCE(SUM(t_win_lose), 0) as winLose
+         FROM data_report_third WHERE agent_id IN (${ph})
+         AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         GROUP BY platform_id ORDER BY betAmount DESC`
+      )
+      .all(...agentIds, startStr, endStr);
+
+    // Top 30 games from bet_orders
+    const topGames = db
+      .prepare(
+        `SELECT game_name, platform_id_name,
+                COUNT(DISTINCT uid) as players,
+                COUNT(*) as betCount,
+                COALESCE(SUM(bet_amount), 0) as betAmount,
+                COALESCE(SUM(win_lose), 0) as winLose
+         FROM data_bet_orders WHERE agent_id IN (${ph})
+         AND bet_time >= ? AND bet_time < ? || ' 23:59:59'
+         GROUP BY game_name ORDER BY betAmount DESC LIMIT 30`
+      )
+      .all(...agentIds, startStr, endStr);
+
+    let totalBet = 0,
+      totalWL = 0;
+    platforms.forEach((p) => {
+      totalBet += p.betAmount;
+      totalWL += p.winLose;
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalProviders: platforms.length,
+          totalBet,
+          totalWL
+        },
+        platforms: platforms.map((p) => ({
+          ...p,
+          companyProfit: -p.winLose
+        })),
+        topGames: topGames.map((g) => ({
+          ...g,
+          companyProfit: -g.winLose
+        }))
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/provider-analysis error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/lottery-analysis ──
+// ═══════════════════════════════════════
+
+router.get('/lottery-analysis', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    const lotteries = db
+      .prepare(
+        `SELECT lottery_name,
+                COUNT(DISTINCT uid) as players,
+                COALESCE(SUM(bet_count), 0) as betCount,
+                COALESCE(SUM(bet_amount), 0) as betAmount,
+                COALESCE(SUM(valid_amount), 0) as validAmount,
+                COALESCE(SUM(prize), 0) as prize,
+                COALESCE(SUM(rebate_amount), 0) as rebateAmount,
+                COALESCE(SUM(result), 0) as result,
+                COALESCE(SUM(win_lose), 0) as winLose
+         FROM data_report_lottery WHERE agent_id IN (${ph})
+         AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         GROUP BY lottery_name ORDER BY betAmount DESC`
+      )
+      .all(...agentIds, startStr, endStr);
+
+    let totalBet = 0,
+      totalWL = 0;
+    lotteries.forEach((l) => {
+      totalBet += l.betAmount;
+      totalWL += l.winLose;
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalLotteries: lotteries.length,
+          totalBet,
+          totalWL
+        },
+        lotteries: lotteries.map((l) => ({
+          ...l,
+          companyProfit: -l.winLose
+        }))
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/lottery-analysis error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/deposit-withdraw-analysis ──
+// ═══════════════════════════════════════
+
+router.get('/deposit-withdraw-analysis', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    // Daily totals
+    const daily = db
+      .prepare(
+        `SELECT SUBSTR(date_key, 1, 10) as day,
+                COALESCE(SUM(deposit_amount), 0) as deposit,
+                COALESCE(SUM(withdrawal_amount), 0) as withdrawal,
+                COALESCE(SUM(promotion), 0) as promotion,
+                COALESCE(SUM(third_rebate), 0) as thirdRebate
+         FROM data_report_funds WHERE agent_id IN (${ph})
+         AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         GROUP BY SUBSTR(date_key, 1, 10) ORDER BY day`
+      )
+      .all(...agentIds, startStr, endStr);
+
+    // Per agent
+    const agents = db
+      .prepare(
+        `SELECT id, label, ee88_username FROM ee88_agents
+         WHERE id IN (${ph}) AND is_deleted = 0 ORDER BY id`
+      )
+      .all(...agentIds);
+
+    const perAgent = db
+      .prepare(
+        `SELECT agent_id,
+                COALESCE(SUM(deposit_amount), 0) as deposit,
+                COALESCE(SUM(withdrawal_amount), 0) as withdrawal,
+                COALESCE(SUM(promotion), 0) as promotion,
+                COALESCE(SUM(third_rebate), 0) as thirdRebate
+         FROM data_report_funds WHERE agent_id IN (${ph})
+         AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         GROUP BY agent_id`
+      )
+      .all(...agentIds, startStr, endStr);
+    const agentDataMap = {};
+    perAgent.forEach((r) => {
+      agentDataMap[r.agent_id] = r;
+    });
+
+    let totalDep = 0,
+      totalWd = 0,
+      totalPro = 0,
+      totalReb = 0;
+    daily.forEach((d) => {
+      totalDep += d.deposit;
+      totalWd += d.withdrawal;
+      totalPro += d.promotion;
+      totalReb += d.thirdRebate;
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalDeposit: totalDep,
+          totalWithdrawal: totalWd,
+          net: totalDep - totalWd,
+          totalPromotion: totalPro,
+          totalRebate: totalReb
+        },
+        daily,
+        perAgent: agents.map((a) => {
+          const d = agentDataMap[a.id] || {
+            deposit: 0,
+            withdrawal: 0,
+            promotion: 0,
+            thirdRebate: 0
+          };
+          return {
+            agentId: a.id,
+            label: a.label,
+            ee88Username: a.ee88_username,
+            deposit: d.deposit,
+            withdrawal: d.withdrawal,
+            net: d.deposit - d.withdrawal,
+            promotion: d.promotion,
+            thirdRebate: d.thirdRebate
+          };
+        })
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/deposit-withdraw-analysis error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/customer-retention ──
+// ═══════════════════════════════════════
+
+router.get('/customer-retention', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    // Kỳ trước cùng độ dài
+    const days =
+      Math.round((new Date(endStr) - new Date(startStr)) / 86400000) + 1;
+    const prevEnd = new Date(startStr);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - days + 1);
+    const prevStartStr = fmtDate(prevStart);
+    const prevEndStr = fmtDate(prevEnd);
+
+    // Active UIDs kỳ hiện tại
+    const currentActive = db
+      .prepare(
+        `SELECT DISTINCT uid FROM (
+           SELECT uid FROM data_report_lottery WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           UNION
+           SELECT uid FROM data_report_third WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         )`
+      )
+      .all(...agentIds, startStr, endStr, ...agentIds, startStr, endStr);
+    const currentUids = new Set(currentActive.map((r) => r.uid));
+
+    // Active UIDs kỳ trước
+    const prevActive = db
+      .prepare(
+        `SELECT DISTINCT uid FROM (
+           SELECT uid FROM data_report_lottery WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           UNION
+           SELECT uid FROM data_report_third WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         )`
+      )
+      .all(
+        ...agentIds,
+        prevStartStr,
+        prevEndStr,
+        ...agentIds,
+        prevStartStr,
+        prevEndStr
+      );
+    const prevUids = new Set(prevActive.map((r) => r.uid));
+
+    // Khách mới đăng ký trong khoảng
+    const newMembers = db
+      .prepare(
+        `SELECT COUNT(*) as cnt FROM data_members
+         WHERE agent_id IN (${ph}) AND register_time >= ? AND register_time < ? || ' 23:59:59'`
+      )
+      .get(...agentIds, startStr, endStr).cnt;
+
+    // Quay lại = active kỳ hiện tại AND active kỳ trước
+    let returning = 0;
+    currentUids.forEach((uid) => {
+      if (prevUids.has(uid)) returning++;
+    });
+
+    // Rời bỏ = active kỳ trước BUT NOT kỳ hiện tại
+    let churned = 0;
+    prevUids.forEach((uid) => {
+      if (!currentUids.has(uid)) churned++;
+    });
+
+    // Mới = active kỳ hiện tại BUT NOT kỳ trước
+    let newActive = 0;
+    currentUids.forEach((uid) => {
+      if (!prevUids.has(uid)) newActive++;
+    });
+
+    const retentionRate =
+      prevUids.size > 0
+        ? Math.round((returning / prevUids.size) * 1000) / 10
+        : 0;
+
+    // Per agent breakdown
+    const memberAgentMap = {};
+    const membersAll = db
+      .prepare(
+        `SELECT uid, agent_id FROM data_members WHERE agent_id IN (${ph})`
+      )
+      .all(...agentIds);
+    membersAll.forEach((m) => {
+      memberAgentMap[m.uid] = m.agent_id;
+    });
+
+    const agentsInfo = db
+      .prepare(
+        `SELECT id, label, ee88_username FROM ee88_agents
+         WHERE id IN (${ph}) AND is_deleted = 0`
+      )
+      .all(...agentIds);
+    const byAgent = {};
+    agentsInfo.forEach((a) => {
+      byAgent[a.id] = {
+        agentId: a.id,
+        label: a.label,
+        ee88Username: a.ee88_username,
+        active: 0,
+        newActive: 0,
+        returning: 0,
+        churned: 0
+      };
+    });
+
+    currentUids.forEach((uid) => {
+      const aid = memberAgentMap[uid];
+      if (aid && byAgent[aid]) {
+        byAgent[aid].active++;
+        if (prevUids.has(uid)) byAgent[aid].returning++;
+        else byAgent[aid].newActive++;
+      }
+    });
+    prevUids.forEach((uid) => {
+      const aid = memberAgentMap[uid];
+      if (aid && byAgent[aid] && !currentUids.has(uid)) {
+        byAgent[aid].churned++;
+      }
+    });
+
+    const byAgentArr = Object.values(byAgent).map((a) => ({
+      ...a,
+      retentionRate:
+        a.returning + a.churned > 0
+          ? Math.round((a.returning / (a.returning + a.churned)) * 1000) / 10
+          : 0
+    }));
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalActive: currentUids.size,
+          newMembers,
+          newActive,
+          returning,
+          churned,
+          retentionRate
+        },
+        byAgent: byAgentArr
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/customer-retention error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/promotion-analysis ──
+// ═══════════════════════════════════════
+
+router.get('/promotion-analysis', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    const agents = db
+      .prepare(
+        `SELECT id, label, ee88_username FROM ee88_agents
+         WHERE id IN (${ph}) AND is_deleted = 0 ORDER BY id`
+      )
+      .all(...agentIds);
+
+    const perAgent = db
+      .prepare(
+        `SELECT agent_id,
+                COALESCE(SUM(promotion), 0) as promotion,
+                COALESCE(SUM(third_rebate), 0) as thirdRebate,
+                COALESCE(SUM(third_activity_amount), 0) as thirdActivity,
+                COALESCE(SUM(deposit_amount), 0) as totalDeposit
+         FROM data_report_funds WHERE agent_id IN (${ph})
+         AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+         GROUP BY agent_id`
+      )
+      .all(...agentIds, startStr, endStr);
+    const dataMap = {};
+    perAgent.forEach((r) => {
+      dataMap[r.agent_id] = r;
+    });
+
+    let totalPro = 0,
+      totalReb = 0,
+      totalAct = 0,
+      totalDep = 0;
+    perAgent.forEach((r) => {
+      totalPro += r.promotion;
+      totalReb += r.thirdRebate;
+      totalAct += r.thirdActivity;
+      totalDep += r.totalDeposit;
+    });
+
+    const promoRate =
+      totalDep > 0 ? Math.round((totalPro / totalDep) * 1000) / 10 : 0;
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalPromotion: totalPro,
+          totalRebate: totalReb,
+          totalActivity: totalAct,
+          totalDeposit: totalDep,
+          promoRate
+        },
+        perAgent: agents.map((a) => {
+          const d = dataMap[a.id] || {
+            promotion: 0,
+            thirdRebate: 0,
+            thirdActivity: 0,
+            totalDeposit: 0
+          };
+          return {
+            agentId: a.id,
+            label: a.label,
+            ee88Username: a.ee88_username,
+            promotion: d.promotion,
+            thirdRebate: d.thirdRebate,
+            thirdActivity: d.thirdActivity,
+            totalDeposit: d.totalDeposit,
+            promoRate:
+              d.totalDeposit > 0
+                ? Math.round((d.promotion / d.totalDeposit) * 1000) / 10
+                : 0
+          };
+        })
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/promotion-analysis error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/financial-summary ──
+// ═══════════════════════════════════════
+
+router.get('/financial-summary', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    // Kỳ trước
+    const numDays =
+      Math.round((new Date(endStr) - new Date(startStr)) / 86400000) + 1;
+    const prevEnd = new Date(startStr);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - numDays + 1);
+    const prevStartStr = fmtDate(prevStart);
+    const prevEndStr = fmtDate(prevEnd);
+
+    const agents = db
+      .prepare(
+        `SELECT id, label, ee88_username FROM ee88_agents
+         WHERE id IN (${ph}) AND is_deleted = 0 ORDER BY id`
+      )
+      .all(...agentIds);
+
+    function queryPeriod(s, e) {
+      const lotteryWL = db
+        .prepare(
+          `SELECT agent_id, COALESCE(SUM(win_lose), 0) as wl
+           FROM data_report_lottery WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           GROUP BY agent_id`
+        )
+        .all(...agentIds, s, e);
+
+      const thirdWL = db
+        .prepare(
+          `SELECT agent_id, COALESCE(SUM(t_win_lose), 0) as wl
+           FROM data_report_third WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           GROUP BY agent_id`
+        )
+        .all(...agentIds, s, e);
+
+      const funds = db
+        .prepare(
+          `SELECT agent_id,
+                  COALESCE(SUM(promotion), 0) as promotion,
+                  COALESCE(SUM(third_rebate), 0) as thirdRebate,
+                  COALESCE(SUM(deposit_amount), 0) as deposit,
+                  COALESCE(SUM(withdrawal_amount), 0) as withdrawal
+           FROM data_report_funds WHERE agent_id IN (${ph})
+           AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+           GROUP BY agent_id`
+        )
+        .all(...agentIds, s, e);
+
+      return { lotteryWL, thirdWL, funds };
+    }
+
+    function buildResult(q) {
+      const lotMap = {},
+        thdMap = {},
+        fundsMap = {};
+      q.lotteryWL.forEach((r) => {
+        lotMap[r.agent_id] = r.wl;
+      });
+      q.thirdWL.forEach((r) => {
+        thdMap[r.agent_id] = r.wl;
+      });
+      q.funds.forEach((r) => {
+        fundsMap[r.agent_id] = {
+          promotion: r.promotion,
+          thirdRebate: r.thirdRebate,
+          deposit: r.deposit,
+          withdrawal: r.withdrawal
+        };
+      });
+
+      let totRevenue = 0,
+        totCost = 0;
+      const perAgent = agents.map((a) => {
+        const lw = lotMap[a.id] || 0;
+        const tw = thdMap[a.id] || 0;
+        const f = fundsMap[a.id] || {
+          promotion: 0,
+          thirdRebate: 0,
+          deposit: 0,
+          withdrawal: 0
+        };
+        const cost = f.promotion + f.thirdRebate;
+        const revenue = -(lw + tw + f.promotion + f.thirdRebate);
+        const profit = revenue;
+        totRevenue += revenue;
+        totCost += cost;
+        return {
+          agentId: a.id,
+          label: a.label,
+          ee88Username: a.ee88_username,
+          lotteryWL: lw,
+          thirdWL: tw,
+          promotion: f.promotion,
+          thirdRebate: f.thirdRebate,
+          revenue,
+          cost,
+          profit,
+          margin:
+            revenue !== 0
+              ? Math.round((profit / Math.abs(revenue)) * 1000) / 10
+              : 0
+        };
+      });
+      return {
+        perAgent,
+        totals: {
+          revenue: totRevenue,
+          cost: totCost,
+          profit: totRevenue,
+          margin:
+            totRevenue !== 0
+              ? Math.round((totRevenue / Math.abs(totRevenue)) * 1000) / 10
+              : 0
+        }
+      };
+    }
+
+    const cur = buildResult(queryPeriod(startStr, endStr));
+    const prev = buildResult(queryPeriod(prevStartStr, prevEndStr));
+
+    let comparison = 'SAME';
+    if (prev.totals.profit === 0 && cur.totals.profit !== 0) comparison = 'NEW';
+    else if (cur.totals.profit > prev.totals.profit) comparison = 'UP';
+    else if (cur.totals.profit < prev.totals.profit) comparison = 'DOWN';
+
+    const changePct =
+      prev.totals.profit !== 0
+        ? Math.round(
+            ((cur.totals.profit - prev.totals.profit) /
+              Math.abs(prev.totals.profit)) *
+              1000
+          ) / 10
+        : 0;
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        perAgent: cur.perAgent,
+        totals: cur.totals,
+        prevTotals: prev.totals,
+        comparison,
+        changePct
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/financial-summary error: ' + err.message);
+    res.json({ code: -1, msg: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
+// ── GET /api/dashboard/detailed-game-stats ──
+// ═══════════════════════════════════════
+
+router.get('/detailed-game-stats', (req, res) => {
+  const { startStr, endStr } = parseDateRange(req.query);
+  try {
+    const db = getDb();
+    const agentIds = req.agentIds;
+    const ph = agentIds.map(() => '?').join(',');
+
+    const games = db
+      .prepare(
+        `SELECT game_name, platform_id_name,
+                COUNT(DISTINCT uid) as players,
+                COUNT(*) as betCount,
+                COALESCE(SUM(bet_amount), 0) as betAmount,
+                COALESCE(SUM(turnover), 0) as turnover,
+                COALESCE(SUM(prize), 0) as prize,
+                COALESCE(SUM(win_lose), 0) as winLose
+         FROM data_bet_orders WHERE agent_id IN (${ph})
+         AND bet_time >= ? AND bet_time < ? || ' 23:59:59'
+         GROUP BY game_name, platform_id_name ORDER BY betAmount DESC`
+      )
+      .all(...agentIds, startStr, endStr);
+
+    let totalBet = 0,
+      totalWL = 0,
+      totalBetCount = 0;
+    games.forEach((g) => {
+      totalBet += g.betAmount;
+      totalWL += g.winLose;
+      totalBetCount += g.betCount;
+    });
+
+    res.json({
+      code: 0,
+      data: {
+        startDate: startStr,
+        endDate: endStr,
+        summary: {
+          totalGames: games.length,
+          totalBetCount,
+          totalBet,
+          totalWL,
+          companyProfit: -totalWL
+        },
+        games: games.map((g) => ({
+          ...g,
+          companyProfit: -g.winLose
+        }))
+      }
+    });
+  } catch (err) {
+    log.error('dashboard/detailed-game-stats error: ' + err.message);
     res.json({ code: -1, msg: err.message });
   }
 });

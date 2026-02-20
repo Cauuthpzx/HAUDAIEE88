@@ -96,15 +96,27 @@ router.get('/sync/status', (req, res) => {
       EP_TABLES[ep] = mapping.table;
     }
 
+    // Tính ngày bắt đầu window (today - SYNC_DAYS)
+    const syncDays = require('../config/default').sync.days || 65;
+    const windowStart = new Date();
+    windowStart.setDate(windowStart.getDate() - syncDays);
+    const windowStartStr =
+      windowStart.getFullYear() +
+      '-' +
+      String(windowStart.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(windowStart.getDate()).padStart(2, '0');
+
     const agentStats = agents.map((agent) => {
       let lockCount = 0;
       let lastSyncAt = null;
       try {
+        // Chỉ đếm locks trong window hiện tại (không đếm ngày cũ đã trôi ra ngoài)
         lockCount = db
           .prepare(
-            'SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ?'
+            'SELECT COUNT(*) as cnt FROM sync_day_locks WHERE agent_id = ? AND date_key >= ?'
           )
-          .get(agent.id).cnt;
+          .get(agent.id, windowStartStr).cnt;
       } catch (e) {}
       try {
         lastSyncAt = db
@@ -141,7 +153,7 @@ router.get('/sync/status', (req, res) => {
       data: {
         agents: agentStats,
         syncing: cronSync.isSyncRunning(),
-        totalDays: 65
+        totalDays: (require('../config/default').sync.days || 65) + 1
       }
     });
   } catch (err) {
@@ -182,14 +194,14 @@ router.post('/sync/run', async (req, res) => {
   }
 });
 
-// POST /api/admin/sync/run-all — Sync tất cả agents (song song)
+// POST /api/admin/sync/run-all — Sync tất cả agents (tuần tự)
 router.post('/sync/run-all', async (req, res) => {
   if (cronSync.isSyncRunning()) {
     return res.json({ code: -1, msg: 'Đang sync, vui lòng đợi...' });
   }
 
-  log.info(`[${req.user.username}] Sync toàn bộ agents`);
-  res.json({ code: 0, msg: 'Đã bắt đầu sync toàn bộ' });
+  log.info(`[${req.user.username}] Sync toàn bộ agents (tuần tự)`);
+  res.json({ code: 0, msg: 'Đã bắt đầu sync toàn bộ (tuần tự)' });
 
   try {
     await cronSync.syncAllAgents();
