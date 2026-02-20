@@ -174,14 +174,6 @@
                     </div>
                   </div>
                   <div class="layui-inline">
-                    <label data-i18n="agent">Đại lý</label>：
-                    <div style="width: 150px" class="layui-input-inline">
-                      <select name="agent_ids" lay-search>
-                        <option value="" data-i18n="all">Tất cả</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -218,11 +210,11 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
-        HubAPI.loadAgentSelect();
 
         var table = layui.table;
         var form = layui.form;
@@ -251,10 +243,10 @@
             String(_td.getDate()).padStart(2, '0');
         laydate.render({
           elem: '#firstDepositTime',
-          type: 'datetime',
+          type: 'date',
           range: '|',
           rangeLinked: true,
-          value: _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59'
+          value: _todayStr + ' | ' + _todayStr
         });
 
         // ── Khởi tạo bảng ──
@@ -263,7 +255,12 @@
           url: '/api/data/members',
           method: 'get',
           toolbar: '#toolbarTpl',
-          defaultToolbar: ['filter', 'print', 'exports'],
+          defaultToolbar: [
+            HubAgentFilter.create('memberTable'),
+            'filter',
+            'print',
+            'exports'
+          ],
           page: true,
           limit: 10,
           text: { none: HubLang.t('noData') },
@@ -629,7 +626,7 @@
             setTimeout(function () {
               form.render('select');
               document.getElementById('firstDepositTime').value =
-                _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59';
+                _todayStr + ' | ' + _todayStr;
               table.reload('memberTable', {
                 where: {
                   username: '',

@@ -121,14 +121,6 @@
                     </div>
                   </div>
                   <div class="layui-inline">
-                    <label data-i18n="agent">Đại lý</label>：
-                    <div style="width: 150px" class="layui-input-inline">
-                      <select name="agent_ids" lay-search>
-                        <option value="" data-i18n="all">Tất cả</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -165,12 +157,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
         HubLang.applyDOM();
-        HubAPI.loadAgentSelect();
         var table = layui.table;
         var form = layui.form;
         var laydate = layui.laydate;
@@ -221,10 +213,10 @@
             String(_td.getDate()).padStart(2, '0');
         laydate.render({
           elem: '#createTime',
-          type: 'datetime',
+          type: 'date',
           range: '|',
           rangeLinked: true,
-          value: _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59'
+          value: _todayStr + ' | ' + _todayStr
         });
 
         table.render({
@@ -232,7 +224,12 @@
           url: '/api/data/invites',
           method: 'get',
           toolbar: '#toolbarTpl',
-          defaultToolbar: ['filter', 'print', 'exports'],
+          defaultToolbar: [
+            HubAgentFilter.create('dataTable'),
+            'filter',
+            'print',
+            'exports'
+          ],
           page: true,
           limit: 10,
           text: { none: HubLang.t('noData') },
@@ -562,12 +559,11 @@
             setTimeout(function () {
               form.render('select');
               document.getElementById('createTime').value =
-                _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59';
+                _todayStr + ' | ' + _todayStr;
               table.reload('dataTable', {
                 where: {
                   invite_code: '',
-                  create_time:
-                    _todayStr + ' 00:00:00 | ' + _todayStr + ' 23:59:59'
+                  create_time: _todayStr + ' | ' + _todayStr
                 },
                 page: { curr: 1 }
               });

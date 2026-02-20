@@ -364,6 +364,7 @@
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       HubAPI.requireAuth();
@@ -375,6 +376,7 @@
         customEnd = null;
       var barChart = null,
         pieChart = null;
+      var _agentTableData = null;
 
       function fmtDate(d) {
         return (
@@ -673,15 +675,34 @@
             templet: wlTpl('thirdWL')
           });
 
+          _agentTableData = tableData;
           layui.table.render({
             elem: '#agentTable',
             toolbar: true,
-            defaultToolbar: ['filter', 'print', 'exports'],
+            defaultToolbar: [
+              HubAgentFilter.create('agentTable'),
+              'filter',
+              'print',
+              'exports'
+            ],
             data: tableData,
             text: { none: HubLang.t('noData') },
             page: false,
             cols: [cols]
           });
+
+          HubAgentFilter.onFilter(
+            'agentTable',
+            function (selectedIds, allSelected) {
+              if (!_agentTableData) return;
+              var filtered = allSelected
+                ? _agentTableData
+                : _agentTableData.filter(function (d) {
+                    return selectedIds.indexOf(d.agentId) !== -1;
+                  });
+              layui.table.reload('agentTable', { data: filtered });
+            }
+          );
         }
 
         function renderBarChart(d) {

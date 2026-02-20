@@ -144,6 +144,7 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       layui.use(['table', 'form', 'layer'], function () {
@@ -154,6 +155,21 @@
         var form = layui.form;
         var layer = layui.layer;
         var $ = layui.$;
+        var _allAgents = null;
+
+        HubAgentFilter.onFilter(
+          'dataTable',
+          function (selectedIds, allSelected) {
+            if (!_allAgents) return;
+            var filtered = allSelected
+              ? _allAgents
+              : _allAgents.filter(function (d) {
+                  return selectedIds.indexOf(d.id) !== -1;
+                });
+            table.reload('dataTable', { data: filtered });
+          }
+        );
+
         // Kiểm tra solver status
         function checkSolverStatus() {
           HubAPI.adminGet('solver-status')
@@ -181,10 +197,16 @@
             .then(function (res) {
               layer.close(loadIdx);
               if (res.code === 0) {
+                _allAgents = res.data;
                 table.render({
                   elem: '#dataTable',
                   toolbar: '#toolbarTpl',
-                  defaultToolbar: ['filter', 'print', 'exports'],
+                  defaultToolbar: [
+                    HubAgentFilter.create('dataTable'),
+                    'filter',
+                    'print',
+                    'exports'
+                  ],
                   data: res.data,
                   text: { none: HubLang.t('noAgents') },
                   cols: [

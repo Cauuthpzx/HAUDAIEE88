@@ -240,14 +240,6 @@
                     </div>
                   </div>
                   <div class="layui-inline">
-                    <label data-i18n="agent">Đại lý</label>：
-                    <div style="width: 150px" class="layui-input-inline">
-                      <select name="agent_ids" lay-search>
-                        <option value="" data-i18n="all">Tất cả</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="layui-inline">
                     <button
                       type="button"
                       class="layui-btn"
@@ -310,12 +302,12 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       layui.use(['table', 'form', 'laydate', 'layer'], function () {
         HubLang.init();
         HubLang.applyDOM();
-        HubAPI.loadAgentSelect();
         document.title = HubLang.t('betTitle');
         var table = layui.table;
         var form = layui.form;
@@ -467,7 +459,12 @@
           method: 'get',
           where: {},
           toolbar: true,
-          defaultToolbar: ['filter', 'print', 'exports'],
+          defaultToolbar: [
+            HubAgentFilter.create('dataTable'),
+            'filter',
+            'print',
+            'exports'
+          ],
           page: true,
           limit: 10,
           text: { none: HubLang.t('noData') },

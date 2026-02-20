@@ -89,31 +89,32 @@ app.use(
   })
 );
 
-app.use(
-  '/api/auth/login',
-  rateLimit({
-    windowMs: config.security.authRateLimit.windowMs,
-    max: config.security.authRateLimit.max,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-      code: -1,
-      msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút'
-    }
-  })
-);
+// Rate limit login — disabled for dev
+// app.use(
+//   '/api/auth/login',
+//   rateLimit({
+//     windowMs: config.security.authRateLimit.windowMs,
+//     max: config.security.authRateLimit.max,
+//     standardHeaders: true,
+//     legacyHeaders: false,
+//     message: {
+//       code: -1,
+//       msg: 'Quá nhiều lần thử đăng nhập, vui lòng đợi 15 phút'
+//     }
+//   })
+// );
 
-// Strict rate limit cho admin sensitive operations
-app.use(
-  '/api/admin/agents/login',
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { code: -1, msg: 'Quá nhiều yêu cầu login agent, đợi 15 phút' }
-  })
-);
+// Strict rate limit cho admin sensitive operations — disabled for dev
+// app.use(
+//   '/api/admin/agents/login',
+//   rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 20,
+//     standardHeaders: true,
+//     legacyHeaders: false,
+//     message: { code: -1, msg: 'Quá nhiều yêu cầu login agent, đợi 15 phút' }
+//   })
+// );
 
 // Morgan: file log (skip health), dev console chỉ khi NODE_ENV !== production
 const skipHealth = (req) => req.path === '/api/health';

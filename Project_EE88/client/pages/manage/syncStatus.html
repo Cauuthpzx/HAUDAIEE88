@@ -300,6 +300,7 @@
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-agent-filter.js"></script>
 
     <script>
       layui.use(['treeTable', 'form', 'layer'], function () {
@@ -315,6 +316,20 @@
         var snap = null;
         var rendered = false;
         var currentFilter = {};
+        var _toolbarAgentFilter = null;
+
+        HubAgentFilter.onFilter(
+          'syncTree',
+          function (selectedIds, allSelected) {
+            _toolbarAgentFilter = allSelected ? null : selectedIds;
+            if (rendered) {
+              var data = applyToolbarAgentFilter(
+                filterTreeData(buildTreeData())
+              );
+              treeTable.reloadData('syncTree', { data: data });
+            }
+          }
+        );
         var sse = null;
         var pollTimer = null;
         var statsTimer = null;
@@ -742,14 +757,26 @@
           '</button>' +
           '</div><span id="syncingIndicator"></span>';
 
+        function applyToolbarAgentFilter(data) {
+          if (!_toolbarAgentFilter) return data;
+          return data.filter(function (d) {
+            return _toolbarAgentFilter.indexOf(d.agentId) !== -1;
+          });
+        }
+
         function renderTree() {
-          var data = filterTreeData(buildTreeData());
+          var data = applyToolbarAgentFilter(filterTreeData(buildTreeData()));
           if (!rendered) {
             treeTable.render({
               id: 'syncTree',
               elem: '#syncTree',
               toolbar: barToolbarHtml,
-              defaultToolbar: ['filter', 'print', 'exports'],
+              defaultToolbar: [
+                HubAgentFilter.create('syncTree'),
+                'filter',
+                'print',
+                'exports'
+              ],
               data: data,
               tree: {
                 customName: { children: 'children' },
@@ -818,7 +845,7 @@
         // ═══════════════════════════════════════
 
         function updateTreeCells() {
-          var data = filterTreeData(buildTreeData());
+          var data = applyToolbarAgentFilter(filterTreeData(buildTreeData()));
 
           if (!rendered) {
             renderTree();
