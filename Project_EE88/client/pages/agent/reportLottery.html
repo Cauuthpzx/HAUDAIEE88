@@ -398,11 +398,6 @@
                 title: HubLang.t('agent'),
                 width: 120
               },
-              {
-                field: 'lottery_name',
-                title: HubLang.t('lotteryName'),
-                width: 200
-              },
               { field: 'bet_count', title: HubLang.t('betTimes'), width: 100 },
               {
                 field: 'bet_amount',
@@ -419,9 +414,18 @@
                 title: HubLang.t('rebateAmount'),
                 width: 120
               },
-              { field: 'prize', title: HubLang.t('prize'), width: 140 },
               { field: 'result', title: HubLang.t('result'), width: 140 },
-              { field: 'win_lose', title: HubLang.t('winLose'), width: 140 },
+              {
+                field: 'win_lose',
+                title: HubLang.t('winLoseNoRebate'),
+                width: 180
+              },
+              { field: 'prize', title: HubLang.t('prize'), width: 140 },
+              {
+                field: 'lottery_name',
+                title: HubLang.t('lotteryName'),
+                width: 200
+              },
               { field: 'uid', title: 'UID', width: 90 },
               { field: 'lottery_id', title: HubLang.t('lotteryId'), width: 90 }
             ]

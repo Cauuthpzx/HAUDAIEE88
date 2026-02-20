@@ -39,7 +39,7 @@
 - **Cược NCC** → dùng `data_report_third` (t_bet_amount)
 - **Thắng/Thua NCC** → dùng `data_bet_orders` (win_lose)
 - **Đếm hội viên hoạt động** → DISTINCT uid từ `data_report_lottery` UNION `data_report_third` (không dùng last_login_time)
-- **Khách mới** → uid xuất hiện lần đầu trong lottery/third/deposits hôm nay mà CHƯA TỪNG có trước đó
+- **Khách mới hợp lệ** → UNION của 3 nhóm (lọc trùng): A) uid lần đầu đặt cược hôm nay (mới trong lottery/third), B) uid có nạp lần đầu hôm nay (first_deposit_time = today, mới hoặc cũ), C) uid lần đầu trong data + balance > 10,000
 - **Tổng hội viên** → COUNT từ `data_members`
 - **Hội viên mới** → COUNT từ `data_members` WHERE register_time trong khoảng
 - **Nạp lần đầu** → DISTINCT uid có giao dịch nạp hoàn tất trong khoảng mà trước đó chưa từng nạp (dùng data_deposits)
@@ -65,20 +65,20 @@
 
 ### Dashboard — Bảng đại lý (luôn tháng hiện tại, không theo bộ chọn)
 
-| Cột                         | Công thức                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| Sale                        | ee88_agents.label                                                                           |
-| Dây đại lý                  | ee88_agents.ee88_username                                                                   |
-| Cột ngày (10 ngày gần nhất) | COUNT(DISTINCT uid) từ report_lottery UNION report_third ngày đó                            |
-| Khách mới hôm nay           | uid lần đầu xuất hiện trong lottery/third/deposits hôm nay (CTE today_uids EXCEPT old_uids) |
-| Cược xs hôm nay             | SUM(bet_amount) từ report_lottery hôm nay                                                   |
-| Cược NCC hôm nay            | SUM(t_bet_amount) từ report_third hôm nay                                                   |
-| Tổng cược xs tháng          | SUM(bet_amount) từ report_lottery cả tháng                                                  |
-| Tổng cược NCC tháng         | SUM(t_bet_amount) từ report_third cả tháng                                                  |
-| Nạp hôm nay                 | SUM(deposit_amount) từ data_report_funds hôm nay                                            |
-| Tổng nạp tháng              | SUM(deposit_amount) từ data_report_funds cả tháng                                           |
-| Tổng T/T xổ số              | SUM(win_lose) từ report_lottery cả tháng                                                    |
-| Tổng T/T NCC                | SUM(win_lose) từ bet_orders cả tháng                                                        |
+| Cột                         | Công thức                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Sale                        | ee88_agents.label                                                                               |
+| Dây đại lý                  | ee88_agents.ee88_username                                                                       |
+| Cột ngày (10 ngày gần nhất) | COUNT(DISTINCT uid) từ report_lottery UNION report_third ngày đó                                |
+| Khách mới hợp lệ hôm nay    | UNION: A) uid lần đầu cược (lottery/third), B) first_deposit_time=today, C) uid mới+balance>10K |
+| Cược xs hôm nay             | SUM(bet_amount) từ report_lottery hôm nay                                                       |
+| Cược NCC hôm nay            | SUM(t_bet_amount) từ report_third hôm nay                                                       |
+| Tổng cược xs tháng          | SUM(bet_amount) từ report_lottery cả tháng                                                      |
+| Tổng cược NCC tháng         | SUM(t_bet_amount) từ report_third cả tháng                                                      |
+| Nạp hôm nay                 | SUM(deposit_amount) từ data_report_funds hôm nay                                                |
+| Tổng nạp tháng              | SUM(deposit_amount) từ data_report_funds cả tháng                                               |
+| Tổng T/T xổ số              | SUM(win_lose) từ report_lottery cả tháng                                                        |
+| Tổng T/T NCC                | SUM(win_lose) từ bet_orders cả tháng                                                            |
 
 ### Bộ chọn thời gian nhanh (Dashboard)
 

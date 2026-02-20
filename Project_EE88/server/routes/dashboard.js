@@ -199,21 +199,13 @@ router.get('/stats', (req, res) => {
             todayStr
           );
 
-        // c) Today new customers: uid lần đầu xuất hiện hôm nay
-        //    (có trong lottery/third/deposits hôm nay, KHÔNG có trước hôm nay)
+        // c) Today valid new customers:
+        //    A) uid lần đầu đặt cược hôm nay (mới xuất hiện trong lottery/third)
+        //    B) uid có nạp lần đầu hôm nay (first_deposit_time = today, mới hoặc cũ)
+        //    C) uid lần đầu trong data + balance > 10,000
         const todayNewRows = db
           .prepare(
-            `WITH today_uids AS (
-               SELECT DISTINCT agent_id, uid FROM data_report_lottery
-               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
-               UNION
-               SELECT DISTINCT agent_id, uid FROM data_report_third
-               WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
-               UNION
-               SELECT DISTINCT agent_id, uid FROM data_deposits
-               WHERE agent_id IN (${ph}) AND SUBSTR(create_time, 1, 10) = ?
-             ),
-             old_uids AS (
+            `WITH old_uids AS (
                SELECT DISTINCT agent_id, uid FROM data_report_lottery
                WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) < ?
                UNION
@@ -223,23 +215,52 @@ router.get('/stats', (req, res) => {
                SELECT DISTINCT agent_id, uid FROM data_deposits
                WHERE agent_id IN (${ph}) AND SUBSTR(create_time, 1, 10) < ?
              )
-             SELECT t.agent_id, COUNT(*) as cnt
-             FROM today_uids t
-             LEFT JOIN old_uids o ON o.agent_id = t.agent_id AND o.uid = t.uid
-             WHERE o.uid IS NULL
-             GROUP BY t.agent_id`
+             SELECT agent_id, COUNT(*) as cnt FROM (
+               -- A: New bettor today (first time in lottery/third)
+               SELECT t.agent_id, t.uid FROM (
+                 SELECT DISTINCT agent_id, uid FROM data_report_lottery
+                 WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+                 UNION
+                 SELECT DISTINCT agent_id, uid FROM data_report_third
+                 WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+               ) t
+               LEFT JOIN old_uids o ON o.agent_id = t.agent_id AND o.uid = t.uid
+               WHERE o.uid IS NULL
+               UNION
+               -- B: First deposit today (new or existing member)
+               SELECT agent_id, uid FROM data_members
+               WHERE agent_id IN (${ph}) AND SUBSTR(first_deposit_time, 1, 10) = ?
+               UNION
+               -- C: New in data today + balance > 10,000
+               SELECT t2.agent_id, t2.uid FROM (
+                 SELECT DISTINCT agent_id, uid FROM data_deposits
+                 WHERE agent_id IN (${ph}) AND SUBSTR(create_time, 1, 10) = ?
+               ) t2
+               LEFT JOIN old_uids o2 ON o2.agent_id = t2.agent_id AND o2.uid = t2.uid
+               WHERE o2.uid IS NULL
+                 AND EXISTS (
+                   SELECT 1 FROM data_members m
+                   WHERE m.agent_id = t2.agent_id AND m.uid = t2.uid AND m.balance > 10000
+                 )
+             ) GROUP BY agent_id`
           )
           .all(
+            // old_uids: 3 × (agentIds + todayStr)
             ...agentIds,
             todayStr,
             ...agentIds,
             todayStr,
             ...agentIds,
             todayStr,
+            // A: new bettors (2 × agentIds + todayStr)
             ...agentIds,
             todayStr,
             ...agentIds,
             todayStr,
+            // B: first deposit (agentIds + todayStr)
+            ...agentIds,
+            todayStr,
+            // C: new deposit + balance (agentIds + todayStr)
             ...agentIds,
             todayStr
           );

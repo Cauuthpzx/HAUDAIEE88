@@ -217,22 +217,22 @@
               <table class="layui-table" lay-even lay-skin="nob">
                 <thead>
                   <tr>
-                    <th data-i18n="betAmount">Tiền cược</th>
-                    <th data-i18n="betTimesCol">Lượt cược</th>
-                    <th data-i18n="turnover">Doanh thu</th>
-                    <th data-i18n="prize">Trúng thưởng</th>
-                    <th data-i18n="winLose">Thắng / Thua</th>
+                    <th data-i18n="betTimesCol">Số lần cược</th>
                     <th data-i18n="bettersCountCol">Số người cược</th>
+                    <th data-i18n="betAmount">Tiền cược</th>
+                    <th data-i18n="validBetAmount">Tiền cược hợp lệ</th>
+                    <th data-i18n="prize">Tiền thưởng</th>
+                    <th data-i18n="winLose">Thắng thua</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td id="total_bet_amount" class="hs-text">0.0000</td>
                     <td id="total_bet_times" class="hs-text">0</td>
+                    <td id="total_bet_number" class="hs-text">0</td>
+                    <td id="total_bet_amount" class="hs-text">0.0000</td>
                     <td id="total_turnover" class="hs-text">0.0000</td>
                     <td id="total_prize" class="hs-text">0.0000</td>
                     <td id="total_win_lose" class="hs-text">0.0000</td>
-                    <td id="total_bet_number" class="hs-text">0</td>
                   </tr>
                 </tbody>
               </table>
@@ -320,12 +320,12 @@
         function renderTotalData(totalData) {
           if (!totalData) return;
           var fields = [
+            'total_bet_times',
+            'total_bet_number',
             'total_bet_amount',
             'total_turnover',
             'total_prize',
-            'total_win_lose',
-            'total_bet_times',
-            'total_bet_number'
+            'total_win_lose'
           ];
           fields.forEach(function (key) {
             var val = totalData[key];
@@ -370,18 +370,18 @@
                 minWidth: 120
               },
               {
-                field: 't_bet_amount',
-                title: HubLang.t('betAmount'),
-                minWidth: 120
-              },
-              {
                 field: 't_bet_times',
                 title: HubLang.t('betTimes'),
                 minWidth: 90
               },
               {
+                field: 't_bet_amount',
+                title: HubLang.t('betAmount'),
+                minWidth: 120
+              },
+              {
                 field: 't_turnover',
-                title: HubLang.t('turnover'),
+                title: HubLang.t('validBetAmount'),
                 minWidth: 120
               },
               { field: 't_prize', title: HubLang.t('prize'), minWidth: 120 },
