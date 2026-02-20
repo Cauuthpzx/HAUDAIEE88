@@ -447,111 +447,193 @@
                 renderPieChart(d);
               });
 
-              // Admin: agent table
+              // Admin: agent overview table (tháng hiện tại)
               if (d.perAgent && d.perAgent.length > 0) {
                 $('#agentTableArea').show();
-                layui.table.render({
-                  elem: '#agentTable',
-                  toolbar: true,
-                  defaultToolbar: ['filter', 'print', 'exports'],
-                  data: d.perAgent,
-                  text: { none: HubLang.t('noData') },
-                  page: false,
-                  cols: [
-                    [
-                      { field: 'label', title: HubLang.t('agent'), width: 120 },
-                      {
-                        field: 'members',
-                        title: HubLang.t('dbTotalMembers'),
-                        width: 100,
-                        align: 'right',
-                        templet: function (row) {
-                          return fmtNum(row.members);
-                        }
-                      },
-                      {
-                        field: 'deposit',
-                        title: HubLang.t('dbDepositTotal'),
-                        width: 130,
-                        align: 'right',
-                        templet: function (row) {
-                          return (
-                            '<span style="color:#16b777">' +
-                            fmtMoney(row.deposit) +
-                            '</span>'
-                          );
-                        }
-                      },
-                      {
-                        field: 'withdrawal',
-                        title: HubLang.t('dbWithdrawTotal'),
-                        width: 130,
-                        align: 'right',
-                        templet: function (row) {
-                          return (
-                            '<span style="color:#ff5722">' +
-                            fmtMoney(row.withdrawal) +
-                            '</span>'
-                          );
-                        }
-                      },
-                      {
-                        field: 'lotteryWL',
-                        title: HubLang.t('dbLotteryWL'),
-                        width: 130,
-                        align: 'right',
-                        templet: function (row) {
-                          var v = row.lotteryWL || 0;
-                          return (
-                            '<span style="color:' +
-                            (v >= 0 ? '#16b777' : '#ff5722') +
-                            '">' +
-                            fmtMoney(v) +
-                            '</span>'
-                          );
-                        }
-                      },
-                      {
-                        field: 'thirdWL',
-                        title: HubLang.t('dbThirdPartyWL'),
-                        width: 130,
-                        align: 'right',
-                        templet: function (row) {
-                          var v = row.thirdWL || 0;
-                          return (
-                            '<span style="color:' +
-                            (v >= 0 ? '#16b777' : '#ff5722') +
-                            '">' +
-                            fmtMoney(v) +
-                            '</span>'
-                          );
-                        }
-                      },
-                      {
-                        field: 'net',
-                        title: HubLang.t('dbNet'),
-                        minWidth: 120,
-                        align: 'right',
-                        templet: function (row) {
-                          var net = (row.deposit || 0) - (row.withdrawal || 0);
-                          return (
-                            '<span style="color:' +
-                            (net >= 0 ? '#16b777' : '#ff5722') +
-                            '">' +
-                            fmtMoney(net) +
-                            '</span>'
-                          );
-                        }
-                      }
-                    ]
-                  ]
-                });
+                renderAgentTable(d);
               }
             })
             .catch(function (err) {
               console.error('[Dashboard] Load error:', err);
               showError(err.message);
             });
+        }
+
+        function renderAgentTable(d) {
+          // Build date columns: 1st of month → today
+          var monthNames = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec'
+          ];
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = now.getMonth();
+          var today = now.getDate();
+          var dateCols = [];
+          var startDay = Math.max(1, today - 9);
+          for (var day = startDay; day <= today; day++) {
+            var dd = String(day).padStart(2, '0');
+            var mm = String(month + 1).padStart(2, '0');
+            var dateKey = year + '-' + mm + '-' + dd;
+            var field = 'd_' + dateKey.replace(/-/g, '_');
+            dateCols.push({
+              field: field,
+              title: dd + '-' + monthNames[month],
+              width: 65,
+              align: 'center'
+            });
+          }
+
+          // Flatten dailyOnline into flat fields per row
+          var tableData = d.perAgent.map(function (row) {
+            var flat = {
+              label: row.label,
+              ee88Username: row.ee88Username,
+              todayNewCustomers: row.todayNewCustomers || 0,
+              todayLotteryBet: row.todayLotteryBet || 0,
+              todayThirdBet: row.todayThirdBet || 0,
+              monthlyLotteryBet: row.monthlyLotteryBet || 0,
+              monthlyThirdBet: row.monthlyThirdBet || 0,
+              todayDeposit: row.todayDeposit || 0,
+              monthlyDeposit: row.monthlyDeposit || 0,
+              lotteryWL: row.lotteryWL || 0,
+              thirdWL: row.thirdWL || 0
+            };
+            // Flatten daily online counts
+            var online = row.dailyOnline || {};
+            for (var i = 0; i < dateCols.length; i++) {
+              var dk =
+                year +
+                '-' +
+                String(month + 1).padStart(2, '0') +
+                '-' +
+                String(startDay + i).padStart(2, '0');
+              flat[dateCols[i].field] = online[dk] || 0;
+            }
+            return flat;
+          });
+
+          // Color templet for money values
+          function moneyTpl(field) {
+            return function (row) {
+              return fmtMoney(row[field]);
+            };
+          }
+          function wlTpl(field) {
+            return function (row) {
+              var v = row[field] || 0;
+              return (
+                '<span style="color:' +
+                (v >= 0 ? '#16b777' : '#ff5722') +
+                '">' +
+                fmtMoney(v) +
+                '</span>'
+              );
+            };
+          }
+
+          // Build columns array
+          var cols = [
+            {
+              field: 'label',
+              title: HubLang.t('dbSale'),
+              width: 120,
+              fixed: 'left'
+            },
+            {
+              field: 'ee88Username',
+              title: HubLang.t('dbAgentLine'),
+              width: 120,
+              fixed: 'left'
+            }
+          ];
+
+          // Add date columns
+          cols = cols.concat(dateCols);
+
+          // Add metric columns
+          cols.push({
+            field: 'todayNewCustomers',
+            title: HubLang.t('dbTodayNewCustomers'),
+            width: 130,
+            align: 'right'
+          });
+          cols.push({
+            field: 'todayLotteryBet',
+            title: HubLang.t('dbTodayLotteryBet'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('todayLotteryBet')
+          });
+          cols.push({
+            field: 'todayThirdBet',
+            title: HubLang.t('dbTodayThirdBet'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('todayThirdBet')
+          });
+          cols.push({
+            field: 'monthlyLotteryBet',
+            title: HubLang.t('dbMonthlyLotteryBet'),
+            width: 150,
+            align: 'right',
+            templet: moneyTpl('monthlyLotteryBet')
+          });
+          cols.push({
+            field: 'monthlyThirdBet',
+            title: HubLang.t('dbMonthlyThirdBet'),
+            width: 150,
+            align: 'right',
+            templet: moneyTpl('monthlyThirdBet')
+          });
+          cols.push({
+            field: 'todayDeposit',
+            title: HubLang.t('dbTodayDeposit'),
+            width: 130,
+            align: 'right',
+            templet: moneyTpl('todayDeposit')
+          });
+          cols.push({
+            field: 'monthlyDeposit',
+            title: HubLang.t('dbMonthlyDeposit'),
+            width: 140,
+            align: 'right',
+            templet: moneyTpl('monthlyDeposit')
+          });
+          cols.push({
+            field: 'lotteryWL',
+            title: HubLang.t('dbLotteryWLTotal'),
+            width: 130,
+            align: 'right',
+            templet: wlTpl('lotteryWL')
+          });
+          cols.push({
+            field: 'thirdWL',
+            title: HubLang.t('dbThirdWLTotal'),
+            minWidth: 130,
+            align: 'right',
+            templet: wlTpl('thirdWL')
+          });
+
+          layui.table.render({
+            elem: '#agentTable',
+            toolbar: true,
+            defaultToolbar: ['filter', 'print', 'exports'],
+            data: tableData,
+            text: { none: HubLang.t('noData') },
+            page: false,
+            cols: [cols]
+          });
         }
 
         function renderBarChart(d) {

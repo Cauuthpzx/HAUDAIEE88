@@ -29,6 +29,12 @@ CREATE TABLE IF NOT EXISTS ee88_agents (
   updated_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
+-- EE88 Agents indexes
+-- (is_deleted, status) — permission.js, admin.js, sync.js: WHERE is_deleted = 0 AND status >= 0
+CREATE INDEX IF NOT EXISTS idx_agents_deleted_status ON ee88_agents(is_deleted, status);
+-- ee88_username — admin.js: duplicate check khi thêm agent
+CREATE INDEX IF NOT EXISTS idx_agents_ee88_username ON ee88_agents(ee88_username);
+
 -- Phân quyền: user nào được xem agent nào
 CREATE TABLE IF NOT EXISTS user_agent_permissions (
   user_id INTEGER NOT NULL,
@@ -37,6 +43,8 @@ CREATE TABLE IF NOT EXISTS user_agent_permissions (
   FOREIGN KEY (user_id) REFERENCES hub_users(id) ON DELETE CASCADE,
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
+-- Reverse lookup: GROUP BY agent_id trong admin dashboard + JOIN từ agents
+CREATE INDEX IF NOT EXISTS idx_permissions_agent ON user_agent_permissions(agent_id);
 
 -- Sync day locks — khoá ngày đã đồng bộ hoàn tất (hash để verify)
 CREATE TABLE IF NOT EXISTS sync_day_locks (
@@ -49,7 +57,7 @@ CREATE TABLE IF NOT EXISTS sync_day_locks (
   UNIQUE(agent_id, date_key),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id);
+-- UNIQUE(agent_id, date_key) đã cover agent_id prefix — không cần index riêng
 
 -- ═══════════════════════════════════════════════════════════
 -- Phase 7: Data Storage — lưu data thực sự vào SQLite
@@ -78,9 +86,12 @@ CREATE TABLE IF NOT EXISTS data_members (
   UNIQUE(agent_id, uid),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_members_agent ON data_members(agent_id);
+-- UNIQUE(agent_id, uid) đã cover agent_id prefix — không cần index riêng
 CREATE INDEX IF NOT EXISTS idx_data_members_username ON data_members(username);
-CREATE INDEX IF NOT EXISTS idx_data_members_register ON data_members(register_time);
+-- Compound: dashboard new members (WHERE agent_id IN + register_time range)
+CREATE INDEX IF NOT EXISTS idx_members_agent_register ON data_members(agent_id, register_time);
+-- Compound: dashboard active members (WHERE agent_id IN + last_login_time range)
+CREATE INDEX IF NOT EXISTS idx_members_agent_login ON data_members(agent_id, last_login_time);
 
 -- 2. Mã mời (invites) — snapshot
 CREATE TABLE IF NOT EXISTS data_invites (
@@ -105,7 +116,9 @@ CREATE TABLE IF NOT EXISTS data_invites (
   UNIQUE(agent_id, ee88_id),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_invites_agent ON data_invites(agent_id);
+-- UNIQUE(agent_id, ee88_id) đã cover agent_id prefix
+-- Compound: queryLocal ORDER BY create_time
+CREATE INDEX IF NOT EXISTS idx_invites_agent_create ON data_invites(agent_id, create_time);
 
 -- 3. Nạp tiền (deposits) — theo ngày, unique serial_no
 CREATE TABLE IF NOT EXISTS data_deposits (
@@ -149,9 +162,10 @@ CREATE TABLE IF NOT EXISTS data_deposits (
   UNIQUE(agent_id, serial_no),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_deposits_agent ON data_deposits(agent_id);
-CREATE INDEX IF NOT EXISTS idx_data_deposits_time ON data_deposits(create_time);
+-- UNIQUE(agent_id, serial_no) + compound below đã cover agent_id prefix
 CREATE INDEX IF NOT EXISTS idx_data_deposits_username ON data_deposits(username);
+-- Compound: dashboard first-deposit LEFT JOIN anti-join (agent_id + uid lookup)
+CREATE INDEX IF NOT EXISTS idx_deposits_agent_uid ON data_deposits(agent_id, uid);
 
 -- 4. Rút tiền (withdrawals) — theo ngày, unique serial_no
 CREATE TABLE IF NOT EXISTS data_withdrawals (
@@ -193,8 +207,7 @@ CREATE TABLE IF NOT EXISTS data_withdrawals (
   UNIQUE(agent_id, serial_no),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_withdrawals_agent ON data_withdrawals(agent_id);
-CREATE INDEX IF NOT EXISTS idx_data_withdrawals_time ON data_withdrawals(create_time);
+-- UNIQUE(agent_id, serial_no) + compound below đã cover agent_id + create_time
 CREATE INDEX IF NOT EXISTS idx_data_withdrawals_username ON data_withdrawals(username);
 
 -- 5. Đơn cược bên thứ 3 (bet-orders) — theo ngày, unique serial_no
@@ -220,8 +233,8 @@ CREATE TABLE IF NOT EXISTS data_bet_orders (
   UNIQUE(agent_id, serial_no),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_bet_orders_agent ON data_bet_orders(agent_id);
-CREATE INDEX IF NOT EXISTS idx_data_bet_orders_time ON data_bet_orders(bet_time);
+-- UNIQUE(agent_id, serial_no) + compound below đã cover agent_id + bet_time
+CREATE INDEX IF NOT EXISTS idx_bet_orders_username ON data_bet_orders(username);
 
 -- 6. Báo cáo xổ số (report-lottery) — aggregated per user/lottery/date
 CREATE TABLE IF NOT EXISTS data_report_lottery (
@@ -316,8 +329,8 @@ CREATE TABLE IF NOT EXISTS data_lottery_bets (
   UNIQUE(agent_id, serial_no),
   FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_data_lottery_bets_agent ON data_lottery_bets(agent_id);
-CREATE INDEX IF NOT EXISTS idx_data_lottery_bets_time ON data_lottery_bets(create_time);
+-- UNIQUE(agent_id, serial_no) + compound below đã cover agent_id + create_time
+CREATE INDEX IF NOT EXISTS idx_lottery_bets_username ON data_lottery_bets(username);
 
 -- 10. Tổng hợp (totals) — lưu total_data per agent/endpoint/date
 CREATE TABLE IF NOT EXISTS data_totals (
@@ -332,7 +345,10 @@ CREATE TABLE IF NOT EXISTS data_totals (
 );
 CREATE INDEX IF NOT EXISTS idx_data_totals_lookup ON data_totals(agent_id, endpoint_key, date_key);
 
--- Compound indexes cho tối ưu truy vấn theo agent + thời gian
+-- ═══════════════════════════════════════════════════════════
+-- Compound indexes: agent + time (ORDER BY + range queries)
+-- Thay thế các index đơn cột bị thừa (agent_id, time riêng lẻ)
+-- ═══════════════════════════════════════════════════════════
 CREATE INDEX IF NOT EXISTS idx_deposits_agent_time ON data_deposits(agent_id, create_time DESC);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_agent_time ON data_withdrawals(agent_id, create_time DESC);
 CREATE INDEX IF NOT EXISTS idx_bet_orders_agent_time ON data_bet_orders(agent_id, bet_time DESC);

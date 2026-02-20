@@ -175,10 +175,38 @@ function getDb() {
   db.exec(
     'CREATE INDEX IF NOT EXISTS idx_login_hist_created ON agent_login_history(created_at)'
   );
-  // Migrate: bảng sync_day_locks (đã trong schema, đảm bảo index)
-  db.exec(
-    'CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id)'
-  );
+
+  // ── Migrate: tối ưu indexes — xoá index thừa, thêm compound indexes ──
+  // Drop redundant single-column indexes (đã được cover bởi UNIQUE + compound)
+  db.exec('DROP INDEX IF EXISTS idx_sync_day_locks_agent');   // → UNIQUE(agent_id, date_key)
+  db.exec('DROP INDEX IF EXISTS idx_data_members_agent');     // → UNIQUE(agent_id, uid)
+  db.exec('DROP INDEX IF EXISTS idx_data_members_register');  // → compound (agent_id, register_time)
+  db.exec('DROP INDEX IF EXISTS idx_data_invites_agent');     // → UNIQUE(agent_id, ee88_id)
+  db.exec('DROP INDEX IF EXISTS idx_data_deposits_agent');    // → UNIQUE(agent_id, serial_no) + compound
+  db.exec('DROP INDEX IF EXISTS idx_data_deposits_time');     // → compound (agent_id, create_time DESC)
+  db.exec('DROP INDEX IF EXISTS idx_data_withdrawals_agent'); // → UNIQUE(agent_id, serial_no) + compound
+  db.exec('DROP INDEX IF EXISTS idx_data_withdrawals_time');  // → compound (agent_id, create_time DESC)
+  db.exec('DROP INDEX IF EXISTS idx_data_bet_orders_agent');  // → UNIQUE(agent_id, serial_no) + compound
+  db.exec('DROP INDEX IF EXISTS idx_data_bet_orders_time');   // → compound (agent_id, bet_time DESC)
+  db.exec('DROP INDEX IF EXISTS idx_data_lottery_bets_agent');// → UNIQUE(agent_id, serial_no) + compound
+  db.exec('DROP INDEX IF EXISTS idx_data_lottery_bets_time'); // → compound (agent_id, create_time DESC)
+
+  // New optimized indexes
+  db.exec('CREATE INDEX IF NOT EXISTS idx_agents_deleted_status ON ee88_agents(is_deleted, status)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_agents_ee88_username ON ee88_agents(ee88_username)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_permissions_agent ON user_agent_permissions(agent_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_members_agent_register ON data_members(agent_id, register_time)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_members_agent_login ON data_members(agent_id, last_login_time)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_invites_agent_create ON data_invites(agent_id, create_time)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_deposits_agent_uid ON data_deposits(agent_id, uid)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_bet_orders_username ON data_bet_orders(username)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_lottery_bets_username ON data_lottery_bets(username)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_activity_username ON hub_activity_log(username)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_login_hist_created_agent ON agent_login_history(created_at, agent_id)');
+
+  // ANALYZE — cập nhật thống kê cho query planner sau khi thay đổi indexes
+  db.exec('ANALYZE');
+  log.ok('Indexes đã tối ưu + ANALYZE hoàn tất');
 
   // Seed admin nếu chưa có user nào
   const userCount = db

@@ -149,40 +149,175 @@ router.get('/stats', (req, res) => {
         )
         .get(...agentIds, startTime, ...agentIds, startTime, endTime).cnt;
 
-      // 10. Per-agent breakdown (admin only) — LEFT JOIN thay subqueries
+      // 10. Per-agent overview (admin only) — luôn dùng tháng hiện tại
       let perAgent = null;
+      let agentMonth = null;
       if (isAdmin) {
-        perAgent = db
+        const monthStart = todayStr.substring(0, 8) + '01';
+        const monthStartTime = monthStart + ' 00:00:00';
+        const todayStart = todayStr + ' 00:00:00';
+        const todayEnd = todayStr + ' 23:59:59';
+        agentMonth = todayStr.substring(0, 7);
+
+        // a) Agent info
+        const agents = db
           .prepare(
-            `SELECT a.id, a.label,
-                  COALESCE(m.cnt, 0) as members,
-                  COALESCE(f.dep, 0) as deposit,
-                  COALESCE(f.wdr, 0) as withdrawal,
-                  COALESCE(l.wl, 0) as lotteryWL,
-                  COALESCE(b.wl, 0) as thirdWL
-           FROM ee88_agents a
-           LEFT JOIN (SELECT agent_id, COUNT(*) as cnt FROM data_members GROUP BY agent_id) m
-             ON m.agent_id = a.id
-           LEFT JOIN (SELECT agent_id, SUM(deposit_amount) as dep, SUM(withdrawal_amount) as wdr
-                      FROM data_report_funds WHERE SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
-                      GROUP BY agent_id) f ON f.agent_id = a.id
-           LEFT JOIN (SELECT agent_id, SUM(win_lose) as wl
-                      FROM data_report_lottery WHERE SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
-                      GROUP BY agent_id) l ON l.agent_id = a.id
-           LEFT JOIN (SELECT agent_id, SUM(win_lose) as wl
-                      FROM data_bet_orders WHERE bet_time >= ? AND bet_time <= ?
-                      GROUP BY agent_id) b ON b.agent_id = a.id
-           WHERE a.id IN (${ph}) ORDER BY a.id`
+            `SELECT id, label, ee88_username FROM ee88_agents
+             WHERE id IN (${ph}) AND is_deleted = 0 ORDER BY id`
+          )
+          .all(...agentIds);
+
+        // b) Daily online: UNION uid từ lottery + third, COUNT DISTINCT per day
+        const dailyOnlineRows = db
+          .prepare(
+            `SELECT agent_id, day_key, COUNT(DISTINCT uid) as cnt FROM (
+               SELECT agent_id, SUBSTR(date_key, 1, 10) as day_key, uid
+                 FROM data_report_lottery
+                 WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+               UNION
+               SELECT agent_id, SUBSTR(date_key, 1, 10) as day_key, uid
+                 FROM data_report_third
+                 WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+             ) GROUP BY agent_id, day_key`
           )
           .all(
-            startStr,
-            endStr,
-            startStr,
-            endStr,
-            startTime,
-            endTime,
-            ...agentIds
+            ...agentIds,
+            monthStart,
+            todayStr,
+            ...agentIds,
+            monthStart,
+            todayStr
           );
+
+        // c) Today new customers (register_time)
+        const todayNewRows = db
+          .prepare(
+            `SELECT agent_id, COUNT(*) as cnt FROM data_members
+             WHERE agent_id IN (${ph}) AND register_time >= ? AND register_time <= ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, todayStart, todayEnd);
+
+        // d) Today lottery bet
+        const todayLotteryRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(bet_amount), 0) as total
+             FROM data_report_lottery
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, todayStr);
+
+        // e) Today 3rd party bet
+        const todayThirdRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(t_bet_amount), 0) as total
+             FROM data_report_third
+             WHERE agent_id IN (${ph}) AND SUBSTR(date_key, 1, 10) = ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, todayStr);
+
+        // f) Monthly lottery bet + W/L (gộp 1 query)
+        const monthLotteryRows = db
+          .prepare(
+            `SELECT agent_id,
+                    COALESCE(SUM(bet_amount), 0) as bet,
+                    COALESCE(SUM(win_lose), 0) as wl
+             FROM data_report_lottery
+             WHERE agent_id IN (${ph})
+               AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, monthStart, todayStr);
+
+        // g) Monthly 3rd party bet
+        const monthThirdBetRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(t_bet_amount), 0) as bet
+             FROM data_report_third
+             WHERE agent_id IN (${ph})
+               AND SUBSTR(date_key, 1, 10) >= ? AND SUBSTR(date_key, 1, 10) <= ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, monthStart, todayStr);
+
+        // h) Monthly 3rd party W/L (bet_orders, dùng bet_time)
+        const monthThirdWLRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(win_lose), 0) as wl
+             FROM data_bet_orders
+             WHERE agent_id IN (${ph}) AND bet_time >= ? AND bet_time <= ?
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, monthStartTime, todayEnd);
+
+        // i) Today deposit (completed)
+        const todayDepRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(true_amount), 0) as total
+             FROM data_deposits
+             WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?
+               AND (status = 1 OR status = 'Hoàn tất')
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, todayStart, todayEnd);
+
+        // j) Monthly deposit (completed)
+        const monthDepRows = db
+          .prepare(
+            `SELECT agent_id, COALESCE(SUM(true_amount), 0) as total
+             FROM data_deposits
+             WHERE agent_id IN (${ph}) AND create_time >= ? AND create_time <= ?
+               AND (status = 1 OR status = 'Hoàn tất')
+             GROUP BY agent_id`
+          )
+          .all(...agentIds, monthStartTime, todayEnd);
+
+        // Merge: build lookup maps
+        const toMap = (rows, fn) => {
+          const m = {};
+          rows.forEach((r) => {
+            m[r.agent_id] = fn(r);
+          });
+          return m;
+        };
+
+        const dailyMap = {};
+        dailyOnlineRows.forEach((r) => {
+          if (!dailyMap[r.agent_id]) dailyMap[r.agent_id] = {};
+          dailyMap[r.agent_id][r.day_key] = r.cnt;
+        });
+
+        const todayNewMap = toMap(todayNewRows, (r) => r.cnt);
+        const todayLotMap = toMap(todayLotteryRows, (r) => r.total);
+        const todayThdMap = toMap(todayThirdRows, (r) => r.total);
+        const mLotMap = {};
+        monthLotteryRows.forEach((r) => {
+          mLotMap[r.agent_id] = { bet: r.bet, wl: r.wl };
+        });
+        const mThdBetMap = toMap(monthThirdBetRows, (r) => r.bet);
+        const mThdWLMap = toMap(monthThirdWLRows, (r) => r.wl);
+        const todayDepMap = toMap(todayDepRows, (r) => r.total);
+        const monthDepMap = toMap(monthDepRows, (r) => r.total);
+
+        perAgent = agents.map((a) => {
+          const ml = mLotMap[a.id] || { bet: 0, wl: 0 };
+          return {
+            label: a.label,
+            ee88Username: a.ee88_username,
+            dailyOnline: dailyMap[a.id] || {},
+            todayNewCustomers: todayNewMap[a.id] || 0,
+            todayLotteryBet: todayLotMap[a.id] || 0,
+            todayThirdBet: todayThdMap[a.id] || 0,
+            monthlyLotteryBet: ml.bet,
+            monthlyThirdBet: mThdBetMap[a.id] || 0,
+            todayDeposit: todayDepMap[a.id] || 0,
+            monthlyDeposit: monthDepMap[a.id] || 0,
+            lotteryWL: ml.wl,
+            thirdWL: mThdWLMap[a.id] || 0
+          };
+        });
       }
 
       return {
@@ -193,7 +328,8 @@ router.get('/stats', (req, res) => {
         betOrders,
         lottery,
         dailyTrend,
-        perAgent
+        perAgent,
+        agentMonth
       };
     });
 
@@ -226,7 +362,8 @@ router.get('/stats', (req, res) => {
           }
         },
         dailyTrend: d.dailyTrend,
-        perAgent: d.perAgent
+        perAgent: d.perAgent,
+        agentMonth: d.agentMonth
       }
     };
 
