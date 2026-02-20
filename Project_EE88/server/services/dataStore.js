@@ -26,7 +26,10 @@ const COLUMN_MAP = {
       'status',
       'is_tester',
       'register_time',
-      'last_login_time'
+      'last_login_time',
+      'first_deposit_time',
+      'deposit_money',
+      'withdrawal_money'
     ],
     // EE88 field → DB column mapping (khi tên khác nhau)
     fieldMap: {
@@ -35,7 +38,8 @@ const COLUMN_MAP = {
       login_time: 'last_login_time',
       parent_user: 'user_parent_format'
     },
-    uniqueKey: ['agent_id', 'uid']
+    uniqueKey: ['agent_id', 'uid'],
+    hasDate: true
   },
   invites: {
     table: 'data_invites',
@@ -56,7 +60,8 @@ const COLUMN_MAP = {
     ],
     fieldMap: { id: 'ee88_id' },
     idField: 'ee88_id',
-    uniqueKey: ['agent_id', 'ee88_id']
+    uniqueKey: ['agent_id', 'ee88_id'],
+    hasDate: true
   },
   deposits: {
     table: 'data_deposits',
@@ -605,9 +610,12 @@ function getDateColumn(endpointKey) {
     case 'deposits':
     case 'withdrawals':
     case 'lottery-bets':
+    case 'invites':
       return 'create_time';
     case 'bet-orders':
       return 'bet_time';
+    case 'members':
+      return 'register_time';
     default:
       return null;
   }
@@ -634,7 +642,13 @@ function queryLocal(agentIds, endpointKey, params) {
   const queryParams = [...agentIds];
 
   // ── Date range filter ──
-  const dateParam = params.create_time || params.bet_time || params.date;
+  // Hỗ trợ nhiều date params: create_time, bet_time, date, first_deposit_time, user_register_time
+  const dateParam =
+    params.create_time ||
+    params.bet_time ||
+    params.date ||
+    params.first_deposit_time ||
+    params.user_register_time;
   if (dateParam) {
     const parts = dateParam.split('|').map((s) => s.trim());
     if (parts.length === 2 && parts[0] && parts[1]) {
@@ -642,12 +656,19 @@ function queryLocal(agentIds, endpointKey, params) {
       const endDate = parts[1];
 
       if (mapping.needsDateKey) {
-        // report endpoints: date_key lưu từng ngày "YYYY-MM-DD|YYYY-MM-DD"
-        // Query range: tìm tất cả ngày trong khoảng
         where += ' AND date_key >= ? AND date_key <= ?';
         queryParams.push(startDate + '|' + startDate, endDate + '|' + endDate);
       } else if (mapping.hasDate) {
-        const dateCol = getDateColumn(endpointKey);
+        // user_register_time cho invites → filter trên extra JSON (user_register_time)
+        // first_deposit_time cho members → filter trên extra JSON
+        let dateCol;
+        if (params.user_register_time) {
+          dateCol = 'user_register_time';
+        } else if (params.first_deposit_time) {
+          dateCol = 'first_deposit_time';
+        } else {
+          dateCol = getDateColumn(endpointKey);
+        }
         if (dateCol) {
           where += ` AND ${dateCol} >= ? AND ${dateCol} <= ?`;
           queryParams.push(startDate, endDate + ' 23:59:59');
@@ -664,7 +685,12 @@ function queryLocal(agentIds, endpointKey, params) {
     'serial_no',
     'platform_username',
     'lottery_id',
-    'platform_id'
+    'platform_id',
+    'invite_code',
+    'lottery_name',
+    'play_type_name',
+    'play_name',
+    'status_text'
   ];
   for (const col of filterCols) {
     if (
@@ -683,12 +709,38 @@ function queryLocal(agentIds, endpointKey, params) {
       .get(...queryParams);
     if (!countRow || countRow.cnt === 0) return null;
 
+    // ── Dynamic ORDER BY ──
+    // sort_field mapping: client field → DB column (qua fieldMap)
+    let orderCol = 'id';
+    let orderDir = 'DESC';
+
+    if (params.sort_field) {
+      // Reverse fieldMap: tìm DB column từ client field name
+      let dbCol = params.sort_field;
+      if (mapping.fieldMap && mapping.fieldMap[params.sort_field]) {
+        dbCol = mapping.fieldMap[params.sort_field];
+      }
+      if (mapping.columns.includes(dbCol)) {
+        orderCol = dbCol;
+      }
+    } else {
+      // Smart default sort per endpoint
+      const dateCol = getDateColumn(endpointKey);
+      if (dateCol && mapping.columns.includes(dateCol)) {
+        orderCol = dateCol;
+      }
+    }
+
+    if (params.sort_direction === 'asc' || params.sort_direction === 'ASC') {
+      orderDir = 'ASC';
+    }
+
     const offset = (page - 1) * limit;
     const rows = db
       .prepare(
         `
       SELECT * FROM ${mapping.table} ${where}
-      ORDER BY id DESC
+      ORDER BY ${orderCol} ${orderDir}
       LIMIT ? OFFSET ?
     `
       )

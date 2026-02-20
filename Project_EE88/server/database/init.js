@@ -105,6 +105,30 @@ function getDb() {
     log.info('Migrate: thêm cột must_change_password');
   }
 
+  // Migrate: thêm cột mới cho data_members (sort/filter fields)
+  const memberCols = db
+    .prepare('PRAGMA table_info(data_members)')
+    .all()
+    .map((c) => c.name);
+  if (memberCols.length > 0 && !memberCols.includes('first_deposit_time')) {
+    db.exec(
+      'ALTER TABLE data_members ADD COLUMN first_deposit_time TEXT'
+    );
+    log.info('Migrate: thêm cột first_deposit_time cho data_members');
+  }
+  if (memberCols.length > 0 && !memberCols.includes('deposit_money')) {
+    db.exec(
+      'ALTER TABLE data_members ADD COLUMN deposit_money REAL DEFAULT 0'
+    );
+    log.info('Migrate: thêm cột deposit_money cho data_members');
+  }
+  if (memberCols.length > 0 && !memberCols.includes('withdrawal_money')) {
+    db.exec(
+      'ALTER TABLE data_members ADD COLUMN withdrawal_money REAL DEFAULT 0'
+    );
+    log.info('Migrate: thêm cột withdrawal_money cho data_members');
+  }
+
   // Migrate: bảng nhật ký hoạt động
   db.exec(`
     CREATE TABLE IF NOT EXISTS hub_activity_log (

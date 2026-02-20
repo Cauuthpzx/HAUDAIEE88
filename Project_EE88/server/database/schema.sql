@@ -69,6 +69,9 @@ CREATE TABLE IF NOT EXISTS data_members (
   is_tester INTEGER DEFAULT 0,
   register_time TEXT,
   last_login_time TEXT,
+  first_deposit_time TEXT,
+  deposit_money REAL DEFAULT 0,
+  withdrawal_money REAL DEFAULT 0,
   extra TEXT,
   synced_at TEXT DEFAULT (datetime('now', 'localtime')),
   UNIQUE(agent_id, uid),
@@ -76,6 +79,7 @@ CREATE TABLE IF NOT EXISTS data_members (
 );
 CREATE INDEX IF NOT EXISTS idx_data_members_agent ON data_members(agent_id);
 CREATE INDEX IF NOT EXISTS idx_data_members_username ON data_members(username);
+CREATE INDEX IF NOT EXISTS idx_data_members_register ON data_members(register_time);
 
 -- 2. Mã mời (invites) — snapshot
 CREATE TABLE IF NOT EXISTS data_invites (
