@@ -9,7 +9,7 @@ const { getOCRWorker } = require('../services/captchaSolver');
 const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
 const { createLogger } = require('../utils/logger');
-const { encrypt } = require('../utils/crypto');
+// Password stored as plaintext (no encryption)
 const { clearPermCache } = require('../middleware/permission');
 
 const adminEmitter = require('../services/adminEvents');
@@ -329,12 +329,11 @@ router.post('/agents', async (req, res) => {
     });
   }
 
-  const encryptedPassword = encrypt(ee88_password);
   const result = db
     .prepare(
       'INSERT INTO ee88_agents (label, base_url, cookie, ee88_username, ee88_password, status) VALUES (?, ?, ?, ?, ?, 0)'
     )
-    .run(label, base_url, '', ee88_username, encryptedPassword);
+    .run(label, base_url, '', ee88_username, ee88_password);
 
   const agentId = result.lastInsertRowid;
   clearPermCache();
@@ -408,10 +407,7 @@ router.put('/agents/:id', (req, res) => {
     return res.status(404).json({ code: -1, msg: 'Agent không tồn tại' });
   }
 
-  // Encrypt password mới nếu có, giữ nguyên password cũ (đã encrypted) nếu không
-  const newPassword = ee88_password
-    ? encrypt(ee88_password)
-    : agent.ee88_password || '';
+  const newPassword = ee88_password || agent.ee88_password || '';
 
   db.prepare(
     `

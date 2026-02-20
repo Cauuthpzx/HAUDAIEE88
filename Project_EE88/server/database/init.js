@@ -154,32 +154,6 @@ function getDb() {
     'CREATE INDEX IF NOT EXISTS idx_sync_day_locks_agent ON sync_day_locks(agent_id)'
   );
 
-  // Migrate: mã hóa ee88_password (Security: encrypt at rest)
-  const {
-    encrypt,
-    isEncrypted,
-    ensureEncryptionKey
-  } = require('../utils/crypto');
-  ensureEncryptionKey();
-  const agentsToEncrypt = db
-    .prepare(
-      "SELECT id, ee88_password FROM ee88_agents WHERE ee88_password != ''"
-    )
-    .all();
-  let encryptedCount = 0;
-  for (const a of agentsToEncrypt) {
-    if (!isEncrypted(a.ee88_password)) {
-      db.prepare('UPDATE ee88_agents SET ee88_password = ? WHERE id = ?').run(
-        encrypt(a.ee88_password),
-        a.id
-      );
-      encryptedCount++;
-    }
-  }
-  if (encryptedCount > 0) {
-    log.ok(`Migrate: mã hóa ${encryptedCount} ee88_password`);
-  }
-
   // Seed admin nếu chưa có user nào
   const userCount = db
     .prepare('SELECT COUNT(*) as cnt FROM hub_users')

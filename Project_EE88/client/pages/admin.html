@@ -113,7 +113,7 @@
         <div class="layui-logo layui-hide-xs">
           <i class="hi hi-fire-flame-curved"></i><span>HUB</span>
         </div>
-        <ul class="layui-nav layui-layout-left">
+        <ul class="layui-nav layui-layout-left" lay-filter="hub-menu">
           <!-- Mobile menu toggle -->
           <li
             class="layui-nav-item layui-show-xs-inline-block layui-hide-sm"
@@ -130,6 +130,141 @@
             <a href="javascript:;" id="btnRefresh" title="Tải lại trang"
               ><i class="hi hi-arrows-rotate"></i
             ></a>
+          </li>
+          <!-- Header nav menus -->
+          <li class="layui-nav-item layui-hide-xs">
+            <a
+              href="javascript:;"
+              data-url="/pages/agent/user.html"
+              data-title-i18n="members"
+              data-title="Hội viên"
+              ><span data-i18n="members">Hội viên</span></a
+            >
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a
+              href="javascript:;"
+              data-url="/pages/agent/inviteList.html"
+              data-title-i18n="referralCode"
+              data-title="Mã giới thiệu"
+              ><span data-i18n="referralCode">Mã giới thiệu</span></a
+            >
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a href="javascript:;"><span data-i18n="reports">Báo cáo</span></a>
+            <dl class="layui-nav-child">
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/reportLottery.html"
+                  data-title-i18n="lotteryReport"
+                  data-title="BC xổ số"
+                  ><span data-i18n="lotteryReport">BC xổ số</span></a
+                >
+              </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/reportFunds.html"
+                  data-title-i18n="transStatement"
+                  data-title="Sao kê giao dịch"
+                  ><span data-i18n="transStatement">Sao kê giao dịch</span></a
+                >
+              </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/reportThirdGame.html"
+                  data-title-i18n="providerReport"
+                  data-title="BC nhà cung cấp"
+                  ><span data-i18n="providerReport">BC nhà cung cấp</span></a
+                >
+              </dd>
+            </dl>
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a href="javascript:;"
+              ><span data-i18n="commission">Rút hoa hồng</span></a
+            >
+            <dl class="layui-nav-child">
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/depositAndWithdrawal.html"
+                  data-title-i18n="deposit"
+                  data-title="Nạp tiền"
+                  ><span data-i18n="deposit">Nạp tiền</span></a
+                >
+              </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/withdrawalsRecord.html"
+                  data-title-i18n="withdraw"
+                  data-title="Rút tiền"
+                  ><span data-i18n="withdraw">Rút tiền</span></a
+                >
+              </dd>
+            </dl>
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a href="javascript:;"
+              ><span data-i18n="betOrders">Đơn cược</span></a
+            >
+            <dl class="layui-nav-child">
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/bet.html"
+                  data-title-i18n="lotteryBet"
+                  data-title="Đơn cược xổ số"
+                  ><span data-i18n="lotteryBet">Đơn cược xổ số</span></a
+                >
+              </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/betOrder.html"
+                  data-title-i18n="thirdPartyBet"
+                  data-title="Cược bên thứ 3"
+                  ><span data-i18n="thirdPartyBet">Cược bên thứ 3</span></a
+                >
+              </dd>
+            </dl>
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a href="javascript:;"
+              ><span data-i18n="customer">Khách hàng</span></a
+            >
+            <dl class="layui-nav-child">
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/editPassword.html"
+                  data-title-i18n="changeLoginPw"
+                  data-title="Đổi MK đăng nhập"
+                  ><span data-i18n="changeLoginPw">Đổi MK đăng nhập</span></a
+                >
+              </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/agent/editFundPassword.html"
+                  data-title-i18n="changeFundPw"
+                  data-title="Đổi MK giao dịch"
+                  ><span data-i18n="changeFundPw">Đổi MK giao dịch</span></a
+                >
+              </dd>
+            </dl>
+          </li>
+          <li class="layui-nav-item layui-hide-xs">
+            <a
+              href="javascript:;"
+              data-url="/pages/agent/getRebateOddsPanel.html"
+              data-title-i18n="rebateRate"
+              data-title="Tỉ lệ hoàn trả"
+              ><span data-i18n="rebateRate">Tỉ lệ hoàn trả</span></a
+            >
           </li>
         </ul>
         <ul class="layui-nav layui-layout-right" lay-filter="hub-account">

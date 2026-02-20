@@ -11,8 +11,11 @@
 const { getDb } = require('../database/init');
 const { createLogger } = require('../utils/logger');
 const { logLoginHistory } = require('./activityLogger');
-const { decrypt, isEncrypted } = require('../utils/crypto');
-const { doLogin: solverLogin, isSolverReady, getOCRWorker } = require('./captchaSolver');
+const {
+  doLogin: solverLogin,
+  isSolverReady,
+  getOCRWorker
+} = require('./captchaSolver');
 
 const log = createLogger('loginService');
 
@@ -48,7 +51,9 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
   }
 
   const db = getDb();
-  const agent = db.prepare('SELECT * FROM ee88_agents WHERE id = ?').get(agentId);
+  const agent = db
+    .prepare('SELECT * FROM ee88_agents WHERE id = ?')
+    .get(agentId);
   if (!agent) return { success: false, error: 'Agent không tồn tại' };
   if (!agent.ee88_username || !agent.ee88_password) {
     return { success: false, error: 'Chưa cấu hình username/password EE88' };
@@ -59,24 +64,11 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
   log.info(`[${agent.label}] Bắt đầu auto-login...`);
 
   try {
-    // Giải mã password
-    let plainPassword;
-    if (isEncrypted(agent.ee88_password)) {
-      try {
-        plainPassword = decrypt(agent.ee88_password);
-      } catch {
-        log.error(`[${agent.label}] Không giải mã được password`);
-        return { success: false, error: 'Lỗi giải mã password — ENCRYPTION_KEY không khớp' };
-      }
-    } else {
-      plainPassword = agent.ee88_password;
-    }
-
     // Gọi JS solver trực tiếp (không cần Python)
     const result = await solverLogin(
       agent.base_url,
       agent.ee88_username,
-      plainPassword,
+      agent.ee88_password,
       10
     );
 
@@ -86,35 +78,77 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
       const newCookie = result.cookies || `PHPSESSID=${result.phpsessid}`;
       const newUA = result.user_agent || '';
 
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE ee88_agents
         SET cookie = ?, user_agent = ?, status = 1,
             last_login = datetime('now', 'localtime'),
             updated_at = datetime('now', 'localtime')
         WHERE id = ?
-      `).run(newCookie, newUA, agentId);
+      `
+      ).run(newCookie, newUA, agentId);
 
-      log.ok(`[${agent.label}] Login thành công — ${result.attempts} lần thử — ${duration}ms`);
-      logLoginHistory({ agentId, agentLabel: agent.label, success: true, attempts: result.attempts, source: source || 'manual', triggeredBy, durationMs: duration });
+      log.ok(
+        `[${agent.label}] Login thành công — ${result.attempts} lần thử — ${duration}ms`
+      );
+      logLoginHistory({
+        agentId,
+        agentLabel: agent.label,
+        success: true,
+        attempts: result.attempts,
+        source: source || 'manual',
+        triggeredBy,
+        durationMs: duration
+      });
 
       // Post-login sync (background)
       if (!(opts && opts.skipSync)) {
         const { syncAfterLogin } = require('./cronSync');
-        syncAfterLogin(agentId).catch(err => {
+        syncAfterLogin(agentId).catch((err) => {
           log.error(`[${agent.label}] Post-login sync lỗi: ${err.message}`);
         });
       }
 
-      return { success: true, cookie: newCookie, user_agent: newUA, attempts: result.attempts };
+      return {
+        success: true,
+        cookie: newCookie,
+        user_agent: newUA,
+        attempts: result.attempts
+      };
     }
 
-    log.error(`[${agent.label}] Login thất bại — ${result.error} — ${duration}ms`);
-    logLoginHistory({ agentId, agentLabel: agent.label, success: false, attempts: result.attempts || 0, errorMsg: result.error || 'Login thất bại', source: source || 'manual', triggeredBy, durationMs: duration });
-    return { success: false, error: result.error || 'Login thất bại', attempts: result.attempts || 0 };
+    log.error(
+      `[${agent.label}] Login thất bại — ${result.error} — ${duration}ms`
+    );
+    logLoginHistory({
+      agentId,
+      agentLabel: agent.label,
+      success: false,
+      attempts: result.attempts || 0,
+      errorMsg: result.error || 'Login thất bại',
+      source: source || 'manual',
+      triggeredBy,
+      durationMs: duration
+    });
+    return {
+      success: false,
+      error: result.error || 'Login thất bại',
+      attempts: result.attempts || 0
+    };
   } catch (err) {
     const duration = Date.now() - startTime;
-    log.error(`[${agent.label}] Login exception — ${err.message} — ${duration}ms`);
-    logLoginHistory({ agentId, agentLabel: agent.label, success: false, errorMsg: err.message, source: source || 'manual', triggeredBy, durationMs: duration });
+    log.error(
+      `[${agent.label}] Login exception — ${err.message} — ${duration}ms`
+    );
+    logLoginHistory({
+      agentId,
+      agentLabel: agent.label,
+      success: false,
+      errorMsg: err.message,
+      source: source || 'manual',
+      triggeredBy,
+      durationMs: duration
+    });
     return { success: false, error: err.message };
   } finally {
     loginLocks.delete(agentId);
@@ -126,13 +160,21 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
  */
 async function autoRelogin(agent) {
   if (!agent.ee88_username || !agent.ee88_password) {
-    log.warn(`[${agent.label}] Không thể auto-login: chưa có username/password`);
+    log.warn(
+      `[${agent.label}] Không thể auto-login: chưa có username/password`
+    );
     return null;
   }
 
-  const result = await loginAgent(agent.id, 'auto', undefined, { skipSync: true });
+  const result = await loginAgent(agent.id, 'auto', undefined, {
+    skipSync: true
+  });
   if (result.success) {
-    return { ...agent, cookie: result.cookie, user_agent: result.user_agent || agent.user_agent };
+    return {
+      ...agent,
+      cookie: result.cookie,
+      user_agent: result.user_agent || agent.user_agent
+    };
   }
   return null;
 }

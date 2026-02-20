@@ -205,7 +205,6 @@ var HubAPI = {
   adminGet: function (path) {
     return this._fetch('/api/admin/' + path)
       .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
       })
       .then(function (data) {
@@ -241,7 +240,6 @@ var HubAPI = {
       body: body ? JSON.stringify(body) : undefined
     })
       .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
       })
       .then(function (data) {
