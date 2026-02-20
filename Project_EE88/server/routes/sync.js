@@ -29,8 +29,11 @@ router.get(
       'X-Accel-Buffering': 'no'
     });
 
-    // Gửi snapshot ngay lập tức
-    res.write(sseData(cronSync.getSyncProgressSnapshot()));
+    // Gửi snapshot ngay lập tức (chỉ khi có data — tránh client disconnect sớm)
+    var initialSnap = cronSync.getSyncProgressSnapshot();
+    if (initialSnap.agents && initialSnap.agents.length > 0) {
+      res.write(sseData(initialSnap));
+    }
 
     function onProgress(data) {
       try {
