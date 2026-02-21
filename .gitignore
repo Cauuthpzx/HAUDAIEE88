@@ -5,9 +5,22 @@ node_modules/
 *.xlsx
 ~$*
 dist/
+.eslintcache
+nul
+
+# Tesseract OCR data
+*.traineddata
+
+# Screenshots / temp images
+*.png
+!Project_EE88/client/images/**/*.png
+
+# Claude config
+.claude/
 
 # Project EE88
 Project_EE88/.env
 Project_EE88/server/.env
 Project_EE88/server/logs/
 Project_EE88/dist/
+Project_EE88/data/
