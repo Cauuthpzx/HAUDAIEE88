@@ -50,14 +50,28 @@ const DATE_EPS = [
 // lottery-bets-summary: chỉ lấy total_data (page 1), không có COLUMN_MAP → không save rows
 const TOTALS_ONLY_EPS = ['lottery-bets-summary'];
 
+// Tham khảo EE88 1 reference project:
+// - report-*: dùng param `date` với format "YYYY-MM-DD | YYYY-MM-DD" (pipe có space)
+// - deposits/withdrawals: dùng start_time/end_time với datetime đầy đủ
+// - lottery-bets: dùng hs_date_time với datetime đầy đủ
 const DATE_PARAM_MAP = {
-  deposits: { start: 'start_time', end: 'end_time' },
-  withdrawals: { start: 'start_time', end: 'end_time' },
-  'report-lottery': { start: 'start_time', end: 'end_time' },
-  'report-funds': { start: 'start_time', end: 'end_time' },
-  'report-third': { start: 'start_time', end: 'end_time' },
-  'lottery-bets': { type: 'range', param: 'hs_date_time', sep: '|' },
-  'lottery-bets-summary': { type: 'range', param: 'hs_date_time', sep: '|' }
+  deposits: { start: 'start_time', end: 'end_time', withTime: true },
+  withdrawals: { start: 'start_time', end: 'end_time', withTime: true },
+  'report-lottery': { type: 'range', param: 'date', sep: ' | ' },
+  'report-funds': { type: 'range', param: 'date', sep: ' | ' },
+  'report-third': { type: 'range', param: 'date', sep: ' | ' },
+  'lottery-bets': {
+    type: 'range',
+    param: 'hs_date_time',
+    sep: '|',
+    withTime: true
+  },
+  'lottery-bets-summary': {
+    type: 'range',
+    param: 'hs_date_time',
+    sep: '|',
+    withTime: true
+  }
 };
 
 // ═══════════════════════════════════════
@@ -342,11 +356,22 @@ function buildDateParams(ep, dateStr) {
   const m = DATE_PARAM_MAP[ep];
   if (!m) return {};
   if (m.type === 'range') {
-    return {
-      [m.param]: dateStr + ' 00:00:00' + m.sep + dateStr + ' 23:59:59'
-    };
+    // withTime: hs_date_time → "YYYY-MM-DD 00:00:00|YYYY-MM-DD 23:59:59"
+    // không withTime: date → "YYYY-MM-DD | YYYY-MM-DD" (giống reference EE88 1)
+    if (m.withTime) {
+      return {
+        [m.param]: dateStr + ' 00:00:00' + m.sep + dateStr + ' 23:59:59'
+      };
+    }
+    const params = { [m.param]: dateStr + m.sep + dateStr };
+    // Giống reference: thêm username= cho report endpoints
+    params.username = '';
+    // Lottery cần thêm lottery_id=
+    if (ep === 'report-lottery') params.lottery_id = '';
+    return params;
   }
-  return { [m.start]: dateStr, [m.end]: dateStr };
+  // deposits/withdrawals: start_time/end_time đầy đủ datetime
+  return { [m.start]: dateStr + ' 00:00:00', [m.end]: dateStr + ' 23:59:59' };
 }
 
 // ═══════════════════════════════════════
@@ -679,6 +704,14 @@ async function syncAfterLogin(agentId) {
           });
 
           try {
+            // Xoá data cũ của ngày này trước khi fetch mới — tránh trùng lặp
+            const deleted = dataStore.deleteDataForDay(agent.id, ep, dateStr);
+            if (deleted > 0) {
+              log.info(
+                `[${agent.label}] ${dateStr} ${ep}: xoá ${deleted} rows cũ trước khi re-sync`
+              );
+            }
+
             const params = buildDateParams(ep, dateStr);
             const result = await fetchAllPages(
               agent,

@@ -8,6 +8,7 @@ const { loginAgent, isSolverReady } = require('../services/loginService');
 const { getOCRWorker } = require('../services/captchaSolver');
 const { logActivity } = require('../services/activityLogger');
 const dataStore = require('../services/dataStore');
+const COLUMN_REGISTRY = require('../services/columnRegistry');
 const { createLogger } = require('../utils/logger');
 // Password stored as plaintext (no encryption)
 const { clearPermCache } = require('../middleware/permission');
@@ -924,6 +925,81 @@ router.delete('/users/:id', (req, res) => {
     ip: req.ip
   });
   res.json({ code: 0, msg: 'Đã xoá user' });
+});
+
+// ═══════════════════════════════════════
+// ── Column Permissions (deny-list) ──
+// ═══════════════════════════════════════
+
+// GET /api/admin/column-registry — Trả toàn bộ registry cho admin UI
+router.get('/column-registry', (req, res) => {
+  res.json({ code: 0, data: COLUMN_REGISTRY });
+});
+
+// GET /api/admin/users/:id/columns — Hidden columns của 1 user (group by page_id)
+router.get('/users/:id/columns', (req, res) => {
+  const id = parseInt(req.params.id);
+  const db = getDb();
+
+  const rows = db
+    .prepare(
+      'SELECT page_id, field FROM user_column_permissions WHERE user_id = ?'
+    )
+    .all(id);
+
+  const hidden = {};
+  for (const row of rows) {
+    if (!hidden[row.page_id]) hidden[row.page_id] = [];
+    hidden[row.page_id].push(row.field);
+  }
+
+  res.json({ code: 0, data: hidden });
+});
+
+// PUT /api/admin/users/:id/columns — Lưu hidden columns (delete + insert trong transaction)
+router.put('/users/:id/columns', (req, res) => {
+  const id = parseInt(req.params.id);
+  const { hiddenColumns } = req.body; // { pageId: ['field1', 'field2'], ... }
+
+  if (!hiddenColumns || typeof hiddenColumns !== 'object') {
+    return res.status(400).json({ code: -1, msg: 'Dữ liệu không hợp lệ' });
+  }
+
+  const db = getDb();
+
+  const user = db
+    .prepare('SELECT id, username FROM hub_users WHERE id = ?')
+    .get(id);
+  if (!user) {
+    return res.status(404).json({ code: -1, msg: 'User không tồn tại' });
+  }
+
+  const save = db.transaction(() => {
+    db.prepare('DELETE FROM user_column_permissions WHERE user_id = ?').run(id);
+    const insert = db.prepare(
+      'INSERT INTO user_column_permissions (user_id, page_id, field) VALUES (?, ?, ?)'
+    );
+    for (const [pageId, fields] of Object.entries(hiddenColumns)) {
+      if (!Array.isArray(fields)) continue;
+      for (const field of fields) {
+        if (typeof field === 'string' && field.length > 0) {
+          insert.run(id, pageId, field);
+        }
+      }
+    }
+  });
+
+  save();
+  logActivity({
+    userId: req.user.id,
+    username: req.user.username,
+    action: 'user_column_perm',
+    targetType: 'user',
+    targetId: id,
+    targetLabel: user.username,
+    ip: req.ip
+  });
+  res.json({ code: 0, msg: 'Đã lưu quyền cột' });
 });
 
 module.exports = router;

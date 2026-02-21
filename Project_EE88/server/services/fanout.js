@@ -44,11 +44,40 @@ async function fetchWithRelogin(agent, endpointKey, params) {
   }
 }
 
+// Report endpoints dùng param `date` với format "YYYY-MM-DD | YYYY-MM-DD"
+const REPORT_EPS = new Set(['report-lottery', 'report-funds', 'report-third']);
+
+/**
+ * Normalize client params → đúng format EE88 API trước khi gửi.
+ * - Report-*: chuyển date=X|Y thành date=X | Y (thêm spaces)
+ * - Report-lottery: thêm lottery_id= nếu thiếu
+ */
+function normalizeApiParams(endpointKey, params) {
+  const p = { ...params };
+  if (REPORT_EPS.has(endpointKey) && p.date) {
+    // Normalize: "2024-01-15|2024-01-15" → "2024-01-15 | 2024-01-15"
+    const parts = p.date.split('|').map((s) => s.trim());
+    if (parts.length === 2) {
+      p.date = parts[0] + ' | ' + parts[1];
+    }
+    // Thêm username= và lottery_id= giống reference
+    if (p.username === undefined) p.username = '';
+    if (endpointKey === 'report-lottery' && p.lottery_id === undefined)
+      p.lottery_id = '';
+  }
+  return p;
+}
+
 /**
  * Fetch full dataset cho tất cả agents — trực tiếp từ EE88 API
  */
 async function fetchAllData(agents, endpointKey, params) {
-  const fetchParams = { ...params, page: 1, limit: 500 };
+  // Normalize params cho đúng format EE88 API
+  const fetchParams = normalizeApiParams(endpointKey, {
+    ...params,
+    page: 1,
+    limit: 500
+  });
 
   // Extract dateKey từ params cho endpoints cần date_key
   const dateParam = params.create_time || params.bet_time || params.date;

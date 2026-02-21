@@ -734,6 +734,16 @@
                   ><span data-i18n="activityLog">Nhật ký</span></a
                 >
               </dd>
+              <dd>
+                <a
+                  href="javascript:;"
+                  data-url="/pages/manage/realtimeMonitor.html"
+                  data-title-i18n="rtMonitor"
+                  data-title="Giám sát Realtime"
+                  ><i class="hi hi-o hi-o-bell"></i
+                  ><span data-i18n="rtMonitor">Giám sát Realtime</span></a
+                >
+              </dd>
             </dl>
           </li>
         </ul>
@@ -756,11 +766,24 @@
     <script src="/js/hub-crypto.js?v=3"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-lang.js"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script>
       // ── Auth guard ──
       if (!HubAPI.isLoggedIn()) {
         window.location.href = '/pages/login.html';
       }
+
+      // ── Load column permissions vào localStorage ──
+      HubAPI._fetch('/api/auth/me')
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (res) {
+          if (res && res.code === 0 && res.data) {
+            HubColPerm.save(res.data.hiddenColumns || {});
+          }
+        })
+        .catch(function () {});
 
       // ── Init i18n trước khi layui.use ──
       HubLang.init();
@@ -840,6 +863,7 @@
             }
             // Logout
             if (elem.attr('id') === 'navLogout') {
+              HubColPerm.clear();
               HubAPI.logout();
               return;
             }

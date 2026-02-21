@@ -237,6 +237,7 @@
     <script src="/lib/layui/layui.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -359,7 +360,7 @@
           },
           request: { pageName: 'page', limitName: 'limit' },
           cols: [
-            [
+            HubColPerm.filterCols('reportThirdGame', [
               { field: 'username', title: HubLang.t('account'), minWidth: 120 },
               {
                 field: 'platform_id_name',
@@ -393,7 +394,7 @@
                 title: HubLang.t('providerId'),
                 width: 80
               }
-            ]
+            ])
           ],
           done: function (res) {
             console.log(

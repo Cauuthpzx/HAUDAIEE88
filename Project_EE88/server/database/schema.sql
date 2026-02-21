@@ -345,6 +345,30 @@ CREATE TABLE IF NOT EXISTS data_totals (
 );
 CREATE INDEX IF NOT EXISTS idx_data_totals_lookup ON data_totals(agent_id, endpoint_key, date_key);
 
+-- 11. Customer Events — phát hiện khách mới / khách mất (realtime polling)
+CREATE TABLE IF NOT EXISTS customer_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  agent_id INTEGER NOT NULL,
+  uid INTEGER NOT NULL,
+  username TEXT,
+  event_type TEXT NOT NULL CHECK(event_type IN ('new', 'lost')),
+  details TEXT,
+  detected_at TEXT DEFAULT (datetime('now', 'localtime')),
+  is_read INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (agent_id) REFERENCES ee88_agents(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_customer_events_agent_type ON customer_events(agent_id, event_type, detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_customer_events_unread ON customer_events(is_read, detected_at DESC);
+
+-- Phân quyền cột: user nào bị ẩn cột nào ở trang nào (deny-list)
+CREATE TABLE IF NOT EXISTS user_column_permissions (
+  user_id INTEGER NOT NULL,
+  page_id TEXT NOT NULL,
+  field   TEXT NOT NULL,
+  PRIMARY KEY (user_id, page_id, field),
+  FOREIGN KEY (user_id) REFERENCES hub_users(id) ON DELETE CASCADE
+);
+
 -- ═══════════════════════════════════════════════════════════
 -- Compound indexes: agent + time (ORDER BY + range queries)
 -- Thay thế các index đơn cột bị thừa (agent_id, time riêng lẻ)

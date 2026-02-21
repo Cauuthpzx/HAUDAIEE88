@@ -149,6 +149,33 @@
 .hi-lightbulb::before {
   content: '\f0eb';
 }
+.hi-tower-broadcast::before {
+  content: '\f519';
+}
+.hi-user-plus::before {
+  content: '\f234';
+}
+.hi-user-minus::before {
+  content: '\f503';
+}
+.hi-signal::before {
+  content: '\f012';
+}
+.hi-plug::before {
+  content: '\f1e6';
+}
+.hi-play::before {
+  content: '\f04b';
+}
+.hi-stop::before {
+  content: '\f04d';
+}
+.hi-check-double::before {
+  content: '\f560';
+}
+.hi-trash::before {
+  content: '\f1f8';
+}
 
 /* ── Outline modifier (FA6 Regular) ── */
 .hi-o {
@@ -210,6 +237,9 @@
 }
 .hi-o-rectangle-list::before {
   content: '\f022';
+}
+.hi-o-bell::before {
+  content: '\f0f3';
 }
 
 /* ── Brand icons ── */

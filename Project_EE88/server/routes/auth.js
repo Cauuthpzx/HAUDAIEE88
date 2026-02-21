@@ -130,9 +130,23 @@ router.get('/me', authMiddleware, (req, res) => {
       .all(user.id);
   }
 
+  // Lấy hidden columns (chỉ cho role user, admin luôn thấy tất cả)
+  let hiddenColumns = {};
+  if (user.role !== 'admin') {
+    const colRows = db
+      .prepare(
+        'SELECT page_id, field FROM user_column_permissions WHERE user_id = ?'
+      )
+      .all(user.id);
+    for (const row of colRows) {
+      if (!hiddenColumns[row.page_id]) hiddenColumns[row.page_id] = [];
+      hiddenColumns[row.page_id].push(row.field);
+    }
+  }
+
   res.json({
     code: 0,
-    data: { ...user, agents }
+    data: { ...user, agents, hiddenColumns }
   });
 });
 

@@ -11,6 +11,7 @@
 const { getDb } = require('../database/init');
 const { createLogger } = require('../utils/logger');
 const { logLoginHistory } = require('./activityLogger');
+const { decrypt, isEncrypted } = require('../utils/crypto');
 const {
   doLogin: solverLogin,
   isSolverReady,
@@ -64,11 +65,27 @@ async function loginAgent(agentId, source, triggeredBy, opts) {
   log.info(`[${agent.label}] Bắt đầu auto-login...`);
 
   try {
+    // Giải mã password trước khi gọi solver
+    let plainPassword;
+    if (isEncrypted(agent.ee88_password)) {
+      try {
+        plainPassword = decrypt(agent.ee88_password);
+      } catch {
+        log.error(`[${agent.label}] Không giải mã được password`);
+        return {
+          success: false,
+          error: 'Lỗi giải mã password — ENCRYPTION_KEY không khớp'
+        };
+      }
+    } else {
+      plainPassword = agent.ee88_password;
+    }
+
     // Gọi JS solver trực tiếp (không cần Python)
     const result = await solverLogin(
       agent.base_url,
       agent.ee88_username,
-      agent.ee88_password,
+      plainPassword,
       10
     );
 

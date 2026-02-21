@@ -4,7 +4,8 @@ const { createLogger } = require('../utils/logger');
 
 const log = createLogger('ee88Client');
 
-const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const DEFAULT_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 // ── Client cache: tái sử dụng TCP connection per agent ──
 const clientCache = new Map(); // key: agentId, value: { client, cookie, ua }
@@ -19,26 +20,37 @@ function createClient(agent) {
   const cached = clientCache.get(key);
 
   // Reuse nếu cookie + UA khớp
-  if (cached && cached.cookie === agent.cookie && cached.ua === (agent.user_agent || DEFAULT_UA)) {
+  if (
+    cached &&
+    cached.cookie === agent.cookie &&
+    cached.ua === (agent.user_agent || DEFAULT_UA)
+  ) {
     return cached.client;
   }
 
   const client = axios.create({
     baseURL: agent.base_url,
-    timeout: 30000,  // 30s default timeout — tránh treo vô hạn
+    timeout: 30000, // 30s default timeout — tránh treo vô hạn
     headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       'X-Requested-With': 'XMLHttpRequest',
       'User-Agent': agent.user_agent || DEFAULT_UA,
       Cookie: agent.cookie
     }
   });
 
-  clientCache.set(key, { client, cookie: agent.cookie, ua: agent.user_agent || DEFAULT_UA });
+  clientCache.set(key, {
+    client,
+    cookie: agent.cookie,
+    ua: agent.user_agent || DEFAULT_UA
+  });
   return client;
 }
 
 /**
  * Gọi 1 endpoint ee88 cho 1 agent cụ thể
+ * Gửi params dưới dạng POST body (form-urlencoded) — khớp cách EE88 API hoạt động.
+ *
  * @param {object} agent — { id, label, base_url, cookie }
  * @param {string} endpointKey — key trong ENDPOINTS (vd: 'members')
  * @param {object} extraParams — params bổ sung từ client (page, limit, search…)
@@ -52,33 +64,43 @@ async function fetchEndpointForAgent(agent, endpointKey, extraParams = {}) {
 
   const params = { ...cfg.defaultParams, ...extraParams };
 
-  const qs = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+  // Build form-urlencoded body (giống reference: POST body, không phải query string)
+  const body = Object.entries(params)
+    .map(([k, v]) => {
+      if (v === undefined || v === null) return null;
+      return `${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
+    })
+    .filter(Boolean)
     .join('&');
 
-  const url = qs ? `${cfg.path}?${qs}` : cfg.path;
   const agentLabel = agent.label || `Agent#${agent.id}`;
 
-  log.info(`[${agentLabel}] → EE88 POST ${url}`, { endpoint: endpointKey });
+  log.info(`[${agentLabel}] → EE88 POST ${cfg.path}`, {
+    endpoint: endpointKey,
+    body: body.substring(0, 200)
+  });
 
   const startTime = Date.now();
   const client = createClient(agent);
 
   try {
-    const res = await client.post(url, null, { timeout: cfg.timeout });
+    const res = await client.post(cfg.path, body, { timeout: cfg.timeout });
     const duration = Date.now() - startTime;
 
     // Phát hiện phiên hết hạn
     if (res.data && res.data.url === '/agent/login') {
-      log.error(`[${agentLabel}] Phiên hết hạn [${endpointKey}] — ${duration}ms`);
+      log.error(
+        `[${agentLabel}] Phiên hết hạn [${endpointKey}] — ${duration}ms`
+      );
       const err = new Error(`Phiên EE88 đã hết hạn (${agentLabel})`);
       err.code = 'SESSION_EXPIRED';
       err.agentId = agent.id;
       throw err;
     }
 
-    const rowCount = Array.isArray(res.data.data) ? res.data.data.length : 'N/A';
+    const rowCount = Array.isArray(res.data.data)
+      ? res.data.data.length
+      : 'N/A';
     log.ok(`[${agentLabel}] ← EE88 [${endpointKey}] ${duration}ms`, {
       mã: res.data.code,
       sốDòng: rowCount,
@@ -90,10 +112,13 @@ async function fetchEndpointForAgent(agent, endpointKey, extraParams = {}) {
     const duration = Date.now() - startTime;
     if (err.code === 'SESSION_EXPIRED') throw err;
 
-    log.error(`[${agentLabel}] ← EE88 [${endpointKey}] THẤT BẠI ${duration}ms`, {
-      lỗi: err.message,
-      mãLỗi: err.code
-    });
+    log.error(
+      `[${agentLabel}] ← EE88 [${endpointKey}] THẤT BẠI ${duration}ms`,
+      {
+        lỗi: err.message,
+        mãLỗi: err.code
+      }
+    );
     throw err;
   }
 }

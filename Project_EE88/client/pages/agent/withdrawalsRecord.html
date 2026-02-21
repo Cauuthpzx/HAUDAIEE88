@@ -154,6 +154,7 @@
     <script src="/lib/layui/layui.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -205,7 +206,7 @@
           },
           request: { pageName: 'page', limitName: 'limit' },
           cols: [
-            [
+            HubColPerm.filterCols('withdrawals', [
               { field: 'serial_no', title: HubLang.t('serialNo'), width: 220 },
               { field: 'username', title: HubLang.t('account'), width: 130 },
               {
@@ -299,7 +300,7 @@
                 title: HubLang.t('updateTime'),
                 width: 160
               }
-            ]
+            ])
           ],
           done: function (res) {
             console.log(

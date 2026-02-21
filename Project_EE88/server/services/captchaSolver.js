@@ -172,22 +172,11 @@ async function preprocessCaptcha(imageBuffer) {
 }
 
 // ── Post-OCR Cleanup ──
+// Chỉ sửa lỗi OCR rõ ràng, không convert aggressive vì captcha có cả chữ lẫn số
 const OBVIOUS_FIXES = {
-  O: '0',
-  o: '0',
-  Q: '0',
-  D: '0',
-  I: '1',
-  l: '1',
-  '|': '1',
-  '!': '1',
-  Z: '2',
-  z: '2',
-  S: '5',
-  s: '5',
-  B: '8',
-  G: '9',
-  ' ': ''
+  O: '0', // Uppercase O hầu như luôn là 0 trong captcha
+  '|': '1', // Pipe luôn là 1
+  ' ': '' // Xoá space
 };
 
 function correctCaptchaText(raw) {
@@ -203,8 +192,9 @@ function correctCaptchaText(raw) {
 
 function isValidCaptcha(text) {
   if (!text) return false;
-  if (text.length !== 4) return false;
-  return /^[0-9a-z]+$/.test(text);
+  // Chấp nhận 3-6 ký tự (phổ biến nhất: 4)
+  if (text.length < 3 || text.length > 6) return false;
+  return /^[0-9a-zA-Z]+$/.test(text);
 }
 
 async function solveCaptchaImage(imageBuffer) {
@@ -275,9 +265,9 @@ async function doLogin(baseUrl, username, password, maxRetries = 10) {
     if (!isValidCaptcha(captchaText)) {
       skipCount++;
       log.warn(`[${username}] Captcha không hợp lệ ('${captchaText}'), bỏ qua`);
-      if (skipCount >= 5) {
+      if (skipCount >= 3) {
         log.warn(
-          `[${username}] 5 lần OCR liên tiếp không hợp lệ, thử submit anyway`
+          `[${username}] 3 lần OCR liên tiếp không hợp lệ, thử submit anyway`
         );
         skipCount = 0;
       } else {

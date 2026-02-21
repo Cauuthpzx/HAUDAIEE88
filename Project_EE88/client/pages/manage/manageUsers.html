@@ -74,6 +74,12 @@
         <span data-i18n="permissions">Phân quyền</span>
       </button>
       <button
+        class="layui-btn layui-btn-xs layui-btn-normal"
+        lay-event="columnPerm"
+      >
+        <span data-i18n="columnPerm">Quyền cột</span>
+      </button>
+      <button
         class="layui-btn layui-btn-xs layui-btn-danger"
         lay-event="delete"
       >
@@ -114,7 +120,7 @@
     <script src="/js/hub-api.js?v=3"></script>
 
     <script>
-      layui.use(['table', 'form', 'layer'], function () {
+      layui.use(['table', 'form', 'layer', 'element'], function () {
         HubLang.init();
         HubLang.applyDOM();
         document.title = HubLang.t('manageUsersTitle');
@@ -212,7 +218,7 @@
                       {
                         fixed: 'right',
                         title: HubLang.t('actions'),
-                        width: 240,
+                        width: 320,
                         toolbar: '#rowActionTpl'
                       }
                     ]
@@ -247,6 +253,9 @@
               break;
             case 'permissions':
               openPermissions(d);
+              break;
+            case 'columnPerm':
+              openColumnPermissions(d);
               break;
             case 'delete':
               layer.confirm(
@@ -512,6 +521,172 @@
               });
             return false;
           });
+        }
+
+        // Phân quyền cột cho user
+        function openColumnPermissions(user) {
+          if (user.role === 'admin') {
+            return layer.msg(HubLang.t('adminAllColumns'), { icon: 0 });
+          }
+
+          var loadIdx = layer.load();
+          Promise.all([
+            HubAPI.adminGet('column-registry'),
+            HubAPI.adminGet('users/' + user.id + '/columns')
+          ])
+            .then(function (results) {
+              layer.close(loadIdx);
+              var registry = results[0].code === 0 ? results[0].data : {};
+              var hidden = results[1].code === 0 ? results[1].data : {};
+
+              var pageIds = Object.keys(registry);
+              if (pageIds.length === 0) {
+                return layer.msg('Registry trống', { icon: 2 });
+              }
+
+              // Build tab UI
+              var html =
+                '<form class="layui-form" style="padding:10px 15px;">' +
+                '<p style="margin-bottom:8px;color:#666;">' +
+                HubLang.t('columnPermDesc') +
+                ' <b>' +
+                HubUtils.escapeHtml(user.username) +
+                '</b></p>' +
+                '<div class="layui-tab layui-tab-brief" lay-filter="colPermTab">' +
+                '<ul class="layui-tab-title">';
+
+              pageIds.forEach(function (pid, i) {
+                html +=
+                  '<li' +
+                  (i === 0 ? ' class="layui-this"' : '') +
+                  '>' +
+                  HubLang.t('page_' + pid, pid) +
+                  '</li>';
+              });
+
+              html += '</ul><div class="layui-tab-content">';
+
+              pageIds.forEach(function (pid, i) {
+                var cols = registry[pid] || [];
+                var hiddenFields = hidden[pid] || [];
+                html +=
+                  '<div class="layui-tab-item' +
+                  (i === 0 ? ' layui-show' : '') +
+                  '">';
+
+                // Nút chọn tất cả / bỏ chọn
+                html +=
+                  '<div style="margin-bottom:8px;">' +
+                  '<button type="button" class="layui-btn layui-btn-xs" onclick="colPermSelectAll(\'' +
+                  pid +
+                  '\', true)">' +
+                  HubLang.t('selectAll') +
+                  '</button> ' +
+                  '<button type="button" class="layui-btn layui-btn-xs layui-btn-primary" onclick="colPermSelectAll(\'' +
+                  pid +
+                  '\', false)">' +
+                  HubLang.t('deselectAll') +
+                  '</button>' +
+                  '</div>';
+
+                cols.forEach(function (col) {
+                  var checked =
+                    hiddenFields.indexOf(col.field) === -1 ? ' checked' : '';
+                  html +=
+                    '<div style="display:inline-block;width:48%;margin-bottom:4px;">' +
+                    '<input type="checkbox" name="col_' +
+                    pid +
+                    '_' +
+                    col.field +
+                    '" lay-skin="primary" title="' +
+                    HubUtils.escapeHtml(HubLang.t(col.labelKey, col.labelKey)) +
+                    ' (' +
+                    HubUtils.escapeHtml(col.field) +
+                    ')"' +
+                    checked +
+                    '>' +
+                    '</div>';
+                });
+
+                html += '</div>';
+              });
+
+              html +=
+                '</div></div>' +
+                '<div style="text-align:center;padding:10px 0;">' +
+                '<button type="button" class="layui-btn" id="btnSaveColPerm">' +
+                HubLang.t('confirm') +
+                '</button>' +
+                '</div></form>';
+
+              // Hàm chọn tất cả / bỏ chọn (global cho onclick)
+              window.colPermSelectAll = function (pid, check) {
+                $('input[name^="col_' + pid + '_"]').each(function () {
+                  this.checked = check;
+                });
+                form.render('checkbox');
+              };
+
+              var layerIdx = layer.open({
+                type: 1,
+                title:
+                  HubLang.t('columnPermTitle') +
+                  ' — ' +
+                  HubUtils.escapeHtml(user.username),
+                area: ['700px', '500px'],
+                content: html,
+                success: function () {
+                  form.render();
+                  layui.element.render('tab', 'colPermTab');
+
+                  // Save handler
+                  $('#btnSaveColPerm').on('click', function () {
+                    var hiddenColumns = {};
+                    pageIds.forEach(function (pid) {
+                      var colDefs = registry[pid] || [];
+                      var hiddenList = [];
+                      colDefs.forEach(function (col) {
+                        var cb = $(
+                          'input[name="col_' + pid + '_' + col.field + '"]'
+                        );
+                        if (cb.length && !cb[0].checked) {
+                          hiddenList.push(col.field);
+                        }
+                      });
+                      if (hiddenList.length > 0) {
+                        hiddenColumns[pid] = hiddenList;
+                      }
+                    });
+
+                    var saveIdx = layer.load();
+                    HubAPI.adminRequest(
+                      'users/' + user.id + '/columns',
+                      'PUT',
+                      { hiddenColumns: hiddenColumns }
+                    )
+                      .then(function (res) {
+                        layer.close(saveIdx);
+                        if (res.code === 0) {
+                          layer.close(layerIdx);
+                          layer.msg(HubLang.t('columnPermSaved'), { icon: 1 });
+                        } else {
+                          layer.msg(res.msg || HubLang.t('failed'), {
+                            icon: 2
+                          });
+                        }
+                      })
+                      .catch(function () {
+                        layer.close(saveIdx);
+                        layer.msg(HubLang.t('connectionError'), { icon: 2 });
+                      });
+                  });
+                }
+              });
+            })
+            .catch(function () {
+              layer.close(loadIdx);
+              layer.msg(HubLang.t('connectionError'), { icon: 2 });
+            });
         }
       });
     </script>

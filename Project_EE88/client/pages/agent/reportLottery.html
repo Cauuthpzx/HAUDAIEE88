@@ -264,6 +264,7 @@
     <script src="/lib/layui/layui.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -388,7 +389,7 @@
           },
           request: { pageName: 'page', limitName: 'limit' },
           cols: [
-            [
+            HubColPerm.filterCols('reportLottery', [
               { field: 'username', title: HubLang.t('account'), width: 130 },
               {
                 field: 'user_parent_format',
@@ -425,7 +426,7 @@
               },
               { field: 'uid', title: 'UID', width: 90 },
               { field: 'lottery_id', title: HubLang.t('lotteryId'), width: 90 }
-            ]
+            ])
           ],
           done: function (res) {
             console.log(

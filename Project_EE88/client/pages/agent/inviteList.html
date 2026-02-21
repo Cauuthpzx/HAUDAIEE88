@@ -156,6 +156,7 @@
     <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -243,7 +244,7 @@
           },
           request: { pageName: 'page', limitName: 'limit' },
           cols: [
-            [
+            HubColPerm.filterCols('inviteList', [
               { field: 'invite_code', title: HubLang.t('referralCode') },
               { field: 'user_type', title: HubLang.t('inviteType') },
               { field: 'reg_count', title: HubLang.t('totalRegistered') },
@@ -306,7 +307,7 @@
                 minWidth: 360,
                 toolbar: '#rowActionTpl'
               }
-            ]
+            ])
           ],
           done: function (res) {
             HubLang.applyDOM();

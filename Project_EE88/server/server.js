@@ -22,6 +22,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const syncRoutes = require('./routes/sync');
 const dashboardRoutes = require('./routes/dashboard');
+const realtimeRoutes = require('./routes/realtime');
 const errorHandler = require('./middleware/errorHandler');
 const responseEncryptMiddleware = require('./middleware/responseEncrypt');
 
@@ -153,6 +154,9 @@ app.use('/api/dashboard', dashboardRoutes);
 // Sync: mount TRƯỚC admin vì SSE endpoint cần pre-middleware cho query token
 app.use('/api/admin', syncRoutes);
 
+// Realtime polling: cần JWT + admin role
+app.use('/api/admin/realtime', realtimeRoutes);
+
 // Admin: cần JWT + admin role
 app.use('/api/admin', adminRoutes);
 
@@ -281,10 +285,18 @@ try {
   log.warn(`Không thể khởi động Login Worker: ${err.message}`);
 }
 
+// ── Redis + WebSocket (pre-load) ──
+const http = require('http');
+const { connectRedis, disconnectRedis } = require('./services/redisClient');
+const { initWebSocket } = require('./services/wsServer');
+const { stopPolling } = require('./services/realtimePoller');
+
 // ── Graceful shutdown ──
 function shutdown() {
   if (loginWorker) loginWorker.postMessage({ type: 'shutdown' });
   terminateOCR().catch(() => {});
+  disconnectRedis().catch(() => {});
+  stopPolling();
   closeDb();
   process.exit(0);
 }
@@ -313,8 +325,10 @@ process.on('unhandledRejection', (reason) => {
   setTimeout(() => shutdown(), 3000);
 });
 
+const httpServer = http.createServer(app);
+
 // ── Khởi động ──
-app.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   log.ok(`Máy chủ Agent Hub đang chạy tại http://localhost:${PORT}`);
   log.info(`Thư mục log: ${LOG_DIR}`);
 
@@ -330,4 +344,10 @@ app.listen(PORT, () => {
     users: userCount,
     jwt: 'enabled'
   });
+
+  // Kết nối Redis (không bắt buộc — fallback memory nếu không có)
+  await connectRedis();
+
+  // Khởi tạo WebSocket server
+  initWebSocket(httpServer);
 });

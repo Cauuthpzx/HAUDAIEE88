@@ -95,7 +95,7 @@
                   <div class="layui-inline">
                     <label data-i18n="firstDepositTime">Thời gian nạp đầu</label
                     >：
-                    <div style="width: 290px" class="layui-input-inline">
+                    <div style="width: 220px" class="layui-input-inline">
                       <input
                         type="text"
                         name="first_deposit_time"
@@ -209,6 +209,7 @@
     <script src="/js/hub-utils.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -245,8 +246,7 @@
           elem: '#firstDepositTime',
           type: 'date',
           range: '|',
-          rangeLinked: true,
-          value: _todayStr + ' | ' + _todayStr
+          rangeLinked: true
         });
 
         // ── Khởi tạo bảng ──
@@ -277,7 +277,7 @@
             limitName: 'limit'
           },
           cols: [
-            [
+            HubColPerm.filterCols('members', [
               // ── Hiển thị mặc định ──
               {
                 field: 'username',
@@ -385,7 +385,7 @@
                 width: 130,
                 toolbar: '#rowActionTpl'
               }
-            ]
+            ])
           ],
           done: function (res) {
             HubLang.applyDOM();
@@ -625,8 +625,7 @@
           .addEventListener('click', function () {
             setTimeout(function () {
               form.render('select');
-              document.getElementById('firstDepositTime').value =
-                _todayStr + ' | ' + _todayStr;
+              document.getElementById('firstDepositTime').value = '';
               table.reload('memberTable', {
                 where: {
                   username: '',

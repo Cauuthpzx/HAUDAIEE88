@@ -190,6 +190,7 @@
     <script src="/lib/layui/layui.js"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-agent-filter.js"></script>
 
@@ -307,7 +308,7 @@
           },
           request: { pageName: 'page', limitName: 'limit' },
           cols: [
-            [
+            HubColPerm.filterCols('reportFunds', [
               {
                 field: 'username',
                 title: HubLang.t('account'),
@@ -374,7 +375,7 @@
               { field: 'id', title: 'ID', width: 100 },
               { field: 'uid', title: 'UID', width: 90 },
               { field: 'user_parent', title: HubLang.t('agentId'), width: 100 }
-            ]
+            ])
           ],
           done: function (res) {
             console.log(

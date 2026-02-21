@@ -246,6 +246,7 @@
 
     <script src="/lib/layui/layui.js"></script>
     <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-col-perm.js"></script>
     <script src="/js/hub-api.js?v=3"></script>
     <script src="/js/hub-lang.js"></script>
     <script src="/js/hub-agent-filter.js"></script>
@@ -399,7 +400,7 @@
             text: { none: HubLang.t('noData') },
             page: false,
             cols: [
-              [
+              HubColPerm.filterCols('providerAnalysis', [
                 {
                   field: 'platform_id_name',
                   title: HubLang.t('paProvider'),
@@ -440,7 +441,7 @@
                   align: 'right',
                   templet: wlTpl('companyProfit')
                 }
-              ]
+              ])
             ]
           });
 
@@ -453,7 +454,7 @@
             text: { none: HubLang.t('noData') },
             page: false,
             cols: [
-              [
+              HubColPerm.filterCols('providerAnalysis', [
                 {
                   field: 'game_name',
                   title: HubLang.t('paGameName'),
@@ -499,7 +500,7 @@
                   align: 'right',
                   templet: wlTpl('companyProfit')
                 }
-              ]
+              ])
             ]
           });
         }

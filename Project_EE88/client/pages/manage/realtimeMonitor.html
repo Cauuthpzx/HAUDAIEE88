@@ -1,0 +1,781 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Realtime Monitor</title>
+    <link rel="stylesheet" href="/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/css/hub-icons.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f2f2;
+        font-family: sans-serif;
+      }
+      .layui-card {
+        margin: 15px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+      }
+      .layui-card-header {
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      /* ── KPI Cards ── */
+      .rt-kpi-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .rt-kpi-card {
+        flex: 1;
+        min-width: 140px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        text-align: center;
+      }
+      .rt-kpi-card .rt-kpi-value {
+        font-size: 28px;
+        font-weight: bold;
+        line-height: 1.2;
+      }
+      .rt-kpi-card .rt-kpi-label {
+        font-size: 13px;
+        color: #888;
+        margin-top: 4px;
+      }
+      .rt-kpi-card .rt-kpi-icon {
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+      .rt-kpi-card.green .rt-kpi-value {
+        color: #16a34a;
+      }
+      .rt-kpi-card.green .rt-kpi-icon {
+        color: #16a34a;
+      }
+      .rt-kpi-card.red .rt-kpi-value {
+        color: #dc2626;
+      }
+      .rt-kpi-card.red .rt-kpi-icon {
+        color: #dc2626;
+      }
+      .rt-kpi-card.blue .rt-kpi-value {
+        color: #2563eb;
+      }
+      .rt-kpi-card.blue .rt-kpi-icon {
+        color: #2563eb;
+      }
+      .rt-kpi-card.orange .rt-kpi-value {
+        color: #ea580c;
+      }
+      .rt-kpi-card.orange .rt-kpi-icon {
+        color: #ea580c;
+      }
+
+      /* ── Controls ── */
+      .rt-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .rt-controls .layui-btn {
+        height: 36px;
+        line-height: 36px;
+      }
+
+      /* ── Status indicator ── */
+      .rt-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: #f5f5f5;
+      }
+      .rt-status .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .rt-status .dot.on {
+        background: #16a34a;
+        animation: pulse 1.5s infinite;
+      }
+      .rt-status .dot.off {
+        background: #999;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── Event feed ── */
+      .rt-feed {
+        max-height: 500px;
+        overflow-y: auto;
+        border: 1px solid #e6e6e6;
+        border-radius: 6px;
+        background: #fff;
+      }
+      .rt-event {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+      }
+      .rt-event:last-child {
+        border-bottom: none;
+      }
+      .rt-event.unread {
+        background: #f0f7ff;
+      }
+      .rt-event:hover {
+        background: #fafafa;
+      }
+      .rt-event .rt-ev-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+      .rt-event .rt-ev-icon.new {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+      .rt-event .rt-ev-icon.lost {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      .rt-event .rt-ev-body {
+        flex: 1;
+      }
+      .rt-event .rt-ev-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .rt-event .rt-ev-detail {
+        font-size: 12px;
+        color: #888;
+      }
+      .rt-event .rt-ev-time {
+        font-size: 11px;
+        color: #aaa;
+        white-space: nowrap;
+        margin-top: 2px;
+      }
+
+      /* ── Agent status cards ── */
+      .rt-agent-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .rt-agent-card {
+        flex: 1;
+        min-width: 200px;
+        background: #fff;
+        border-radius: 6px;
+        padding: 12px 14px;
+        border: 1px solid #e6e6e6;
+      }
+      .rt-agent-card .rt-ag-label {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .rt-agent-card .rt-ag-info {
+        font-size: 12px;
+        color: #888;
+      }
+
+      /* ── Empty state ── */
+      .rt-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #aaa;
+        font-size: 14px;
+      }
+      .rt-empty i {
+        font-size: 40px;
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      /* ── Filter tabs ── */
+      .rt-filter-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 12px;
+      }
+      .rt-filter-tabs .ft-btn {
+        padding: 4px 14px;
+        border-radius: 16px;
+        border: 1px solid #d9d9d9;
+        background: #fff;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      .rt-filter-tabs .ft-btn:hover {
+        border-color: #ff4d4f;
+        color: #ff4d4f;
+      }
+      .rt-filter-tabs .ft-btn.active {
+        background: #ff4d4f;
+        color: #fff;
+        border-color: #ff4d4f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <span style="font-size: 16px; font-weight: 600">
+          <i class="hi hi-tower-broadcast" style="color: #ff4d4f"></i>
+          <span data-i18n="rtMonitor">Giám sát Realtime</span>
+        </span>
+      </div>
+      <div class="layui-card-body" style="padding: 15px">
+        <!-- KPI Cards -->
+        <div class="rt-kpi-row" id="kpiRow">
+          <div class="rt-kpi-card blue">
+            <div class="rt-kpi-icon"><i class="hi hi-signal"></i></div>
+            <div class="rt-kpi-value" id="kpiStatus">--</div>
+            <div class="rt-kpi-label" data-i18n="rtPollingStatus">
+              Trạng thái
+            </div>
+          </div>
+          <div class="rt-kpi-card green">
+            <div class="rt-kpi-icon"><i class="hi hi-user-plus"></i></div>
+            <div class="rt-kpi-value" id="kpiNew">0</div>
+            <div class="rt-kpi-label" data-i18n="rtNewCustomers">Khách mới</div>
+          </div>
+          <div class="rt-kpi-card red">
+            <div class="rt-kpi-icon"><i class="hi hi-user-minus"></i></div>
+            <div class="rt-kpi-value" id="kpiLost">0</div>
+            <div class="rt-kpi-label" data-i18n="rtLostCustomers">
+              Khách mất
+            </div>
+          </div>
+          <div class="rt-kpi-card orange">
+            <div class="rt-kpi-icon"><i class="hi hi-plug"></i></div>
+            <div class="rt-kpi-value" id="kpiWs">0</div>
+            <div class="rt-kpi-label" data-i18n="rtWsConnections">
+              WS Connections
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="rt-controls">
+          <div class="rt-status" id="statusBadge">
+            <span class="dot off" id="statusDot"></span>
+            <span id="statusText" data-i18n="rtStopped">Đã dừng</span>
+          </div>
+          <div class="layui-inline" style="margin-left: 8px">
+            <label data-i18n="rtInterval">Interval</label>
+            <select
+              id="selInterval"
+              class="layui-select"
+              style="width: 100px; height: 36px"
+            >
+              <option value="5000">5s</option>
+              <option value="10000" selected>10s</option>
+              <option value="15000">15s</option>
+              <option value="30000">30s</option>
+              <option value="60000">60s</option>
+            </select>
+          </div>
+          <button class="layui-btn layui-btn-normal layui-btn-sm" id="btnStart">
+            <i class="hi hi-play"></i> <span data-i18n="rtStart">Bắt đầu</span>
+          </button>
+          <button
+            class="layui-btn layui-btn-warm layui-btn-sm"
+            id="btnStop"
+            disabled
+          >
+            <i class="hi hi-stop"></i> <span data-i18n="rtStop">Dừng</span>
+          </button>
+          <button
+            class="layui-btn layui-btn-primary layui-btn-sm"
+            id="btnMarkRead"
+          >
+            <i class="hi hi-check-double"></i>
+            <span data-i18n="rtMarkAllRead">Đọc tất cả</span>
+          </button>
+          <button class="layui-btn layui-btn-danger layui-btn-sm" id="btnClear">
+            <i class="hi hi-trash"></i>
+            <span data-i18n="rtClearAll">Xoá tất cả</span>
+          </button>
+          <span style="flex: 1"></span>
+          <span style="font-size: 12px; color: #888" id="lastPollTime"></span>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="rt-filter-tabs" id="filterTabs">
+          <span class="ft-btn active" data-filter="all" data-i18n="rtAll"
+            >Tất cả</span
+          >
+          <span class="ft-btn" data-filter="new"
+            ><i class="hi hi-user-plus" style="color: #16a34a"></i>
+            <span data-i18n="rtNewOnly">Khách mới</span></span
+          >
+          <span class="ft-btn" data-filter="lost"
+            ><i class="hi hi-user-minus" style="color: #dc2626"></i>
+            <span data-i18n="rtLostOnly">Khách mất</span></span
+          >
+          <span class="ft-btn" data-filter="unread" data-i18n="rtUnread"
+            >Chưa đọc</span
+          >
+        </div>
+
+        <!-- Agent status -->
+        <div
+          class="rt-agent-row"
+          id="agentRow"
+          style="margin-bottom: 12px; display: none"
+        ></div>
+
+        <!-- Event feed -->
+        <div class="rt-feed" id="eventFeed">
+          <div class="rt-empty" id="emptyState">
+            <i class="hi hi-tower-broadcast"></i>
+            <span data-i18n="rtNoEvents"
+              >Chưa có sự kiện nào. Bắt đầu polling để theo dõi.</span
+            >
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="eventPager" style="margin-top: 10px; text-align: center"></div>
+      </div>
+    </div>
+
+    <script src="/lib/layui/layui.js"></script>
+    <script src="/js/hub-crypto.js?v=3"></script>
+    <script src="/js/hub-api.js?v=3"></script>
+    <script src="/js/hub-lang.js"></script>
+    <script>
+      HubLang.init();
+      HubLang.applyDOM();
+
+      layui.use(['layer', 'laypage'], function () {
+        var $ = layui.$;
+        var layer = layui.layer;
+        var laypage = layui.laypage;
+
+        // ═══════════════════════════════════════
+        // ── State ──
+        // ═══════════════════════════════════════
+        var currentFilter = 'all';
+        var currentPage = 1;
+        var pageSize = 50;
+        var wsSocket = null;
+
+        // ═══════════════════════════════════════
+        // ── API helpers ──
+        // ═══════════════════════════════════════
+
+        function apiGet(path) {
+          return HubAPI._fetch('/api/admin/realtime' + path).then(function (r) {
+            return r.json();
+          });
+        }
+        function apiPost(path, body) {
+          return HubAPI._fetch('/api/admin/realtime' + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {})
+          }).then(function (r) {
+            return r.json();
+          });
+        }
+
+        // ═══════════════════════════════════════
+        // ── Load status ──
+        // ═══════════════════════════════════════
+
+        function loadStatus() {
+          apiGet('/status')
+            .then(function (res) {
+              if (res.code !== 0) return;
+              var d = res.data;
+
+              // KPI
+              $('#kpiNew').text(d.totalNewDetected || 0);
+              $('#kpiLost').text(d.totalLostDetected || 0);
+              $('#kpiWs').text(d.wsConnections || 0);
+
+              // Status
+              if (d.enabled) {
+                $('#kpiStatus').text(HubLang.t('rtRunning'));
+                $('#statusDot').removeClass('off').addClass('on');
+                $('#statusText').text(HubLang.t('rtRunning'));
+                $('#btnStart').prop('disabled', true);
+                $('#btnStop').prop('disabled', false);
+              } else {
+                $('#kpiStatus').text(HubLang.t('rtStopped'));
+                $('#statusDot').removeClass('on').addClass('off');
+                $('#statusText').text(HubLang.t('rtStopped'));
+                $('#btnStart').prop('disabled', false);
+                $('#btnStop').prop('disabled', true);
+              }
+
+              // Last poll
+              if (d.lastPoll) {
+                $('#lastPollTime').text(
+                  HubLang.t('rtLastPoll') +
+                    ': ' +
+                    new Date(d.lastPoll).toLocaleTimeString()
+                );
+              }
+
+              // Agent cards
+              var agentResults = d.agentResults || {};
+              var keys = Object.keys(agentResults);
+              if (keys.length > 0) {
+                var html = '';
+                keys.forEach(function (agentId) {
+                  var ag = agentResults[agentId];
+                  html +=
+                    '<div class="rt-agent-card">' +
+                    '<div class="rt-ag-label">' +
+                    layui.util.escape(ag.label || 'Agent #' + agentId) +
+                    '</div>' +
+                    '<div class="rt-ag-info">' +
+                    '<span>' +
+                    HubLang.t('rtMembers') +
+                    ': ' +
+                    (ag.memberCount || 0) +
+                    '</span>' +
+                    ' · <span>' +
+                    (ag.status === 'ok' ? '✓' : ag.status) +
+                    '</span>' +
+                    ' · <span>' +
+                    (ag.duration || 0) +
+                    'ms</span>' +
+                    '</div></div>';
+                });
+                $('#agentRow').html(html).show();
+              }
+            })
+            .catch(function () {});
+        }
+
+        // ═══════════════════════════════════════
+        // ── Load events ──
+        // ═══════════════════════════════════════
+
+        function loadEvents(page) {
+          currentPage = page || 1;
+          var params = '?page=' + currentPage + '&limit=' + pageSize;
+          if (currentFilter === 'new') params += '&type=new';
+          else if (currentFilter === 'lost') params += '&type=lost';
+          else if (currentFilter === 'unread') params += '&unread=1';
+
+          apiGet('/events' + params)
+            .then(function (res) {
+              if (res.code !== 0) return;
+              var d = res.data;
+              renderFeed(d.rows);
+              renderPager(d.total);
+            })
+            .catch(function () {});
+        }
+
+        function renderFeed(rows) {
+          if (!rows || rows.length === 0) {
+            $('#eventFeed').html(
+              '<div class="rt-empty"><i class="hi hi-tower-broadcast"></i>' +
+                '<span>' +
+                HubLang.t('rtNoEvents') +
+                '</span></div>'
+            );
+            return;
+          }
+
+          var html = '';
+          rows.forEach(function (ev) {
+            var isNew = ev.event_type === 'new';
+            var icon = isNew ? 'hi-user-plus' : 'hi-user-minus';
+            var iconCls = isNew ? 'new' : 'lost';
+            var title = isNew
+              ? HubLang.t('rtNewCustomerDetected')
+              : HubLang.t('rtLostCustomerDetected');
+            var details = ev.details || {};
+            var unreadCls = ev.is_read ? '' : ' unread';
+            var agentLabel = ev.agent_label
+              ? layui.util.escape(ev.agent_label)
+              : 'Agent #' + ev.agent_id;
+
+            html +=
+              '<div class="rt-event' +
+              unreadCls +
+              '" data-id="' +
+              ev.id +
+              '">' +
+              '<div class="rt-ev-icon ' +
+              iconCls +
+              '"><i class="hi ' +
+              icon +
+              '"></i></div>' +
+              '<div class="rt-ev-body">' +
+              '<div class="rt-ev-title">' +
+              title +
+              '</div>' +
+              '<div class="rt-ev-detail">' +
+              '<b>' +
+              layui.util.escape(ev.username || '') +
+              '</b>' +
+              ' (UID: ' +
+              ev.uid +
+              ')' +
+              ' — ' +
+              agentLabel +
+              (details.balance !== undefined
+                ? ' — Balance: ' + Number(details.balance).toLocaleString()
+                : '') +
+              (details.user_parent
+                ? ' — ' +
+                  HubLang.t('rtParent') +
+                  ': ' +
+                  layui.util.escape(details.user_parent)
+                : '') +
+              '</div>' +
+              '<div class="rt-ev-time">' +
+              (ev.detected_at || '') +
+              '</div>' +
+              '</div></div>';
+          });
+
+          $('#eventFeed').html(html);
+        }
+
+        function renderPager(total) {
+          if (total <= pageSize) {
+            $('#eventPager').empty();
+            return;
+          }
+          laypage.render({
+            elem: 'eventPager',
+            count: total,
+            limit: pageSize,
+            curr: currentPage,
+            jump: function (obj, first) {
+              if (!first) loadEvents(obj.curr);
+            }
+          });
+        }
+
+        // ═══════════════════════════════════════
+        // ── WebSocket ──
+        // ═══════════════════════════════════════
+
+        function connectWS() {
+          // Dynamically load socket.io client
+          var script = document.createElement('script');
+          script.src = '/ws/socket.io.js';
+          script.onload = function () {
+            var token = localStorage.getItem('hub_token');
+            wsSocket = io({
+              path: '/ws',
+              auth: { token: token },
+              transports: ['websocket', 'polling']
+            });
+
+            wsSocket.on('connect', function () {
+              console.log('[WS] Connected');
+            });
+
+            wsSocket.on('customer_event', function (event) {
+              // Prepend vào feed (realtime)
+              prependEvent(event);
+              // Update KPIs
+              if (event.type === 'new') {
+                var v = parseInt($('#kpiNew').text()) || 0;
+                $('#kpiNew').text(v + 1);
+              } else if (event.type === 'lost') {
+                var v2 = parseInt($('#kpiLost').text()) || 0;
+                $('#kpiLost').text(v2 + 1);
+              }
+              // Sound/visual notification
+              flashNotification(event);
+            });
+
+            wsSocket.on('event_summary', function (summary) {
+              // Refresh status
+              loadStatus();
+            });
+
+            wsSocket.on('disconnect', function () {
+              console.log('[WS] Disconnected');
+            });
+
+            wsSocket.on('connect_error', function (err) {
+              console.warn('[WS] Error:', err.message);
+            });
+          };
+          script.onerror = function () {
+            console.warn('[WS] socket.io client không tải được');
+          };
+          document.head.appendChild(script);
+        }
+
+        function prependEvent(event) {
+          var isNew = event.type === 'new';
+          var icon = isNew ? 'hi-user-plus' : 'hi-user-minus';
+          var iconCls = isNew ? 'new' : 'lost';
+          var title = isNew
+            ? HubLang.t('rtNewCustomerDetected')
+            : HubLang.t('rtLostCustomerDetected');
+          var agentLabel = event.agent ? layui.util.escape(event.agent) : '';
+
+          var html =
+            '<div class="rt-event unread" style="animation: fadeIn 0.3s">' +
+            '<div class="rt-ev-icon ' +
+            iconCls +
+            '"><i class="hi ' +
+            icon +
+            '"></i></div>' +
+            '<div class="rt-ev-body">' +
+            '<div class="rt-ev-title">' +
+            title +
+            '</div>' +
+            '<div class="rt-ev-detail">' +
+            '<b>' +
+            layui.util.escape(event.username || '') +
+            '</b>' +
+            ' (UID: ' +
+            event.uid +
+            ')' +
+            ' — ' +
+            agentLabel +
+            (event.balance !== undefined
+              ? ' — Balance: ' + Number(event.balance).toLocaleString()
+              : '') +
+            '</div>' +
+            '<div class="rt-ev-time">' +
+            new Date().toLocaleTimeString() +
+            '</div>' +
+            '</div></div>';
+
+          // Xoá empty state nếu có
+          $('#emptyState').remove();
+          $('#eventFeed').prepend(html);
+        }
+
+        function flashNotification(event) {
+          var msg =
+            event.type === 'new'
+              ? HubLang.t('rtNewCustomerDetected') +
+                ': ' +
+                (event.username || event.uid)
+              : HubLang.t('rtLostCustomerDetected') +
+                ': ' +
+                (event.username || event.uid);
+          layer.msg(msg, {
+            icon: event.type === 'new' ? 1 : 2,
+            time: 3000,
+            offset: 'rt'
+          });
+        }
+
+        // ═══════════════════════════════════════
+        // ── Event handlers ──
+        // ═══════════════════════════════════════
+
+        // Start polling
+        $('#btnStart').on('click', function () {
+          var intervalMs = parseInt($('#selInterval').val()) || 10000;
+          apiPost('/start', { intervalMs: intervalMs }).then(function (res) {
+            if (res.code === 0) {
+              layer.msg(res.msg, { icon: 1 });
+              loadStatus();
+            } else {
+              layer.msg(res.msg || 'Lỗi', { icon: 2 });
+            }
+          });
+        });
+
+        // Stop polling
+        $('#btnStop').on('click', function () {
+          apiPost('/stop').then(function (res) {
+            if (res.code === 0) {
+              layer.msg(res.msg, { icon: 1 });
+              loadStatus();
+            }
+          });
+        });
+
+        // Mark all read
+        $('#btnMarkRead').on('click', function () {
+          apiPost('/read', { ids: 'all' }).then(function (res) {
+            if (res.code === 0) {
+              layer.msg(HubLang.t('rtMarkedRead'), { icon: 1 });
+              loadEvents(currentPage);
+            }
+          });
+        });
+
+        // Clear all
+        $('#btnClear').on('click', function () {
+          layer.confirm(HubLang.t('rtConfirmClear'), function (idx) {
+            apiPost('/clear').then(function (res) {
+              if (res.code === 0) {
+                layer.msg(res.msg, { icon: 1 });
+                loadEvents(1);
+                loadStatus();
+              }
+            });
+            layer.close(idx);
+          });
+        });
+
+        // Filter tabs
+        $('#filterTabs').on('click', '.ft-btn', function () {
+          $('#filterTabs .ft-btn').removeClass('active');
+          $(this).addClass('active');
+          currentFilter = $(this).attr('data-filter');
+          loadEvents(1);
+        });
+
+        // ═══════════════════════════════════════
+        // ── Init ──
+        // ═══════════════════════════════════════
+
+        loadStatus();
+        loadEvents(1);
+        connectWS();
+
+        // Auto-refresh status mỗi 15s
+        setInterval(loadStatus, 15000);
+      });
+    </script>
+  </body>
+</html>
